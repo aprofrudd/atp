@@ -2,19 +2,18 @@
 
 import { FONT_STACK, THEME } from './theme.js';
 
-// Detect base path so links work on both localhost and GitHub Pages (/atp/)
-const BASE = location.pathname.replace(/\/modules\/.*$/, '').replace(/\/$/, '');
-
+// All paths are relative — from any /modules/xxx/ page,
+// ../yyy/ reaches a sibling module and ../../ goes home.
 const MODULES = [
-  { id: 'metabolic-profile', name: 'Metabolic Profile', path: `${BASE}/modules/metabolic-profile/`, connector: 'Overview' },
-  { id: 'sarcomere',     name: 'Sarcomere',      path: `${BASE}/modules/sarcomere/`,        connector: 'ATP' },
-  { id: 'transport',     name: 'ATP Transport',  path: `${BASE}/modules/transport/`,         connector: 'ATP' },
-  { id: 'atp-synthase',  name: 'ATP Synthase',   path: `${BASE}/modules/atp-synthase/`,     connector: 'H\u207A gradient' },
-  { id: 'etc',           name: 'ETC',            path: `${BASE}/modules/etc/`,              connector: 'NADH, FADH\u2082' },
-  { id: 'krebs',         name: 'Krebs Cycle',    path: `${BASE}/modules/krebs/`,            connector: 'Pyruvate, NADH' },
-  { id: 'glycolysis',    name: 'Glycolysis',     path: `${BASE}/modules/glycolysis/`,       connector: null },
-  { id: 'beta-oxidation', name: '\u03B2-Oxidation', path: `${BASE}/modules/beta-oxidation/`, connector: null },
-  { id: 'metabolism-101', name: 'Metabolism 101', path: `${BASE}/modules/metabolism-101/`,  connector: null },
+  { id: 'metabolic-profile', name: 'Metabolic Profile', path: '../metabolic-profile/', connector: 'Overview' },
+  { id: 'sarcomere',     name: 'Sarcomere',      path: '../sarcomere/',        connector: 'ATP' },
+  { id: 'transport',     name: 'ATP Transport',  path: '../transport/',         connector: 'ATP' },
+  { id: 'atp-synthase',  name: 'ATP Synthase',   path: '../atp-synthase/',     connector: 'H\u207A gradient' },
+  { id: 'etc',           name: 'ETC',            path: '../etc/',              connector: 'NADH, FADH\u2082' },
+  { id: 'krebs',         name: 'Krebs Cycle',    path: '../krebs/',            connector: 'Pyruvate, NADH' },
+  { id: 'glycolysis',    name: 'Glycolysis',     path: '../glycolysis/',       connector: null },
+  { id: 'beta-oxidation', name: '\u03B2-Oxidation', path: '../beta-oxidation/', connector: null },
+  { id: 'metabolism-101', name: 'Metabolism 101', path: '../metabolism-101/',  connector: null },
 ];
 
 export function initNav(currentModuleId) {
@@ -36,9 +35,9 @@ export function initNav(currentModuleId) {
     overflow-x: auto;
   `;
 
-  // Home button
+  // Home button — go up two levels from /modules/xxx/
   const home = document.createElement('a');
-  home.href = `${BASE}/`;
+  home.href = '../../';
   home.textContent = '\u2302 Home';
   home.style.cssText = `
     display: inline-block;

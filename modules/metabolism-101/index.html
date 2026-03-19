@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metabolism 101 &mdash; Foundational Glossary</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    text-align: center;
+    padding: 14px 16px 10px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  header p {
+    font-size: 0.82rem;
+    color: #708090;
+    margin-top: 4px;
+  }
+
+  /* Sticky toolbar */
+  #toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #111828;
+    border-bottom: 1px solid #0f3460;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #search {
+    flex: 1;
+    min-width: 180px;
+    max-width: 360px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid #0f3460;
+    background: #16213e;
+    color: #e0e0e0;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #search:focus { border-color: #FFD700; }
+  #search::placeholder { color: #506070; }
+
+  .cat-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .cat-btn {
+    padding: 4px 12px;
+    border-radius: 14px;
+    border: 1px solid #0f3460;
+    background: transparent;
+    color: #a0b0c0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .cat-btn:hover { border-color: #1a4a80; background: #16213e; }
+  .cat-btn.active {
+    background: #FFD700;
+    color: #1a1a2e;
+    border-color: #FFD700;
+  }
+
+  /* Card container */
+  main#card-container {
+    flex: 1;
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  .category-section { margin-bottom: 28px; }
+  .category-section.hidden { display: none; }
+  .category-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #0f3460;
+    letter-spacing: 0.3px;
+  }
+
+  /* Concept cards */
+  .concept-card {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .concept-card.hidden { display: none; }
+  .concept-card:hover { border-color: #1a4a80; }
+  .concept-card.expanded { border-color: #FFD700; }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .card-header:hover { background: rgba(255, 215, 0, 0.04); }
+
+  .chevron {
+    font-size: 0.7rem;
+    color: #506070;
+    transition: transform 0.25s;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+  }
+  .expanded .chevron { transform: rotate(90deg); color: #FFD700; }
+
+  .card-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    flex-shrink: 0;
+  }
+  .card-summary {
+    font-size: 0.78rem;
+    color: #708090;
+    margin-left: auto;
+    text-align: right;
+    line-height: 1.3;
+  }
+
+  .card-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+  }
+  .expanded .card-detail { max-height: 800px; }
+
+  .card-detail-inner {
+    padding: 0 14px 14px 38px;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: #c0c8d4;
+  }
+  .card-detail-inner p { margin-bottom: 8px; }
+  .card-detail-inner strong { color: #e0e0e0; }
+
+  .card-links {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .card-links span.label {
+    font-size: 0.72rem;
+    color: #506070;
+    align-self: center;
+  }
+  .module-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: rgba(255, 215, 0, 0.12);
+    color: #FFD700;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .module-pill:hover { background: rgba(255, 215, 0, 0.25); }
+
+  footer {
+    padding: 16px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: #405060;
+    border-top: 1px solid #0f3460;
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    #search { max-width: 100%; min-width: 0; }
+    .card-summary { display: none; }
+    .card-title { font-size: 0.84rem; }
+    main#card-container { padding: 14px 10px 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="nav-slot"></div>
+
+<header>
+  <h1>Metabolism 101</h1>
+  <p>Foundational concepts that connect every module &mdash; search, browse, and build your mental model.</p>
+</header>
+
+<div id="toolbar">
+  <input type="text" id="search" placeholder="Search concepts&hellip;" autocomplete="off" spellcheck="false">
+  <div class="cat-filters" id="cat-filters"></div>
+</div>
+
+<main id="card-container"></main>
+
+<footer>
+  Exercise Physiology Visualization System &mdash; Metabolism 101 Glossary
+</footer>
+
+<script type="module">
+import { initNav } from '../../shared/nav.js';
+
+const MODULE_PATHS = {
+  'Glycolysis': '/modules/glycolysis/',
+  'Krebs': '/modules/krebs/',
+  'ETC': '/modules/etc/',
+  'ATP Synthase': '/modules/atp-synthase/',
+  'Transport': '/modules/transport/',
+  'Sarcomere': '/modules/sarcomere/',
+  'Metabolic Profile': '/modules/metabolic-profile/',
+};
+
+const CATEGORIES = [
+  { id: 'energy', name: 'Energy Basics' },
+  { id: 'redox', name: 'Redox & Electron Carriers' },
+  { id: 'membrane', name: 'Membrane & Transport' },
+  { id: 'regulation', name: 'Regulation' },
+  { id: 'fuels', name: 'Fuels & Storage' },
+  { id: 'acid-base', name: 'Acid-Base' },
+];
+
+const CONCEPTS = [
+  // ── Energy Basics ──
+  {
+    id: 'atp', category: 'energy',
+    title: 'ATP',
+    summary: 'Universal energy currency',
+    detail: `<p>Adenosine triphosphate (ATP) is the cell's universal energy currency. Hydrolysis of its terminal phosphate bond releases <strong>~30.5 kJ/mol</strong> of free energy, driving almost every energy-requiring process — from muscle contraction to ion pumping to biosynthesis.</p>
+<p>A resting human turns over roughly their own body weight in ATP each day, yet stores only ~100 g at any moment. This means ATP must be constantly recycled from ADP + P<sub>i</sub>.</p>`,
+    links: ['ATP Synthase', 'Transport', 'Sarcomere'],
+  },
+  {
+    id: 'adp-pi', category: 'energy',
+    title: 'ADP + Pᵢ',
+    summary: 'The "spent" currency',
+    detail: `<p>When ATP is hydrolyzed to do work, the products are <strong>ADP</strong> (adenosine diphosphate) and <strong>inorganic phosphate (P<sub>i</sub>)</strong>. These are the "spent" form of the energy currency.</p>
+<p>ATP synthase recombines ADP + P<sub>i</sub> back into ATP, completing the cycle. The adenine nucleotide translocase (ANT) shuttles ADP into the matrix and ATP out — keeping the cycle flowing.</p>`,
+    links: ['ATP Synthase', 'Transport'],
+  },
+  {
+    id: 'free-energy', category: 'energy',
+    title: 'Free Energy (ΔG)',
+    summary: 'Determines reaction spontaneity',
+    detail: `<p><strong>Gibbs free energy change (ΔG)</strong> tells you whether a reaction will happen spontaneously. If ΔG is <strong>negative</strong>, the reaction releases energy and proceeds spontaneously (exergonic). If <strong>positive</strong>, it requires energy input (endergonic).</p>
+<p>In metabolism, many biosynthetic steps have positive ΔG. Cells overcome this by coupling them to reactions with large negative ΔG — most commonly ATP hydrolysis.</p>`,
+    links: ['Glycolysis', 'Krebs'],
+  },
+  {
+    id: 'substrate-level-phosphorylation', category: 'energy',
+    title: 'Substrate-Level Phosphorylation',
+    summary: 'Direct phosphate transfer to ADP',
+    detail: `<p>A <strong>direct transfer</strong> of a phosphate group from a substrate molecule to ADP, forming ATP. No membrane, no proton gradient, no oxygen required.</p>
+<p>This occurs at specific steps in <strong>glycolysis</strong> (steps 7 and 10) and in the <strong>Krebs cycle</strong> (succinyl-CoA → succinate, producing GTP → ATP). It's fast but yields far fewer ATP than oxidative phosphorylation.</p>`,
+    links: ['Glycolysis', 'Krebs'],
+  },
+  {
+    id: 'oxidative-phosphorylation', category: 'energy',
+    title: 'Oxidative Phosphorylation',
+    summary: 'ATP via the proton gradient',
+    detail: `<p>The major ATP-producing pathway: electrons from NADH and FADH₂ flow through the electron transport chain, pumping H⁺ across the inner mitochondrial membrane. The resulting <strong>proton-motive force (PMF)</strong> drives ATP synthase.</p>
+<p>Oxidative phosphorylation accounts for <strong>~30 of the ~32 ATP</strong> produced per glucose. It requires oxygen as the terminal electron acceptor — hence "oxidative."</p>`,
+    links: ['ETC', 'ATP Synthase'],
+  },
+  {
+    id: 'coupled-reactions', category: 'energy',
+    title: 'Coupled Reactions',
+    summary: 'Linking unfavorable + favorable reactions',
+    detail: `<p>A thermodynamically unfavorable reaction (positive ΔG) can be driven forward by <strong>coupling</strong> it to a favorable one (large negative ΔG), so the net ΔG is negative.</p>
+<p>The classic example: many biosynthetic steps are coupled to ATP hydrolysis (ΔG ≈ −30.5 kJ/mol). In glycolysis, the hexokinase step couples glucose phosphorylation (unfavorable alone) to ATP hydrolysis, making the net reaction strongly favorable.</p>`,
+    links: ['Glycolysis', 'Krebs'],
+  },
+
+  // ── Redox & Electron Carriers ──
+  {
+    id: 'oxidation-reduction', category: 'redox',
+    title: 'Oxidation & Reduction',
+    summary: 'OIL RIG: electron loss/gain',
+    detail: `<p><strong>OIL RIG</strong>: Oxidation Is Loss (of electrons), Reduction Is Gain. Redox reactions are always paired — when one molecule is oxidized, another is reduced.</p>
+<p>In metabolism, fuel molecules (glucose, fatty acids) are progressively <strong>oxidized</strong>, losing electrons. Those electrons are captured by carriers like NAD⁺ and FAD, which are <strong>reduced</strong> to NADH and FADH₂. Finally, electrons are passed to O₂ (the terminal acceptor) in the ETC.</p>`,
+    links: ['ETC', 'Krebs'],
+  },
+  {
+    id: 'nad-nadh', category: 'redox',
+    title: 'NAD⁺/NADH',
+    summary: 'Primary electron shuttle to ETC',
+    detail: `<p><strong>Nicotinamide adenine dinucleotide</strong> exists in oxidized (NAD⁺) and reduced (NADH) forms. It carries <strong>2 electrons + 1 H⁺</strong> (as a hydride ion) from fuel-oxidizing reactions to Complex I of the ETC.</p>
+<p>Each NADH entering the ETC contributes enough proton-motive force to produce <strong>~2.5 ATP</strong>. NAD⁺ is regenerated in the process, maintaining the cell's NAD⁺/NADH balance — critical because glycolysis halts without NAD⁺.</p>`,
+    links: ['Glycolysis', 'Krebs', 'ETC'],
+  },
+  {
+    id: 'fad-fadh2', category: 'redox',
+    title: 'FAD/FADH₂',
+    summary: 'Secondary carrier bound to Complex II',
+    detail: `<p><strong>Flavin adenine dinucleotide</strong> is a secondary electron carrier. Unlike NAD⁺, FAD is <strong>covalently bound</strong> to succinate dehydrogenase (Complex II), so FADH₂ delivers electrons directly to the chain at a lower energy point.</p>
+<p>Result: FADH₂ bypasses Complex I and pumps fewer protons, yielding only <strong>~1.5 ATP</strong> per molecule (vs. ~2.5 for NADH).</p>`,
+    links: ['Krebs', 'ETC'],
+  },
+  {
+    id: 'coenzymes-cofactors', category: 'redox',
+    title: 'Coenzymes & Cofactors',
+    summary: 'Non-protein helpers',
+    detail: `<p>Enzymes often need non-protein partners to function. <strong>Cofactors</strong> are inorganic (metal ions like Fe²⁺, Mg²⁺). <strong>Coenzymes</strong> are organic molecules — many derived from B vitamins.</p>
+<p>Key coenzymes in central metabolism: <strong>NAD⁺</strong> (from niacin/B3), <strong>FAD</strong> (from riboflavin/B2), <strong>Coenzyme A</strong> (from pantothenic acid/B5), and <strong>TPP</strong> (from thiamine/B1). They shuttle chemical groups between enzyme active sites.</p>`,
+    links: ['Krebs', 'Glycolysis'],
+  },
+  {
+    id: 'redox-potential', category: 'redox',
+    title: 'Redox Potential (E⁰\')',
+    summary: 'Electron affinity measure',
+    detail: `<p>Standard reduction potential (E⁰') is a <strong>voltage-like measure</strong> of how strongly a molecule attracts electrons. More positive E⁰' = stronger electron pull.</p>
+<p>Electrons flow spontaneously from low E⁰' to high E⁰'. In the ETC, they cascade from NADH (E⁰' ≈ −0.32 V) down to O₂ (E⁰' ≈ +0.82 V). This ~1.14 V drop releases energy that pumps protons across the membrane.</p>`,
+    links: ['ETC'],
+  },
+  {
+    id: 'electron-carrier-chain', category: 'redox',
+    title: 'Electron Carrier Chain',
+    summary: 'Stepwise transfer from NADH to O₂',
+    detail: `<p>Rather than transferring electrons directly from NADH to O₂ (which would release a dangerous burst of energy), the ETC uses a <strong>stepwise relay</strong> of carriers with progressively higher redox potentials.</p>
+<p>The chain: NADH → Complex I → ubiquinone → Complex III → cytochrome c → Complex IV → O₂. Each step releases a controlled amount of energy, used to pump H⁺ across the inner membrane.</p>`,
+    links: ['ETC'],
+  },
+
+  // ── Membrane & Transport ──
+  {
+    id: 'pmf', category: 'membrane',
+    title: 'Proton Gradient (PMF)',
+    summary: 'Stored energy across inner membrane',
+    detail: `<p>The <strong>proton-motive force (PMF)</strong> is the electrochemical gradient of H⁺ ions across the inner mitochondrial membrane. It has two components: a <strong>concentration gradient</strong> (ΔpH, ~0.5–1.0 units) and a <strong>voltage</strong> (Δψ, ~150–180 mV, negative inside).</p>
+<p>The ETC pumps H⁺ from the matrix to the intermembrane space, building this gradient. ATP synthase then lets H⁺ flow back down the gradient, harvesting the energy to make ATP. PMF ≈ Δψ − 59·ΔpH (in mV).</p>`,
+    links: ['ETC', 'ATP Synthase'],
+  },
+  {
+    id: 'chemiosmosis', category: 'membrane',
+    title: 'Chemiosmosis',
+    summary: "Mitchell's insight: gradient-driven ATP",
+    detail: `<p>Peter Mitchell's <strong>chemiosmotic hypothesis</strong> (Nobel Prize, 1978): ATP synthesis is driven not by a direct chemical intermediate, but by an <strong>electrochemical proton gradient</strong> across a membrane.</p>
+<p>The ETC pumps H⁺ out of the matrix, and ATP synthase provides the only efficient path back in. The flow of ~4 H⁺ through ATP synthase rotates the c-ring and drives the conformational changes that condense ADP + P<sub>i</sub> into ATP.</p>`,
+    links: ['ATP Synthase'],
+  },
+  {
+    id: 'inner-membrane', category: 'membrane',
+    title: 'Inner Mitochondrial Membrane',
+    summary: 'Ion-tight barrier for the gradient',
+    detail: `<p>The inner mitochondrial membrane is remarkably <strong>ion-tight</strong> — impermeable to most small molecules and ions, including H⁺. This impermeability is what allows the proton gradient to build up.</p>
+<p>Its large surface area (folded into <strong>cristae</strong>) houses the ETC complexes and ATP synthase. Specific translocases control what crosses: ANT for ATP/ADP, phosphate carrier for P<sub>i</sub>, and shuttle systems for reducing equivalents.</p>`,
+    links: ['ETC', 'ATP Synthase', 'Transport'],
+  },
+  {
+    id: 'malate-aspartate-shuttle', category: 'membrane',
+    title: 'Malate-Aspartate Shuttle',
+    summary: 'Cytoplasmic NADH → matrix (~2.5 ATP)',
+    detail: `<p>NADH can't cross the inner membrane directly. The malate-aspartate shuttle transfers its electrons indirectly: cytoplasmic NADH reduces oxaloacetate to malate, which enters the matrix and is re-oxidized to regenerate NADH inside.</p>
+<p>Because matrix NADH feeds Complex I, this shuttle preserves the full <strong>~2.5 ATP yield</strong>. It dominates in heart and liver. The trade-off: it's slower than the glycerol-3-phosphate shuttle because it requires multiple carrier proteins.</p>`,
+    links: ['Glycolysis', 'ETC'],
+  },
+  {
+    id: 'g3p-shuttle', category: 'membrane',
+    title: 'Glycerol-3-Phosphate Shuttle',
+    summary: 'Faster but less efficient (~1.5 ATP)',
+    detail: `<p>An alternative to the malate-aspartate shuttle. Cytoplasmic NADH reduces DHAP to glycerol-3-phosphate, which is then oxidized on the <strong>outer face</strong> of the inner membrane by a FAD-linked dehydrogenase — delivering electrons directly to ubiquinone (bypassing Complex I).</p>
+<p>Yield: only <strong>~1.5 ATP per NADH</strong> (same as FADH₂). But it's faster and dominates in <strong>skeletal muscle and brain</strong> where speed matters more than efficiency.</p>`,
+    links: ['Glycolysis', 'ETC'],
+  },
+  {
+    id: 'mct-transporters', category: 'membrane',
+    title: 'MCT1/MCT4 Transporters',
+    summary: 'Lactate import/export between cells',
+    detail: `<p><strong>Monocarboxylate transporters</strong> move lactate (plus an H⁺) across cell membranes. MCT4 (low affinity, high capacity) <strong>exports</strong> lactate from fast-twitch glycolytic fibers. MCT1 (high affinity) <strong>imports</strong> lactate into oxidative fibers, heart, and brain for use as fuel.</p>
+<p>This is the basis of the <strong>lactate shuttle</strong> concept — lactate is not a waste product but a mobile fuel shared between cells.</p>`,
+    links: ['Glycolysis', 'Metabolic Profile'],
+  },
+  {
+    id: 'ant', category: 'membrane',
+    title: 'ANT (Adenine Nucleotide Translocase)',
+    summary: 'Swaps ATP-out for ADP-in',
+    detail: `<p>The most abundant protein in the inner mitochondrial membrane. ANT performs an <strong>obligatory 1:1 exchange</strong>: one ATP⁴⁻ out of the matrix for one ADP³⁻ in. This is electrogenic — it moves one net negative charge inward, driven by the membrane potential (Δψ).</p>
+<p>ANT accounts for a significant fraction of the PMF "cost" of making ATP. Inhibition (e.g., by bongkrekic acid or atractyloside) is rapidly lethal.</p>`,
+    links: ['Transport'],
+  },
+
+  // ── Regulation ──
+  {
+    id: 'allosteric-regulation', category: 'regulation',
+    title: 'Allosteric Regulation',
+    summary: 'Non-active-site control',
+    detail: `<p>An enzyme's activity can be increased or decreased by a molecule binding at a site <strong>other than the active site</strong> (an allosteric site). This binding changes the enzyme's shape, altering its catalytic efficiency.</p>
+<p>Example: <strong>PFK-1</strong> (the key glycolytic regulator) is allosterically activated by AMP and fructose-2,6-bisphosphate, and inhibited by ATP and citrate. This lets the cell tune glycolytic flux to its current energy state.</p>`,
+    links: ['Glycolysis', 'Krebs'],
+  },
+  {
+    id: 'feedback-inhibition', category: 'regulation',
+    title: 'Feedback Inhibition',
+    summary: 'End product inhibits early enzyme',
+    detail: `<p>A specific form of allosteric regulation where the <strong>end product of a pathway inhibits an enzyme near the start</strong> of that pathway. This prevents wasteful overproduction.</p>
+<p>Classic example: in glycolysis, <strong>ATP</strong> (an end product of the whole energy pathway) inhibits PFK-1. When ATP levels are high, there's no need to break down more glucose — so the pathway slows.</p>`,
+    links: ['Glycolysis', 'Krebs'],
+  },
+  {
+    id: 'enzyme-kinetics', category: 'regulation',
+    title: 'Enzyme Kinetics (Km, Vmax)',
+    summary: 'Half-max concentration & ceiling rate',
+    detail: `<p><strong>Km</strong> (Michaelis constant) is the substrate concentration at which an enzyme operates at half its maximum rate. Low Km = high affinity (enzyme works well even at low [substrate]). <strong>Vmax</strong> is the maximum rate when the enzyme is fully saturated.</p>
+<p>These values matter for understanding why hexokinase (low Km for glucose) traps glucose in cells, while glucokinase (high Km) acts as a glucose sensor in the liver and pancreas.</p>`,
+    links: ['Glycolysis', 'Krebs'],
+  },
+  {
+    id: 'energy-charge', category: 'regulation',
+    title: 'Cellular Energy Charge',
+    summary: 'ATP/ADP/AMP ratio as master switch',
+    detail: `<p>Energy charge = <strong>([ATP] + 0.5[ADP]) / ([ATP] + [ADP] + [AMP])</strong>. It ranges from 0 (all AMP) to 1.0 (all ATP). Cells maintain it near <strong>0.85–0.90</strong>.</p>
+<p>When energy charge drops (more AMP), catabolic pathways speed up (glycolysis, β-oxidation). When it rises, anabolic pathways are favored. AMP-activated protein kinase (AMPK) acts as the sensor, phosphorylating targets to restore balance.</p>`,
+    links: ['Glycolysis', 'Krebs', 'Metabolic Profile'],
+  },
+  {
+    id: 'calcium-signaling', category: 'regulation',
+    title: 'Calcium Signaling',
+    summary: 'Ca²⁺ links muscle activation to fuel',
+    detail: `<p>The same Ca²⁺ release that triggers muscle contraction also <strong>activates Krebs cycle dehydrogenases</strong> (isocitrate dehydrogenase, α-ketoglutarate dehydrogenase, pyruvate dehydrogenase phosphatase). This is elegant: the signal to contract is simultaneously a signal to produce more ATP.</p>
+<p>Ca²⁺ also activates glycogen phosphorylase (via phosphorylase kinase), mobilizing stored glucose. This feed-forward mechanism ensures fuel supply ramps up with demand.</p>`,
+    links: ['Krebs', 'Sarcomere'],
+  },
+
+  // ── Fuels & Storage ──
+  {
+    id: 'glucose', category: 'fuels',
+    title: 'Glucose',
+    summary: '6-carbon sugar, fastest-mobilized fuel',
+    detail: `<p>A 6-carbon monosaccharide (C₆H₁₂O₆) and the primary fuel for glycolysis. Blood glucose is maintained at <strong>~4–6 mM</strong> at rest. It can be metabolized anaerobically (to lactate, yielding 2 ATP) or aerobically (complete oxidation yields <strong>~30–32 ATP</strong>).</p>
+<p>Glucose is the <strong>fastest-mobilized</strong> fuel from glycogen stores. The brain depends on it almost exclusively at rest (~120 g/day).</p>`,
+    links: ['Glycolysis'],
+  },
+  {
+    id: 'glycogen', category: 'fuels',
+    title: 'Glycogen',
+    summary: 'Branched glucose polymer',
+    detail: `<p>A highly branched polymer of glucose, stored in <strong>muscle (~400 g)</strong> and <strong>liver (~100 g)</strong>. Its branched structure provides many non-reducing ends for rapid simultaneous cleavage by glycogen phosphorylase.</p>
+<p>Muscle glycogen is used locally (no glucose-6-phosphatase, so it can't export free glucose). Liver glycogen maintains blood glucose for the brain and other tissues. Glycogen depletion ("hitting the wall") occurs after ~90 min of intense exercise.</p>`,
+    links: ['Glycolysis', 'Metabolic Profile'],
+  },
+  {
+    id: 'fatty-acids', category: 'fuels',
+    title: 'Fatty Acids',
+    summary: 'High-yield but O₂-demanding',
+    detail: `<p>Long-chain fatty acids are the most energy-dense fuel. Palmitate (16C) yields <strong>~106 ATP</strong> via β-oxidation + Krebs + ETC — over 3× more than glucose per molecule. But oxidation requires abundant O₂ and is slower to ramp up.</p>
+<p>At rest and low-to-moderate intensity, fatty acids supply <strong>60–70%</strong> of energy. As intensity increases past ~65% VO₂max, the fuel mix shifts toward carbohydrates (the "crossover" concept).</p>`,
+    links: ['Metabolic Profile'],
+  },
+  {
+    id: 'beta-oxidation', category: 'fuels',
+    title: 'β-Oxidation',
+    summary: 'Mitochondrial spiral cutting 2C units',
+    detail: `<p>A repeating 4-step spiral in the mitochondrial matrix that chops <strong>2-carbon units</strong> (as acetyl-CoA) off a fatty acid chain. Each cycle also produces <strong>1 NADH + 1 FADH₂</strong>.</p>
+<p>Palmitate (16C) undergoes 7 cycles → 8 acetyl-CoA + 7 NADH + 7 FADH₂. The acetyl-CoA enters the Krebs cycle. Rate is controlled by <strong>CPT-1</strong> (carnitine palmitoyltransferase), which is inhibited by malonyl-CoA when carbohydrate is abundant.</p>`,
+    links: ['Krebs', 'Metabolic Profile'],
+  },
+  {
+    id: 'acetyl-coa', category: 'fuels',
+    title: 'Acetyl-CoA',
+    summary: '2C universal entry ticket to Krebs',
+    detail: `<p>A 2-carbon acetyl group linked to <strong>coenzyme A</strong>. It's the common product of carbohydrate (via pyruvate dehydrogenase), fat (via β-oxidation), and amino acid catabolism — the "universal entry ticket" to the Krebs cycle.</p>
+<p>Acetyl-CoA condenses with oxaloacetate (4C) to form citrate (6C), initiating each turn of the cycle. It's also a key regulatory signal: high acetyl-CoA inhibits pyruvate dehydrogenase, slowing glucose oxidation when fat is available.</p>`,
+    links: ['Krebs'],
+  },
+  {
+    id: 'fuel-crossover', category: 'fuels',
+    title: 'Fuel Crossover',
+    summary: 'Carbs replace fat as intensity rises',
+    detail: `<p>The <strong>crossover concept</strong> (Brooks, 1994): as exercise intensity rises, the fuel mix progressively shifts from fat to carbohydrate. The "crossover point" (~65% VO₂max in trained individuals) is where carbs become the dominant fuel.</p>
+<p>Why? Higher intensity means faster ATP demand → glycolysis speeds up → pyruvate production outpaces PDH → lactate rises. Meanwhile, rising catecholamines and declining malonyl-CoA further suppress fat oxidation.</p>`,
+    links: ['Metabolic Profile'],
+  },
+
+  // ── Acid-Base ──
+  {
+    id: 'ph-hydrogen-ions', category: 'acid-base',
+    title: 'pH & Hydrogen Ions',
+    summary: 'pH = -log[H⁺]; small shifts, big effects',
+    detail: `<p>pH is the negative logarithm of hydrogen ion concentration. The log scale means a drop from <strong>pH 7.4 → 7.0</strong> represents a <strong>2.5-fold increase</strong> in [H⁺].</p>
+<p>Resting muscle pH is ~7.0; during maximal exercise it can drop to ~6.5. This rising [H⁺] impairs cross-bridge cycling, inhibits PFK-1, and reduces Ca²⁺ sensitivity — contributing to fatigue. Maintaining pH within a narrow range is critical for enzyme function.</p>`,
+    links: ['Glycolysis', 'Sarcomere'],
+  },
+  {
+    id: 'buffering-systems', category: 'acid-base',
+    title: 'Buffering Systems',
+    summary: 'Absorb excess H⁺',
+    detail: `<p>Buffers resist pH changes by absorbing or releasing H⁺. The body uses three main systems: <strong>bicarbonate</strong> (blood, ~53% of capacity), <strong>phosphate</strong> (intracellular), and <strong>proteins</strong> (histidine residues, hemoglobin).</p>
+<p>During exercise, buffering capacity is finite. When H⁺ production exceeds buffering, pH drops. Training can increase muscle buffering capacity (more carnosine, more mitochondrial volume for oxidative disposal of pyruvate).</p>`,
+    links: ['Metabolic Profile'],
+  },
+  {
+    id: 'bicarbonate-buffer', category: 'acid-base',
+    title: 'Bicarbonate Buffer',
+    summary: 'H⁺ + HCO₃⁻ → CO₂ + H₂O',
+    detail: `<p>The dominant extracellular buffer: <strong>H⁺ + HCO₃⁻ ⇌ H₂CO₃ ⇌ CO₂ + H₂O</strong>. Excess H⁺ is converted to CO₂, which is exhaled. This links acid-base balance directly to <strong>ventilation</strong>.</p>
+<p>At the "ventilatory threshold," rising H⁺ drives CO₂ production beyond metabolic needs, triggering a disproportionate increase in breathing rate. This is why breathing surges before VO₂max — it's partially a buffering response.</p>`,
+    links: ['Metabolic Profile'],
+  },
+  {
+    id: 'lactic-acid-myth', category: 'acid-base',
+    title: 'The "Lactic Acid" Myth',
+    summary: 'Lactate ≠ lactic acid at body pH',
+    detail: `<p>At physiological pH (~7.0–7.4), "lactic acid" (pKa 3.86) is <strong>>99% dissociated</strong> into lactate⁻ and H⁺. The molecule produced by LDH is lactate, not lactic acid. The H⁺ that causes acidosis comes primarily from <strong>ATP hydrolysis</strong>, not from lactate production.</p>
+<p>In fact, lactate production <strong>consumes</strong> an H⁺ (pyruvate + NADH + H⁺ → lactate + NAD⁺). Lactate is a valuable fuel — oxidized by the heart, slow-twitch fibers, and brain via MCT transporters.</p>`,
+    links: ['Glycolysis', 'Metabolic Profile'],
+  },
+];
+
+// ── Build DOM ──
+const container = document.getElementById('card-container');
+const searchInput = document.getElementById('search');
+const filterWrap = document.getElementById('cat-filters');
+let activeCategory = 'all';
+let expandedCard = null;
+
+// Category filter buttons
+const allBtn = makeFilterBtn('all', 'All');
+filterWrap.appendChild(allBtn);
+allBtn.classList.add('active');
+CATEGORIES.forEach(c => filterWrap.appendChild(makeFilterBtn(c.id, c.name)));
+
+function makeFilterBtn(id, label) {
+  const btn = document.createElement('button');
+  btn.className = 'cat-btn';
+  btn.dataset.cat = id;
+  btn.textContent = label;
+  btn.addEventListener('click', () => {
+    activeCategory = id;
+    filterWrap.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+  });
+  return btn;
+}
+
+// Build category sections and cards
+CATEGORIES.forEach(cat => {
+  const section = document.createElement('div');
+  section.className = 'category-section';
+  section.dataset.cat = cat.id;
+
+  const heading = document.createElement('h2');
+  heading.className = 'category-title';
+  heading.textContent = cat.name;
+  section.appendChild(heading);
+
+  CONCEPTS.filter(c => c.category === cat.id).forEach(concept => {
+    const card = document.createElement('div');
+    card.className = 'concept-card';
+    card.dataset.searchText = `${concept.title} ${concept.summary} ${concept.detail}`.replace(/<[^>]*>/g, '').toLowerCase();
+    card.dataset.cat = cat.id;
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'card-header';
+
+    const chevron = document.createElement('span');
+    chevron.className = 'chevron';
+    chevron.textContent = '▶';
+
+    const title = document.createElement('span');
+    title.className = 'card-title';
+    title.textContent = concept.title;
+
+    const summary = document.createElement('span');
+    summary.className = 'card-summary';
+    summary.textContent = concept.summary;
+
+    header.appendChild(chevron);
+    header.appendChild(title);
+    header.appendChild(summary);
+
+    // Detail
+    const detail = document.createElement('div');
+    detail.className = 'card-detail';
+
+    const inner = document.createElement('div');
+    inner.className = 'card-detail-inner';
+    inner.innerHTML = concept.detail;
+
+    // Module link pills
+    if (concept.links && concept.links.length > 0) {
+      const linksWrap = document.createElement('div');
+      linksWrap.className = 'card-links';
+      const lbl = document.createElement('span');
+      lbl.className = 'label';
+      lbl.textContent = 'See it in:';
+      linksWrap.appendChild(lbl);
+      concept.links.forEach(modName => {
+        const pill = document.createElement('a');
+        pill.className = 'module-pill';
+        pill.textContent = modName;
+        pill.href = MODULE_PATHS[modName] || '#';
+        linksWrap.appendChild(pill);
+      });
+      inner.appendChild(linksWrap);
+    }
+
+    detail.appendChild(inner);
+    card.appendChild(header);
+    card.appendChild(detail);
+
+    // Accordion toggle
+    header.addEventListener('click', () => {
+      if (expandedCard && expandedCard !== card) {
+        expandedCard.classList.remove('expanded');
+      }
+      card.classList.toggle('expanded');
+      expandedCard = card.classList.contains('expanded') ? card : null;
+    });
+
+    section.appendChild(card);
+  });
+
+  container.appendChild(section);
+});
+
+// ── Filtering ──
+function applyFilters() {
+  const query = searchInput.value.trim().toLowerCase();
+  const sections = container.querySelectorAll('.category-section');
+
+  sections.forEach(section => {
+    const catMatch = activeCategory === 'all' || section.dataset.cat === activeCategory;
+    let anyVisible = false;
+
+    section.querySelectorAll('.concept-card').forEach(card => {
+      const textMatch = !query || card.dataset.searchText.includes(query);
+      const visible = catMatch && textMatch;
+      card.classList.toggle('hidden', !visible);
+      if (visible) anyVisible = true;
+    });
+
+    section.classList.toggle('hidden', !catMatch || !anyVisible);
+  });
+}
+
+searchInput.addEventListener('input', applyFilters);
+
+// ── Nav ──
+initNav('metabolism-101');
+</script>
+</body>
+</html>

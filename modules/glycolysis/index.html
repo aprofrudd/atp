@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glycolysis &amp; Lactate Shuttle &mdash; Glucose to Pyruvate</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #E8A040;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  #process-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #process-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #process-panel::-webkit-scrollbar { width: 6px; }
+  #process-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-hk    { background: #E85030; }
+  .tag-pgi   { background: #8B8BA0; }
+  .tag-pfk   { background: #D94A4A; }
+  .tag-aldo  { background: #7BA0C0; }
+  .tag-tpi   { background: #8B8BA0; }
+  .tag-g3pdh { background: #4A90D9; }
+  .tag-pgk   { background: #D4A843; }
+  .tag-pgm   { background: #8B8BA0; }
+  .tag-eno   { background: #8B8BA0; }
+  .tag-pk    { background: #D4A843; }
+  .tag-ldh   { background: #3AADA8; }
+  .tag-mct   { background: #9B59B6; }
+  .tag-atp   { background: #D4A843; }
+  .tag-invest { background: #D94A4A; }
+  .tag-nadh  { background: #4A90D9; }
+  .tag-lactate { background: #3AADA8; }
+  .tag-reg   { background: #D94A4A; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .misconception {
+    background: #1a0d0d;
+    border-left: 3px solid #D94A4A;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #c0a0a0;
+  }
+  .misconception strong { color: #e0c0c0; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-body .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; vertical-align: 1px; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>Glycolysis &amp; Lactate Shuttle &mdash; Glucose to Pyruvate</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="supply-slider">Glucose Supply:</label>
+    <input type="range" id="supply-slider" min="0" max="100" value="50">
+  </div>
+  <div class="stats">
+    <span>ATP Net: <span class="stat-val" id="atp-count">0</span></span>
+    <span>NADH: <span class="stat-val" id="nadh-count">0</span></span>
+    <span>Lactate: <span class="stat-val" id="lactate-count">0</span></span>
+    <span>&rarr; Krebs: <span class="stat-val" id="krebs-count">0</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Adjust the glucose supply slider to drive glycolysis.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+    <div class="analogy"><strong>Analogy:</strong> Imagine a factory assembly line with 10 stations. PFK-1 is the foreman checking energy reserves before letting work proceed. If the line backs up (NAD&plus; runs out), G3P DH stalls and the whole line stops &mdash; unless LDH steps in as the emergency recycler.</div>
+    <h3>Bottleneck 1 &mdash; PFK-1 Regulation</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>PFK-1 senses the cell&rsquo;s energy status.</strong> When ATP is high and the cell is well-fed, PFK-1 slows down &mdash; no point making more pyruvate. When AMP rises (ATP depleted), PFK-1 opens the gate. Fructose-2,6-bisphosphate is the most potent activator, overriding ATP inhibition during exercise.</div>
+    </div>
+    <h3>Bottleneck 2 &mdash; NAD&plus; Availability</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>G3P DH (step 4) requires NAD&plus;.</strong> Without NAD&plus; recycling, glycolysis stalls completely. Two recycling paths: (1) the ETC via the malate-aspartate shuttle (aerobic), and (2) LDH in the cytoplasm (the emergency recycler). At high intensity, mitochondria can&rsquo;t recycle NADH fast enough, so LDH takes over.</div>
+    </div>
+    <h3>The Lactate Threshold</h3>
+    <div class="step">
+      <div class="step-num" style="background:#3AADA8">!</div>
+      <div class="step-body"><strong>At low intensity, mitochondria handle all NADH.</strong> As intensity rises, NADH production exceeds mitochondrial capacity &rarr; LDH activates &rarr; lactate rises. This IS the lactate threshold. It&rsquo;s not a failure &mdash; it&rsquo;s a relief valve that keeps glycolysis running.</div>
+    </div>
+    <h3>How Endurance Training Adapts</h3>
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">1</div>
+      <div class="step-body"><strong>Mitochondrial biogenesis (~2&times;).</strong> More mitochondria = more NADH oxidation capacity. The lactate threshold shifts higher &mdash; you can work harder before LDH must activate.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">2</div>
+      <div class="step-body"><strong>MCT upregulation (30-80%).</strong> More MCT1 and MCT4 transporters = faster lactate shuttle. Better clearance from producing cells, better uptake by oxidative tissues (heart, slow-twitch, brain).</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">3</div>
+      <div class="step-body"><strong>Glycolytic enzyme increases.</strong> Hexokinase +40%, PFK-1 +20%, Pyruvate Kinase +30%. Higher enzyme concentrations mean the same flux at lower substrate saturation &mdash; more reserve capacity.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">4</div>
+      <div class="step-body"><strong>Larger ETC capacity.</strong> Faster NADH&rarr;NAD&plus; recycling via the electron transport chain means less reliance on LDH for NAD&plus; regeneration.</div>
+    </div>
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">2 net ATP</div><div class="lbl">Per glucose</div></div>
+      <div class="num-card"><div class="val">2 NADH</div><div class="lbl">Per glucose</div></div>
+      <div class="num-card"><div class="val">30-80%</div><div class="lbl">MCT increase (training)</div></div>
+      <div class="num-card"><div class="val">~2&times;</div><div class="lbl">Mitochondrial density</div></div>
+    </div>
+    <div class="misconception"><strong>Misconception correction:</strong> Lactate does NOT cause fatigue or delayed-onset muscle soreness. LDH <em>consumes</em> a proton (H&plus;) &mdash; lactate formation actually <em>buffers</em> against acidosis. Blood lactate clears within ~30 minutes post-exercise. The heart <em>preferentially</em> uses lactate as fuel.</div>
+    <div class="misconception"><strong>Where does cytoplasmic H&plus; actually come from?</strong> ATP hydrolysis: ATP &rarr; ADP + P&#7522; + <strong>H&plus;</strong>. Every muscle contraction releases a proton. At low/moderate intensity, mitochondrial oxidative phosphorylation resynthesizes ATP fast enough that H&plus; is effectively re-consumed. At high intensity, ATP hydrolysis rate <em>exceeds</em> mitochondrial resynthesis capacity &mdash; net H&plus; accumulates and pH drops. LDH fights <em>against</em> this acidosis by consuming H&plus;, and MCT4 co-exports lactate&minus; + H&plus; out of the cell. But when ATP turnover demand massively outpaces both LDH buffering and mitochondrial recycling, acidosis wins. The crossover is an ATP supply/demand mismatch &mdash; not a lactate problem.</div>
+    <div class="analogy"><strong>Key insight:</strong> Glycolysis is fast but yields only 2 net ATP. Its real value is feeding pyruvate + NADH into the Krebs cycle and ETC for ~30 more ATP. LDH is the relief valve &mdash; recycling NAD&plus; when demand exceeds mitochondrial capacity, and exporting lactate as fuel for other cells.</div>
+  </div>
+</div>
+
+<div id="process-panel">
+  <div class="process-inner">
+    <h2>How Glycolysis Works &mdash; Step by Step</h2>
+
+    <div class="analogy">
+      <strong>Think of a 10-station assembly line.</strong> Glucose enters at station 1. The first 3 stations <em>invest</em> 2 ATP to activate the molecule and split it in half. Stations 4&ndash;6 run the <em>payoff</em>: each half produces 2 ATP + 1 NADH = net profit. At the end, pyruvate either enters the Krebs cycle or is converted to lactate by LDH to recycle NAD&plus;.
+    </div>
+
+    <h3>Part 1 &mdash; Investment Phase (2 ATP consumed)</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#E85030">1</div>
+      <div class="step-body">
+        <strong>Glucose + ATP &rarr; G6P + ADP.</strong>
+        <span class="tag tag-hk">Hexokinase</span> <span class="tag tag-invest">&minus;ATP</span>
+        Traps glucose inside the cell by phosphorylation. First ATP invested. Irreversible &mdash; committed to metabolism.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">2</div>
+      <div class="step-body">
+        <strong>G6P &rarr; F6P &rarr; F1,6BP + ADP.</strong>
+        <span class="tag tag-pgi">PGI</span> <span class="tag tag-pfk">PFK-1</span> <span class="tag tag-reg">Regulatory</span> <span class="tag tag-invest">&minus;ATP</span>
+        PGI isomerizes, then PFK-1 commits the molecule &mdash; irreversible. THE regulatory enzyme. Activated by AMP, F2,6BP; inhibited by ATP, citrate. Second ATP invested.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#7BA0C0">3</div>
+      <div class="step-body">
+        <strong>F1,6BP &rarr; DHAP + G3P &rarr; 2&times;G3P.</strong>
+        <span class="tag tag-aldo">Aldolase</span> <span class="tag tag-tpi">TPI</span>
+        6-carbon splits into 2&times;3-carbon. TPI converts DHAP to G3P so both halves follow the same path. Everything &times;2 from here.
+      </div>
+    </div>
+
+    <h3>Part 2 &mdash; Payoff Phase (4 ATP + 2 NADH produced)</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">4</div>
+      <div class="step-body">
+        <strong>G3P + NAD&plus; + P&#7522; &rarr; 1,3-BPG + NADH.</strong>
+        <span class="tag tag-g3pdh">G3P DH</span> <span class="tag tag-nadh">NADH</span> (&times;2 = 2 NADH)
+        <strong>Requires NAD&plus;</strong> &mdash; if unavailable, glycolysis stops here. This is WHY LDH matters: it regenerates NAD&plus; in the cytoplasm when mitochondria can&rsquo;t keep up.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#D4A843">5</div>
+      <div class="step-body">
+        <strong>1,3-BPG &rarr; 3-PG &rarr; 2-PG + ATP.</strong>
+        <span class="tag tag-pgk">PGK</span> <span class="tag tag-pgm">PGM</span> <span class="tag tag-atp">+ATP</span> (&times;2 = 2 ATP)
+        First substrate-level phosphorylation. High-energy phosphate from 1,3-BPG transfers directly to ADP.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#D4A843">6</div>
+      <div class="step-body">
+        <strong>2-PG &rarr; PEP &rarr; Pyruvate + ATP.</strong>
+        <span class="tag tag-eno">Enolase</span> <span class="tag tag-pk">PK</span> <span class="tag tag-atp">+ATP</span> (&times;2 = 2 ATP)
+        PEP has extremely high phosphoryl transfer potential. Second substrate-level phosphorylation. Pyruvate kinase is irreversible.
+      </div>
+    </div>
+
+    <h3>Part 3 &mdash; Net Yield</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">7</div>
+      <div class="step-body">
+        <strong>4 ATP produced &minus; 2 ATP invested = 2 net ATP</strong> + 2 NADH + 2 pyruvate per glucose.
+      </div>
+    </div>
+
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">2</div><div class="lbl">Net ATP per glucose</div></div>
+      <div class="num-card"><div class="val">2</div><div class="lbl">NADH per glucose</div></div>
+      <div class="num-card"><div class="val">2</div><div class="lbl">Pyruvate per glucose</div></div>
+    </div>
+
+    <h3>Part 4 &mdash; Lactate &amp; NAD&plus; Recycling</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#3AADA8">8</div>
+      <div class="step-body">
+        <strong>Pyruvate + NADH + H&plus; &rarr; Lactate&minus; + NAD&plus;.</strong>
+        <span class="tag tag-ldh">LDH</span> <span class="tag tag-lactate">Lactate</span>
+        Lactate is the conjugate BASE &mdash; the correct term is always &ldquo;lactate&rdquo; at physiological pH.
+        The reaction <strong>CONSUMES a proton</strong> &mdash; it buffers against acidosis.
+        Regenerates NAD&plus; for G3P DH (step 4) so glycolysis can continue.
+        H&plus; accumulation during exercise comes from ATP hydrolysis, NOT from lactate formation.
+      </div>
+    </div>
+
+    <div class="misconception">
+      <strong>Lactate is the hero, not the villain.</strong> The old &ldquo;lactate causes fatigue&rdquo; myth is wrong. LDH consumes H&plus; (buffering), regenerates NAD&plus; (keeping glycolysis alive), and produces a fuel substrate that other tissues eagerly import and oxidize.
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#9B59B6">9</div>
+      <div class="step-body">
+        <strong>Lactate shuttle: MCT4 &rarr; bloodstream &rarr; MCT1.</strong>
+        <span class="tag tag-mct">MCT4</span> <span class="tag tag-mct">MCT1</span>
+        MCT4 (low-affinity, high-capacity) exports lactate&minus; + H&plus; from fast-twitch/glycolytic cells.
+        MCT1 (high-affinity) imports into heart, slow-twitch muscle, brain, and liver.
+        Those cells convert lactate &rarr; pyruvate (reverse LDH) &rarr; Krebs cycle.
+        Lactate is an intercellular fuel currency, not waste.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">10</div>
+      <div class="step-body">
+        <strong>Full integration.</strong>
+        Glycolysis is fast but yields only 2 net ATP. Its real value: pyruvate + NADH feed the Krebs cycle and ETC for ~30 more ATP.
+        LDH is the relief valve &mdash; recycling NAD&plus; when mitochondrial demand exceeds capacity, and exporting lactate as fuel for other cells via the lactate shuttle.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { lerp, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const COLORS = {
+  pageBg:      '#1a1a2e',
+  cytosolBg:   '#E8DCC8',
+  pathLine:    '#8A7A60',
+  activeGlow:  '#E8A040',
+  nodeStroke:  '#4A3A2A',
+  nodeFill:    '#2A1E14',
+  nodeText:    '#F0E8D8',
+  glucose:     '#E8A040',
+  atp:         '#D4A843',
+  atpInvest:   '#D94A4A',
+  nadh:        '#4A90D9',
+  nad:         '#6A9AC0',
+  pyruvate:    '#C08050',
+  lactate:     '#3AADA8',
+  hPlus:       '#D94A4A',
+  mito:        '#3AADA8',
+  enzyme:      '#907060',
+  label:       '#705040',
+  labelLight:  '#f0f0f0',
+  regulatory:  '#D94A4A',
+  investPhase: 'rgba(217, 74, 74, 0.08)',
+  payoffPhase: 'rgba(212, 168, 67, 0.08)',
+};
+
+// 10 intermediates arranged vertically
+const INTERMEDIATES = [
+  { name: 'Glucose',   short: 'GLC',  note: '' },
+  { name: 'G6P',       short: 'G6P',  note: '' },
+  { name: 'F6P',       short: 'F6P',  note: '' },
+  { name: 'F1,6BP',    short: 'F1,6BP', note: '' },
+  { name: 'G3P',       short: 'G3P',  note: '\u00D72' },
+  { name: '1,3-BPG',   short: '1,3BPG', note: '\u00D72' },
+  { name: '3-PG',      short: '3-PG', note: '\u00D72' },
+  { name: '2-PG',      short: '2-PG', note: '\u00D72' },
+  { name: 'PEP',       short: 'PEP',  note: '\u00D72' },
+  { name: 'Pyruvate',  short: 'PYR',  note: '\u00D72' },
+];
+
+const ENZYMES = [
+  'HK', 'PGI', 'PFK-1', 'Aldo+TPI',
+  'G3P DH', 'PGK', 'PGM', 'Enolase', 'PK',
+];
+
+// Products spawned when completing each step (step i -> step i+1)
+// 9 reactions: 0=HK, 1=PGI, 2=PFK-1, 3=Aldo+TPI, 4=G3PDH, 5=PGK, 6=PGM, 7=Eno, 8=PK
+const STEP_PRODUCTS = [
+  ['atpInvest'],        // 0: HK — invest ATP
+  [],                   // 1: PGI — isomerization only
+  ['atpInvest'],        // 2: PFK-1 — invest ATP
+  [],                   // 3: Aldo+TPI — split, no products
+  ['nadh', 'nadh'],     // 4: G3P DH — 2 NADH (×2 halves)
+  ['atp', 'atp'],       // 5: PGK — 2 ATP (×2 halves)
+  [],                   // 6: PGM — rearrangement only
+  [],                   // 7: Enolase — dehydration only
+  ['atp', 'atp'],       // 8: PK — 2 ATP (×2 halves)
+];
+
+// Tutorial step configs (1-indexed, index 0 unused)
+const STEP_CONFIGS = [
+  null,
+  { supply: 0.5, speed: 0.35, highlightSteps: [0] },           // 1: HK
+  { supply: 0.5, speed: 0.35, highlightSteps: [1, 2] },        // 2: PGI+PFK-1
+  { supply: 0.5, speed: 0.35, highlightSteps: [3] },           // 3: Aldo+TPI
+  { supply: 0.5, speed: 0.35, highlightSteps: [4] },           // 4: G3P DH
+  { supply: 0.5, speed: 0.35, highlightSteps: [5, 6] },        // 5: PGK+PGM
+  { supply: 0.5, speed: 0.35, highlightSteps: [7, 8] },        // 6: Eno+PK
+  { supply: 0.5, speed: 0.35, highlightSteps: [0,1,2,3,4,5,6,7,8] }, // 7: Net yield (all)
+  { supply: 0.7, speed: 0.35, highlightSteps: [8], showLDH: true },  // 8: LDH
+  { supply: 0.85, speed: 0.35, highlightSteps: [8], showLDH: true, showShuttle: true }, // 9: shuttle
+  { supply: 0.6, speed: 0.45, highlightSteps: [0,1,2,3,4,5,6,7,8], showLDH: true, showShuttle: true }, // 10: full
+];
+
+const STEP_ACCENT = [
+  null, '#D94A4A', '#D94A4A', '#7BA0C0', '#4A90D9',
+  '#D4A843', '#D4A843', '#E8A040', '#3AADA8', '#9B59B6', '#E8A040',
+];
+
+const GLOSSARY = {
+  glucose: {
+    title: 'Glucose (6C)',
+    body: 'A 6-carbon sugar \u2014 the primary fuel for glycolysis. Enters cells via GLUT transporters. Each glucose is split into 2 pyruvate molecules, yielding 2 net ATP + 2 NADH.',
+  },
+  g6p: {
+    title: 'Glucose-6-Phosphate (G6P)',
+    body: 'Glucose trapped by phosphorylation. The added phosphate prevents it from leaving the cell (glucose transporters won\u2019t recognize it). Branch point: can enter glycolysis, the pentose phosphate pathway, or glycogen synthesis.',
+  },
+  f6p: {
+    title: 'Fructose-6-Phosphate (F6P)',
+    body: 'An isomer of G6P produced by phosphoglucose isomerase (PGI). The rearrangement positions a hydroxyl group for the next phosphorylation by PFK-1.',
+  },
+  f16bp: {
+    title: 'Fructose-1,6-Bisphosphate (F1,6BP)',
+    body: 'Produced by PFK-1 \u2014 the committed intermediate. Two phosphate groups make it ready for aldolase to split the 6C chain into two 3C fragments. This is past the point of no return.',
+  },
+  g3p: {
+    title: 'Glyceraldehyde-3-Phosphate (G3P)',
+    body: 'A 3-carbon phosphorylated sugar. From this point, every reaction operates on <strong>2 copies</strong> (one from each half of glucose). G3P dehydrogenase oxidizes it using NAD\u207A.',
+  },
+  bpg13: {
+    title: '1,3-Bisphosphoglycerate (1,3-BPG)',
+    body: 'Contains a high-energy acyl-phosphate bond. G3P DH added an inorganic phosphate and transferred electrons to NAD\u207A \u2192 NADH. The acyl-phosphate drives the first substrate-level phosphorylation.',
+  },
+  pg3: {
+    title: '3-Phosphoglycerate (3-PG)',
+    body: 'Produced after the first ATP-generating step. PGK transfers the high-energy phosphate from 1,3-BPG to ADP \u2192 ATP. Phosphoglycerate mutase rearranges the remaining phosphate.',
+  },
+  pg2: {
+    title: '2-Phosphoglycerate (2-PG)',
+    body: 'An isomer of 3-PG \u2014 the phosphate has been moved from carbon 3 to carbon 2 by phosphoglycerate mutase. Enolase will dehydrate this to create PEP.',
+  },
+  pep: {
+    title: 'Phosphoenolpyruvate (PEP)',
+    body: 'Has the <strong>highest phosphoryl transfer potential</strong> of any common biological molecule (\u0394G\u2019\u00B0 = \u221261.9 kJ/mol). Enolase\u2019s dehydration traps energy in the enol-phosphate bond, driving the final ATP production.',
+  },
+  pyruvate: {
+    title: 'Pyruvate (3C)',
+    body: 'The end product of glycolysis. Two fates: (1) enters mitochondria \u2192 pyruvate DH \u2192 acetyl-CoA \u2192 Krebs cycle (aerobic), or (2) reduced by LDH \u2192 lactate\u207B + NAD\u207A (when NADH exceeds mitochondrial capacity).',
+  },
+  hexokinase: {
+    title: 'Hexokinase (HK)',
+    body: 'Phosphorylates glucose using ATP. <strong>Irreversible</strong> \u2014 traps glucose in the cell. Inhibited by its own product (G6P). In liver, glucokinase (an isozyme) handles the same reaction but with different kinetics.',
+  },
+  pgi: {
+    title: 'Phosphoglucose Isomerase (PGI)',
+    body: 'Converts G6P (an aldose) to F6P (a ketose). A simple, reversible rearrangement. Prepares the molecule for phosphorylation by PFK-1. Essentially a housekeeping step.',
+  },
+  pfk1: {
+    title: 'Phosphofructokinase-1 (PFK-1)',
+    body: '<strong>THE regulatory enzyme of glycolysis.</strong> Catalyzes the irreversible commitment step. Activated by <strong>AMP</strong> and <strong>fructose-2,6-bisphosphate</strong> (F2,6BP \u2014 the most potent activator). Inhibited by <strong>ATP</strong> and <strong>citrate</strong>. This is where the cell decides whether to run glycolysis.',
+  },
+  aldolase: {
+    title: 'Aldolase',
+    body: 'Cleaves the 6C F1,6BP into two 3C fragments: DHAP and G3P. Named for the reverse reaction (aldol condensation). TPI converts DHAP \u2192 G3P so both halves follow the same downstream path.',
+  },
+  g3pdh: {
+    title: 'Glyceraldehyde-3-Phosphate Dehydrogenase (G3P DH)',
+    body: 'Oxidizes G3P, reducing NAD\u207A \u2192 NADH and adding inorganic phosphate. <strong>Requires NAD\u207A</strong> \u2014 without it, glycolysis stalls here. This is why LDH matters: it regenerates NAD\u207A in the cytoplasm.',
+  },
+  pgk: {
+    title: 'Phosphoglycerate Kinase (PGK)',
+    body: 'Transfers the acyl-phosphate from 1,3-BPG to ADP \u2192 ATP. First substrate-level phosphorylation of glycolysis. \u00D72 copies = 2 ATP.',
+  },
+  pgm: {
+    title: 'Phosphoglycerate Mutase (PGM)',
+    body: 'Moves the phosphate from carbon 3 to carbon 2. A reversible rearrangement that positions the phosphate for the enolase dehydration that follows.',
+  },
+  enolase: {
+    title: 'Enolase',
+    body: 'Dehydrates 2-PG to PEP, concentrating bond energy into the phosphoenol group. Inhibited by fluoride (used in blood collection tubes to prevent glycolysis in vitro).',
+  },
+  pyruvateKinase: {
+    title: 'Pyruvate Kinase (PK)',
+    body: 'Transfers phosphate from PEP to ADP \u2192 ATP + pyruvate. <strong>Irreversible.</strong> Second substrate-level phosphorylation. \u00D72 copies = 2 ATP. Activated by F1,6BP (feed-forward activation).',
+  },
+  lactate: {
+    title: 'Lactate\u207B (the correct name)',
+    body: 'At physiological pH 7.4, it\u2019s the conjugate <strong>base</strong>. Lactate is a <strong>proton acceptor</strong> and a valuable fuel substrate \u2014 not waste. Heart, brain, slow-twitch muscle, and liver import and oxidize it. The old \u201Clactate causes fatigue\u201D myth is completely wrong.',
+  },
+  ldh: {
+    title: 'Lactate Dehydrogenase (LDH)',
+    body: 'Pyruvate + NADH + H\u207A \u2192 Lactate\u207B + NAD\u207A. <strong>CONSUMES</strong> a proton (buffering against acidosis). Regenerates NAD\u207A so glycolysis can continue when mitochondria can\u2019t keep up. The reaction is freely reversible \u2014 oxidative tissues run it in reverse.',
+  },
+  mct4: {
+    title: 'MCT4 \u2014 Monocarboxylate Transporter 4',
+    body: '<strong>Low-affinity, high-capacity</strong> transporter. Exports lactate\u207B + H\u207A (symport) from glycolytic/fast-twitch cells. High expression in type II muscle fibers. Think of it as the \u201Cout\u201D door for lactate.',
+  },
+  mct1: {
+    title: 'MCT1 \u2014 Monocarboxylate Transporter 1',
+    body: '<strong>High-affinity</strong> transporter in oxidative tissues. Imports lactate\u207B into heart, slow-twitch muscle, brain, and liver. Those cells convert lactate \u2192 pyruvate (reverse LDH) \u2192 Krebs cycle. Upregulated 30-80% with endurance training.',
+  },
+  nad: {
+    title: 'NAD\u207A / NADH',
+    body: 'G3P DH requires NAD\u207A. Without recycling, glycolysis stalls at step 4. Two recycling paths: (1) ETC via the <strong>malate-aspartate shuttle</strong> (transports NADH equivalents into mitochondria), and (2) <strong>LDH</strong> in the cytoplasm (the fast, emergency route).',
+  },
+  cytosol: {
+    title: 'Cytoplasm',
+    body: 'Where glycolysis occurs. Unlike the Krebs cycle (mitochondrial matrix), all 10 glycolytic enzymes are dissolved in the cytoplasm. This means glycolysis can proceed without mitochondria \u2014 important for red blood cells, which have none.',
+  },
+  mitochondria: {
+    title: 'Mitochondria',
+    body: 'Pyruvate enters via the MPC (mitochondrial pyruvate carrier), is converted to acetyl-CoA by pyruvate dehydrogenase, and feeds the Krebs cycle. Cytoplasmic NADH enters via the malate-aspartate shuttle. When mito capacity is exceeded, LDH takes over NAD\u207A recycling.',
+  },
+  hPlus: {
+    title: 'H\u207A \u2014 Cytoplasmic Acidosis',
+    body: 'The H\u207A that drops muscle pH comes from <strong>ATP hydrolysis</strong> (ATP \u2192 ADP + P\u1D62 + H\u207A), not from lactate. At moderate intensity, mitochondria resynthesize ATP fast enough to re-consume H\u207A. At high intensity, ATP hydrolysis outpaces resynthesis \u2192 net H\u207A accumulates \u2192 pH falls. LDH actually <strong>fights</strong> acidosis by consuming H\u207A, and MCT4 co-exports lactate\u207B + H\u207A out of the cell.',
+  },
+};
+
+// Layout object computed on resize
+let L = {};
+
+// ============================================================
+// 2. STATE MANAGEMENT
+// ============================================================
+class SimState {
+  constructor() {
+    this.glucoseSupply = 0.5;
+    this.pathwayPhase = 0;       // 0–8.999 continuous (9 reactions)
+    this.passCount = 0;
+    this.passTimes = [];
+    this.atpProduced = 0;
+    this.atpInvested = 0;
+    this.nadhProduced = 0;
+    this.lactateProduced = 0;
+    this.pyruvateToKrebs = 0;
+    this.running = true;
+
+    // Tutorial state
+    this.tutorialStep = null;
+    this.savedSupply = 0.5;
+    this.stepTransition = 1;
+    this.tutorialTime = 0;
+  }
+
+  get netAtp() { return this.atpProduced - this.atpInvested; }
+
+  get effectiveSupply() {
+    if (this.tutorialStep !== null) {
+      const cfg = STEP_CONFIGS[this.tutorialStep];
+      return cfg ? cfg.supply : 0;
+    }
+    return this.glucoseSupply;
+  }
+
+  get effectiveSpeed() {
+    if (this.tutorialStep !== null) {
+      const cfg = STEP_CONFIGS[this.tutorialStep];
+      return cfg ? cfg.speed : 0;
+    }
+    return this.glucoseSupply;
+  }
+
+  // Ratio of pyruvate diverted to lactate (vs Krebs)
+  get lactateRatio() {
+    const supply = this.effectiveSupply;
+    return Math.max(0, Math.min(0.8, (supply - 0.3) / 0.5));
+  }
+
+  update(dt) {
+    if (!this.running) return;
+
+    const supply = this.effectiveSupply;
+    const speed = this.effectiveSpeed;
+
+    if (this.tutorialStep !== null) {
+      this.tutorialTime += dt;
+      if (this.stepTransition < 1) {
+        this.stepTransition = Math.min(1, this.stepTransition + dt / 0.3);
+      }
+    }
+
+    if (supply < 0.03) return;
+
+    const prevPhase = this.pathwayPhase;
+    // Speed: at full supply, ~0.7 steps/s => full pass in ~13s
+    this.pathwayPhase += speed * 0.7 * dt;
+
+    // Detect step crossings
+    const prevStep = Math.floor(prevPhase) % 9;
+    const newStep = Math.floor(this.pathwayPhase) % 9;
+
+    if (this.pathwayPhase >= 9) {
+      const passes = Math.floor(this.pathwayPhase / 9);
+      this.passCount += passes;
+      const now = performance.now();
+      for (let i = 0; i < passes; i++) this.passTimes.push(now);
+      this.pathwayPhase = this.pathwayPhase % 9;
+    }
+
+    // Check each step crossing
+    if (prevStep !== newStep || this.pathwayPhase < prevPhase) {
+      let s = (prevStep + 1) % 9;
+      const limit = 9;
+      for (let i = 0; i < limit; i++) {
+        this.onStepComplete(s);
+        if (s === newStep) break;
+        s = (s + 1) % 9;
+      }
+    }
+
+    // Prune old pass times
+    const now = performance.now();
+    while (this.passTimes.length && this.passTimes[0] < now - 5000) {
+      this.passTimes.shift();
+    }
+  }
+
+  onStepComplete(step) {
+    const products = STEP_PRODUCTS[step];
+    for (const p of products) {
+      if (p === 'atp') {
+        this.atpProduced++;
+        spawnProduct('atp', step);
+      } else if (p === 'atpInvest') {
+        this.atpInvested++;
+        spawnProduct('atpInvest', step);
+      } else if (p === 'nadh') {
+        this.nadhProduced++;
+        spawnProduct('nadh', step);
+      }
+    }
+
+    // Step 8 (PK) completes → pyruvate produced, decide fate
+    if (step === 8) {
+      const r = this.lactateRatio;
+      if (Math.random() < r) {
+        // → LDH → lactate
+        this.lactateProduced++;
+        spawnProduct('pyruvate_ldh', step);
+      } else {
+        // → mitochondria → Krebs
+        this.pyruvateToKrebs++;
+        spawnProduct('pyruvate_mito', step);
+      }
+    }
+  }
+
+  get passRate() {
+    if (this.passTimes.length < 2) return 0;
+    const span = (this.passTimes[this.passTimes.length - 1] - this.passTimes[0]) / 1000;
+    return span > 0 ? ((this.passTimes.length - 1) / span) : 0;
+  }
+}
+
+const sim = new SimState();
+
+// Tutorial helpers
+function tCfg() {
+  return sim.tutorialStep !== null ? STEP_CONFIGS[sim.tutorialStep] : null;
+}
+
+function isHighlightedStep(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return false;
+  return cfg.highlightSteps.includes(stepIdx);
+}
+
+function stepOpacity(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return 1;
+  const target = cfg.highlightSteps.includes(stepIdx) ? 1 : 0.25;
+  return lerp(0.25, target, sim.stepTransition);
+}
+
+function clearAllParticles() {
+  for (const key of Object.keys(POOL)) {
+    for (const p of POOL[key]) p.active = false;
+  }
+}
+
+// ============================================================
+// 3. PARTICLE SYSTEM
+// ============================================================
+const POOL = {
+  glucose: [],
+  atp: [],
+  atpInvest: [],
+  nadh: [],
+  nad: [],
+  pyruvate: [],
+  lactate: [],
+  hPlus: [],
+};
+
+function initParticles() {
+  for (let i = 0; i < 6; i++) POOL.glucose.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0, progress:0 });
+  for (let i = 0; i < 16; i++) POOL.atp.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.atpInvest.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 10; i++) POOL.nadh.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.nad.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.pyruvate.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0, type:'mito' });
+  for (let i = 0; i < 10; i++) POOL.lactate.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.hPlus.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+}
+
+function spawnProduct(type, step) {
+  if (!L.nodes) return;
+
+  if (type === 'atp') {
+    const p = getInactive(POOL.atp);
+    if (!p) return;
+    const node = L.nodes[step + 1]; // product appears at the resulting node
+    if (!node) return;
+    p.active = true; p.life = 0; p.opacity = 1;
+    p.x = node.x; p.y = node.y;
+    p.vx = -50 - Math.random() * 30;
+    p.vy = (Math.random() - 0.5) * 20;
+  } else if (type === 'atpInvest') {
+    const p = getInactive(POOL.atpInvest);
+    if (!p) return;
+    const node = L.nodes[step];
+    if (!node) return;
+    p.active = true; p.life = 0; p.opacity = 1;
+    p.x = node.x; p.y = node.y;
+    p.vx = -40 - Math.random() * 20;
+    p.vy = (Math.random() - 0.5) * 15;
+  } else if (type === 'nadh') {
+    const p = getInactive(POOL.nadh);
+    if (!p) return;
+    const node = L.nodes[step + 1]; // 1,3-BPG node
+    if (!node) return;
+    p.active = true; p.life = 0; p.opacity = 1;
+    p.x = node.x; p.y = node.y;
+    p.vx = 50 + Math.random() * 30;
+    p.vy = (Math.random() - 0.5) * 20;
+  } else if (type === 'pyruvate_mito') {
+    const p = getInactive(POOL.pyruvate);
+    if (!p) return;
+    const node = L.nodes[9]; // Pyruvate node
+    p.active = true; p.life = 0; p.opacity = 1; p.type = 'mito';
+    p.x = node.x; p.y = node.y;
+    // Fly toward mitochondria (bottom-left)
+    p.vx = -40 - Math.random() * 20;
+    p.vy = 20 + Math.random() * 15;
+  } else if (type === 'pyruvate_ldh') {
+    const p = getInactive(POOL.pyruvate);
+    if (!p) return;
+    const node = L.nodes[9]; // Pyruvate node
+    p.active = true; p.life = 0; p.opacity = 1; p.type = 'ldh';
+    p.x = node.x; p.y = node.y;
+    // Fly toward LDH zone (bottom-right)
+    p.vx = 40 + Math.random() * 20;
+    p.vy = 20 + Math.random() * 15;
+
+    // Also spawn lactate, NAD+, and H+ consumed at LDH
+    setTimeout(() => {
+      spawnLactate();
+      spawnNADrecycle();
+      spawnHPlus();
+    }, 400);
+  }
+}
+
+function spawnLactate() {
+  const p = getInactive(POOL.lactate);
+  if (!p || !L.ldhZone) return;
+  p.active = true; p.life = 0; p.opacity = 1;
+  p.x = L.ldhZone.x; p.y = L.ldhZone.y;
+  // Fly rightward through shuttle
+  p.vx = 40 + Math.random() * 30;
+  p.vy = (Math.random() - 0.5) * 10;
+}
+
+function spawnNADrecycle() {
+  const p = getInactive(POOL.nad);
+  if (!p || !L.ldhZone || !L.nodes) return;
+  const g3pdNode = L.nodes[5]; // 1,3-BPG (near G3P DH)
+  p.active = true; p.life = 0; p.opacity = 1;
+  p.x = L.ldhZone.x; p.y = L.ldhZone.y;
+  // Fly upward toward G3P DH area
+  const dx = g3pdNode.x - p.x;
+  const dy = g3pdNode.y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  p.vx = (dx / dist) * 50 + (Math.random() - 0.5) * 15;
+  p.vy = (dy / dist) * 50 + (Math.random() - 0.5) * 15;
+}
+
+function spawnHPlus() {
+  const p = getInactive(POOL.hPlus);
+  if (!p || !L.ldhZone) return;
+  p.active = true; p.life = 0; p.opacity = 1;
+  // Start from outside, fly INTO LDH (consumed)
+  p.x = L.ldhZone.x + 60 + Math.random() * 30;
+  p.y = L.ldhZone.y - 20 + Math.random() * 40;
+  p.vx = -40 - Math.random() * 20;
+  p.vy = (Math.random() - 0.5) * 10;
+}
+
+let glucoseSpawnTimer = 0;
+
+function updateParticles(dt) {
+  const s = L.s || 1;
+  const supply = sim.effectiveSupply;
+
+  if (supply < 0.03) return;
+
+  // --- Glucose arriving ---
+  glucoseSpawnTimer += dt;
+  const gInterval = Math.max(0.5, 2.0 - supply * 1.5);
+  if (glucoseSpawnTimer >= gInterval) {
+    glucoseSpawnTimer = 0;
+    const p = getInactive(POOL.glucose);
+    if (p && L.nodes) {
+      p.active = true; p.life = 0; p.opacity = 1; p.progress = 0;
+      p.x = L.nodes[0].x;
+      p.y = L.nodes[0].y - 60 * s;
+    }
+  }
+
+  // Animate glucose → Glucose node
+  for (const p of POOL.glucose) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.progress += dt * 0.8;
+    if (L.nodes) {
+      const targetY = L.nodes[0].y;
+      const startY = L.nodes[0].y - 60 * s;
+      const t = Math.min(1, p.progress);
+      p.y = startY + (targetY - startY) * t;
+      p.x = L.nodes[0].x + Math.sin(t * Math.PI) * 15 * s;
+      if (t > 0.7) p.opacity = Math.max(0, 1 - (t - 0.7) / 0.3);
+    }
+    if (p.progress >= 1 || p.opacity <= 0) p.active = false;
+  }
+
+  // --- ATP particles fly left and fade ---
+  for (const p of POOL.atp) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.97; p.vy *= 0.97;
+    p.opacity = Math.max(0, 1 - p.life / 2.5);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  // --- ATP invest particles ---
+  for (const p of POOL.atpInvest) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.97; p.vy *= 0.97;
+    p.opacity = Math.max(0, 1 - p.life / 2.0);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  // --- NADH particles fly right and fade ---
+  for (const p of POOL.nadh) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.97; p.vy *= 0.97;
+    p.opacity = Math.max(0, 1 - p.life / 2.5);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  // --- NAD+ recycle particles (fly upward from LDH to G3P DH) ---
+  for (const p of POOL.nad) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.96; p.vy *= 0.96;
+    p.opacity = Math.max(0, 1 - p.life / 3.0);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  // --- Pyruvate particles ---
+  for (const p of POOL.pyruvate) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.96; p.vy *= 0.96;
+    p.opacity = Math.max(0, 1 - p.life / 2.5);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  // --- Lactate particles fly right through shuttle ---
+  for (const p of POOL.lactate) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.97; p.vy *= 0.97;
+    p.opacity = Math.max(0, 1 - p.life / 3.5);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  // --- H+ particles fly into LDH and vanish ---
+  for (const p of POOL.hPlus) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.opacity = Math.max(0, 1 - p.life / 1.2);
+    if (p.opacity <= 0) p.active = false;
+  }
+}
+
+// ============================================================
+// 4. RENDERING
+// ============================================================
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+function computeLayout() {
+  const w = cm.cssWidth;
+  const h = cm.cssHeight;
+  const s = Math.min(w / 800, h / 700);
+
+  const pathX = w * 0.35;
+  const topY = h * 0.06;
+  const botY = h * 0.72;
+  const stepH = (botY - topY) / 9;
+
+  // 10 nodes evenly spaced
+  const nodes = INTERMEDIATES.map((inter, i) => ({
+    x: pathX,
+    y: topY + i * stepH,
+    name: inter.name,
+    short: inter.short,
+    note: inter.note,
+  }));
+
+  const nodeW = Math.max(52, 64 * s);
+  const nodeH = Math.max(24, 28 * s);
+
+  // Branch zones at bottom
+  const mitoZone = { x: pathX - 120 * s, y: botY + 40 * s, w: 90 * s, h: 36 * s };
+  const ldhZone = { x: pathX + 110 * s, y: botY + 20 * s };
+  const mct4Zone = { x: pathX + 210 * s, y: botY + 20 * s };
+  const mct1Zone = { x: pathX + 330 * s, y: botY + 20 * s };
+
+  // Split indicator Y (between F1,6BP and G3P)
+  const splitY = nodes[3].y + stepH * 0.5;
+
+  L = {
+    w, h, s, pathX, topY, botY, stepH,
+    nodes, nodeW, nodeH,
+    mitoZone, ldhZone, mct4Zone, mct1Zone,
+    splitY,
+    fontSm: Math.max(9, 10 * s) + 'px',
+    fontMd: Math.max(11, 12 * s) + 'px',
+    fontLg: Math.max(13, 15 * s) + 'px',
+    fontXs: Math.max(7, 8 * s) + 'px',
+  };
+}
+
+function drawBackground() {
+  const { w, h, s } = L;
+
+  ctx.fillStyle = COLORS.cytosolBg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Phase background tints
+  if (L.nodes) {
+    // Investment phase (nodes 0-3)
+    const invTop = L.nodes[0].y - 20 * s;
+    const invBot = L.splitY;
+    ctx.fillStyle = COLORS.investPhase;
+    ctx.fillRect(0, invTop, w, invBot - invTop);
+
+    // Payoff phase (nodes 4-9)
+    const payTop = L.splitY;
+    const payBot = L.nodes[9].y + 25 * s;
+    ctx.fillStyle = COLORS.payoffPhase;
+    ctx.fillRect(0, payTop, w, payBot - payTop);
+  }
+
+  // Label
+  ctx.font = `bold ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#907050';
+  ctx.fillText('CYTOPLASM', 14 * s, 22 * s);
+}
+
+function drawPathwayLine() {
+  const { nodes, s } = L;
+  if (!nodes) return;
+
+  // Dashed vertical line
+  ctx.strokeStyle = COLORS.pathLine;
+  ctx.lineWidth = 2.5 * s;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(nodes[0].x, nodes[0].y);
+  for (let i = 1; i < 10; i++) {
+    ctx.lineTo(nodes[i].x, nodes[i].y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Active glow segment
+  const supply = sim.effectiveSupply;
+  if (supply >= 0.03) {
+    const phase = sim.pathwayPhase;
+    const currentStep = Math.floor(phase) % 9;
+    const stepFrac = phase - Math.floor(phase);
+
+    const fromNode = nodes[currentStep];
+    const toNode = nodes[currentStep + 1];
+    if (fromNode && toNode) {
+      const glowX = fromNode.x;
+      const glowY1 = fromNode.y;
+      const glowY2 = fromNode.y + (toNode.y - fromNode.y) * stepFrac;
+
+      ctx.strokeStyle = COLORS.activeGlow;
+      ctx.lineWidth = 4 * s;
+      ctx.shadowColor = COLORS.activeGlow;
+      ctx.shadowBlur = 10 * s;
+      ctx.beginPath();
+      ctx.moveTo(glowX, glowY1);
+      ctx.lineTo(glowX, glowY2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Direction arrows
+  ctx.fillStyle = COLORS.pathLine;
+  for (let i = 0; i < 9; i++) {
+    const midY = (nodes[i].y + nodes[i + 1].y) / 2;
+    const ax = nodes[i].x;
+    const size = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(ax - size, midY - size);
+    ctx.lineTo(ax, midY + size);
+    ctx.lineTo(ax + size, midY - size);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawSplitIndicator() {
+  const { s, splitY, pathX } = L;
+
+  ctx.strokeStyle = '#8A7A60';
+  ctx.lineWidth = 1.5 * s;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(pathX - 50 * s, splitY);
+  ctx.lineTo(pathX + 50 * s, splitY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8A7060';
+  ctx.fillText('6C \u2192 2\u00D73C', pathX, splitY - 4 * s);
+}
+
+function drawPhaseLabels() {
+  const { s, nodes, splitY, w } = L;
+  if (!nodes) return;
+
+  ctx.save();
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'right';
+
+  // Investment Phase label
+  ctx.fillStyle = 'rgba(217, 74, 74, 0.5)';
+  const invMidY = (nodes[0].y + splitY) / 2;
+  ctx.fillText('INVESTMENT', w - 14 * s, invMidY - 4 * s);
+  ctx.fillText('PHASE', w - 14 * s, invMidY + 10 * s);
+
+  // Payoff Phase label
+  ctx.fillStyle = 'rgba(212, 168, 67, 0.5)';
+  const payMidY = (splitY + nodes[9].y) / 2;
+  ctx.fillText('PAYOFF', w - 14 * s, payMidY - 4 * s);
+  ctx.fillText('PHASE', w - 14 * s, payMidY + 10 * s);
+
+  ctx.restore();
+}
+
+function drawNodes() {
+  const { nodes, nodeW, nodeH, s } = L;
+  if (!nodes) return;
+
+  for (let i = 0; i < 10; i++) {
+    const node = nodes[i];
+    const alpha = stepOpacity(Math.min(i, 8)); // node i relates to step min(i, 8)
+    ctx.globalAlpha = alpha;
+
+    // Highlight glow for tutorial
+    const cfg = tCfg();
+    if (cfg && cfg.highlightSteps.includes(Math.min(i, 8))) {
+      const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+      const accent = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 12 + 10 * pulse;
+      ctx.globalAlpha = (0.4 + 0.35 * pulse) * alpha;
+      roundRect(ctx, node.x - nodeW / 2 - 4, node.y - nodeH / 2 - 4, nodeW + 8, nodeH + 8, 10 * s);
+      ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = alpha;
+    }
+
+    // Node body
+    const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, nodeW * 0.7);
+    grad.addColorStop(0, '#3A2E20');
+    grad.addColorStop(1, '#1E1610');
+    roundRect(ctx, node.x - nodeW / 2, node.y - nodeH / 2, nodeW, nodeH, 8 * s);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.nodeStroke;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Name
+    ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.nodeText;
+    ctx.fillText(node.short, node.x, node.y + 1);
+
+    // ×2 badge
+    if (node.note) {
+      ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+      ctx.fillStyle = '#D4A843';
+      ctx.fillText(node.note, node.x + nodeW / 2 + 12 * s, node.y + 2);
+    }
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawEnzymeLabels() {
+  const { nodes, s } = L;
+  if (!nodes) return;
+
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  for (let i = 0; i < 9; i++) {
+    const alpha = stepOpacity(i);
+    ctx.globalAlpha = alpha;
+
+    const midY = (nodes[i].y + nodes[i + 1].y) / 2;
+    const lx = nodes[i].x - L.nodeW / 2 - 8 * s;
+
+    // Regulatory badge for PFK-1 (step 2)
+    if (i === 2) {
+      ctx.fillStyle = COLORS.regulatory;
+      ctx.beginPath();
+      ctx.arc(lx - 6 * s, midY, 4 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText('\u2605', lx - 6 * s, midY + 1);
+      ctx.textAlign = 'left';
+      ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+    }
+
+    ctx.fillStyle = COLORS.enzyme;
+    ctx.textAlign = 'right';
+    ctx.fillText(ENZYMES[i], nodes[i].x - L.nodeW / 2 - 6 * s, midY + 2);
+    ctx.textAlign = 'left';
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawPyruvateBranch() {
+  const { nodes, s, mitoZone, ldhZone } = L;
+  if (!nodes) return;
+
+  const pyrNode = nodes[9];
+
+  // --- Left branch: Mitochondria ---
+  ctx.strokeStyle = '#3AADA8';
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([5, 5]);
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(pyrNode.x, pyrNode.y + L.nodeH / 2);
+  ctx.lineTo(mitoZone.x + mitoZone.w / 2, mitoZone.y - 5 * s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // Mito box
+  ctx.strokeStyle = '#3AADA8';
+  ctx.lineWidth = 2 * s;
+  roundRect(ctx, mitoZone.x, mitoZone.y, mitoZone.w, mitoZone.h, 6 * s);
+  ctx.stroke();
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#3AADA8';
+  ctx.fillText('MITO', mitoZone.x + mitoZone.w / 2, mitoZone.y + mitoZone.h / 2 - 4 * s);
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#907060';
+  ctx.fillText('\u2192 Krebs', mitoZone.x + mitoZone.w / 2, mitoZone.y + mitoZone.h / 2 + 10 * s);
+
+  // --- Right branch: LDH → Lactate ---
+  ctx.strokeStyle = '#3AADA8';
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([5, 5]);
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(pyrNode.x, pyrNode.y + L.nodeH / 2);
+  ctx.lineTo(ldhZone.x, ldhZone.y - 5 * s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // LDH zone
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#3AADA8';
+  ctx.fillText('LDH', ldhZone.x, ldhZone.y);
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#705040';
+  ctx.fillText('PYR + NADH + H\u207A', ldhZone.x, ldhZone.y + 14 * s);
+  ctx.fillText('\u2192 Lactate\u207B + NAD\u207A', ldhZone.x, ldhZone.y + 26 * s);
+
+  // NAD+ recycling arrow (curved, from LDH back up to G3P DH area)
+  if (L.nodes) {
+    const g3pdNode = nodes[5]; // near G3P DH output node (1,3-BPG)
+    ctx.save();
+    ctx.strokeStyle = COLORS.nad;
+    ctx.lineWidth = 2.5 * s;
+    ctx.setLineDash([6, 4]);
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(ldhZone.x + 10 * s, ldhZone.y - 10 * s);
+    // Curved path arcing right then back to the pathway near G3P DH
+    const cpx = ldhZone.x + 60 * s;
+    const cpy = (ldhZone.y + g3pdNode.y) / 2;
+    ctx.quadraticCurveTo(cpx, cpy, g3pdNode.x + L.nodeW / 2 + 10 * s, g3pdNode.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrowhead
+    ctx.fillStyle = COLORS.nad;
+    ctx.globalAlpha = 0.7;
+    const endX = g3pdNode.x + L.nodeW / 2 + 10 * s;
+    const endY = g3pdNode.y;
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX + 6 * s, endY - 4 * s);
+    ctx.lineTo(endX + 6 * s, endY + 4 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    // Label on the recycling arrow
+    ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.nad;
+    ctx.globalAlpha = 0.8;
+    ctx.fillText('NAD\u207A recycled', cpx + 10 * s, cpy - 6 * s);
+
+    ctx.restore();
+  }
+}
+
+function drawLactateShuttle() {
+  const { s, ldhZone, mct4Zone, mct1Zone } = L;
+
+  // MCT4 gate
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#9B59B6';
+  ctx.fillText('MCT4', mct4Zone.x, mct4Zone.y - 8 * s);
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#705040';
+  ctx.fillText('export', mct4Zone.x, mct4Zone.y + 4 * s);
+
+  // Shuttle arrow
+  ctx.strokeStyle = '#9B59B6';
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([4, 4]);
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(mct4Zone.x + 20 * s, mct4Zone.y - 2 * s);
+  ctx.lineTo(mct1Zone.x - 20 * s, mct1Zone.y - 2 * s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // Blood/gap label
+  ctx.font = `${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#906050';
+  ctx.fillText('bloodstream', (mct4Zone.x + mct1Zone.x) / 2, mct4Zone.y + 14 * s);
+
+  // MCT1 gate
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#9B59B6';
+  ctx.fillText('MCT1', mct1Zone.x, mct1Zone.y - 8 * s);
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#705040';
+  ctx.fillText('import', mct1Zone.x, mct1Zone.y + 4 * s);
+
+  // Target tissues label
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#907060';
+  ctx.textAlign = 'left';
+  ctx.fillText('Heart, brain,', mct1Zone.x + 30 * s, mct1Zone.y - 4 * s);
+  ctx.fillText('slow-twitch', mct1Zone.x + 30 * s, mct1Zone.y + 8 * s);
+  ctx.textAlign = 'center';
+}
+
+function drawParticles() {
+  const s = L.s;
+
+  // Glucose incoming
+  for (const p of POOL.glucose) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.glucose;
+    ctx.shadowColor = COLORS.glucose;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('GLC', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // ATP produced
+  for (const p of POOL.atp) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.atp;
+    ctx.shadowColor = COLORS.atp;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('ATP', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // ATP invested
+  for (const p of POOL.atpInvest) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.atpInvest;
+    ctx.shadowColor = COLORS.atpInvest;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('\u2212ATP', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // NADH
+  for (const p of POOL.nadh) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.nadh;
+    ctx.shadowColor = COLORS.nadh;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('NADH', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // NAD+ recycled
+  for (const p of POOL.nad) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity * 0.7;
+    ctx.fillStyle = COLORS.nad;
+    ctx.shadowColor = COLORS.nad;
+    ctx.shadowBlur = 4 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('NAD\u207A', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // Pyruvate
+  for (const p of POOL.pyruvate) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.pyruvate;
+    ctx.shadowColor = COLORS.pyruvate;
+    ctx.shadowBlur = 5 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('PYR', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // Lactate
+  for (const p of POOL.lactate) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.lactate;
+    ctx.shadowColor = COLORS.lactate;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('LAC\u207B', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // H+ consumed
+  for (const p of POOL.hPlus) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.hPlus;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(5, 6 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('H\u207A', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawLegend() {
+  const { s, w, h } = L;
+  const lx = 14 * s;
+  const ly = h - 100 * s;
+  const lineH = 14 * s;
+
+  const items = [
+    { color: COLORS.glucose, label: 'Glucose (input)' },
+    { color: COLORS.atp, label: 'ATP produced' },
+    { color: COLORS.atpInvest, label: 'ATP invested' },
+    { color: COLORS.nadh, label: 'NADH' },
+    { color: COLORS.nad, label: 'NAD\u207A recycled' },
+    { color: COLORS.lactate, label: 'Lactate\u207B' },
+    { color: COLORS.pyruvate, label: 'Pyruvate' },
+  ];
+
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  if (ly > 40) {
+    items.forEach((item, i) => {
+      const y = ly + i * lineH;
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(lx + 5 * s, y - 3 * s, 4 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#705040';
+      ctx.fillText(item.label, lx + 14 * s, y);
+    });
+  }
+}
+
+// ============================================================
+// 5. UI & INFO PANEL
+// ============================================================
+const slider = document.getElementById('supply-slider');
+const atpCountEl = document.getElementById('atp-count');
+const nadhCountEl = document.getElementById('nadh-count');
+const lactateCountEl = document.getElementById('lactate-count');
+const krebsCountEl = document.getElementById('krebs-count');
+const infoPanel = document.getElementById('info-panel');
+
+slider.addEventListener('input', () => {
+  sim.glucoseSupply = slider.value / 100;
+});
+
+function extractStepDescriptions() {
+  const bodies = document.querySelectorAll('#process-panel .step .step-body');
+  return Array.from(bodies).map(el => el.innerHTML);
+}
+
+function updateUI() {
+  atpCountEl.textContent = sim.netAtp;
+  nadhCountEl.textContent = sim.nadhProduced;
+  lactateCountEl.textContent = sim.lactateProduced;
+  krebsCountEl.textContent = sim.pyruvateToKrebs;
+
+  const g = sim.glucoseSupply;
+  if (g < 0.03) {
+    infoPanel.textContent = 'No glucose \u2014 glycolysis stalled. No ATP, no pyruvate for mitochondria.';
+  } else if (g < 0.25) {
+    infoPanel.textContent = 'Low flux \u2014 mitochondria handle all NADH. Pyruvate enters Krebs directly. Minimal lactate.';
+  } else if (g < 0.55) {
+    infoPanel.textContent = 'Moderate \u2014 2 net ATP per glucose. NAD\u207A recycling adequate. Most pyruvate \u2192 Krebs.';
+  } else if (g < 0.80) {
+    infoPanel.textContent = 'High flux \u2014 NADH accumulating. LDH activates: pyruvate \u2192 lactate\u207B + NAD\u207A, keeping glycolysis running.';
+  } else {
+    infoPanel.textContent = 'Maximum throughput! LDH essential for NAD\u207A recycling. Lactate exported via MCT4 as fuel for other cells.';
+  }
+}
+
+// ============================================================
+// 6. GLOSSARY TOOLTIPS
+// ============================================================
+function getHitRegions() {
+  const s = L.s || 1;
+  const regions = [];
+  const { nodes, nodeW, nodeH, ldhZone, mct4Zone, mct1Zone, mitoZone } = L;
+
+  if (!nodes) return regions;
+
+  // Map node indices to glossary keys
+  const nodeGlossary = [
+    'glucose', 'g6p', 'f6p', 'f16bp', 'g3p',
+    'bpg13', 'pg3', 'pg2', 'pep', 'pyruvate',
+  ];
+
+  for (let i = 0; i < 10; i++) {
+    const node = nodes[i];
+    const glossaryId = nodeGlossary[i];
+    regions.push({
+      id: glossaryId,
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - node.x) < nodeW / 2 + 8 * s
+          && Math.abs(my - node.y) < nodeH / 2 + 8 * s;
+      },
+    });
+  }
+
+  // Enzyme hit regions (between nodes)
+  const enzymeGlossary = [
+    'hexokinase', 'pgi', 'pfk1', 'aldolase',
+    'g3pdh', 'pgk', 'pgm', 'enolase', 'pyruvateKinase',
+  ];
+  for (let i = 0; i < 9; i++) {
+    const midY = (nodes[i].y + nodes[i + 1].y) / 2;
+    const ex = nodes[i].x - nodeW / 2 - 20 * s;
+    const glossaryId = enzymeGlossary[i];
+    regions.push({
+      id: glossaryId,
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - ex) < 30 * s && Math.abs(my - midY) < 10 * s;
+      },
+    });
+  }
+
+  // LDH zone
+  if (ldhZone) {
+    regions.push({
+      id: 'ldh',
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - ldhZone.x) < 50 * s && Math.abs(my - ldhZone.y) < 25 * s;
+      },
+    });
+  }
+
+  // MCT4 zone
+  if (mct4Zone) {
+    regions.push({
+      id: 'mct4',
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - mct4Zone.x) < 25 * s && Math.abs(my - mct4Zone.y) < 20 * s;
+      },
+    });
+  }
+
+  // MCT1 zone
+  if (mct1Zone) {
+    regions.push({
+      id: 'mct1',
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - mct1Zone.x) < 25 * s && Math.abs(my - mct1Zone.y) < 20 * s;
+      },
+    });
+  }
+
+  // Mito zone
+  if (mitoZone) {
+    regions.push({
+      id: 'mitochondria',
+      cursor: true,
+      test(mx, my) {
+        return mx > mitoZone.x && mx < mitoZone.x + mitoZone.w
+          && my > mitoZone.y && my < mitoZone.y + mitoZone.h;
+      },
+    });
+  }
+
+  // Cytoplasm center
+  regions.push({
+    id: 'cytosol',
+    cursor: false,
+    test(mx, my) {
+      return mx < L.pathX - 80 * s && my > 40 * s && my < L.botY - 20 * s;
+    },
+  });
+
+  return regions;
+}
+
+const tooltipMgr = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ============================================================
+// 7. TUTORIAL
+// ============================================================
+const stepDescriptions = extractStepDescriptions();
+
+const tutorialMgr = new TutorialManager({
+  stepCount: 10,
+  accents: STEP_ACCENT,
+  descriptions: stepDescriptions,
+  onEnter() {
+    tooltipMgr.hide();
+    const panel = document.getElementById('process-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    }
+    const tPanel = document.getElementById('training-panel');
+    if (tPanel.classList.contains('open')) {
+      tPanel.classList.remove('open');
+      document.getElementById('training-btn').classList.remove('active');
+    }
+    sim.savedSupply = sim.glucoseSupply;
+    sim.tutorialStep = 1;
+    sim.tutorialTime = 0;
+    sim.stepTransition = 0;
+    sim.atpProduced = 0;
+    sim.atpInvested = 0;
+    sim.nadhProduced = 0;
+    sim.lactateProduced = 0;
+    sim.pyruvateToKrebs = 0;
+    sim.passCount = 0;
+    sim.passTimes = [];
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onExit() {
+    sim.tutorialStep = null;
+    sim.glucoseSupply = sim.savedSupply;
+    slider.value = sim.glucoseSupply * 100;
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onStepChange(n) {
+    sim.tutorialStep = n;
+    sim.stepTransition = 0;
+    clearAllParticles();
+  },
+});
+
+document.getElementById('how-btn').addEventListener('click', () => tutorialMgr.enter());
+
+document.getElementById('training-btn').addEventListener('click', () => {
+  const panel = document.getElementById('training-panel');
+  const btn = document.getElementById('training-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+// ============================================================
+// 8. MAIN LOOP & INIT
+// ============================================================
+function resize() {
+  cm.resize();
+  computeLayout();
+}
+
+function init() {
+  initNav('glycolysis');
+  initParticles();
+  resize();
+  window.addEventListener('resize', () => { tooltipMgr.hide(); resize(); });
+  sim.glucoseSupply = slider.value / 100;
+  updateUI();
+
+  createAnimationLoop(
+    (dt) => {
+      sim.update(dt);
+      updateParticles(dt);
+    },
+    (dt, timestamp) => {
+      const w = cm.cssWidth;
+      const h = cm.cssHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawPathwayLine();
+      drawSplitIndicator();
+      drawPhaseLabels();
+      drawNodes();
+      drawEnzymeLabels();
+      drawPyruvateBranch();
+      drawLactateShuttle();
+      drawParticles();
+      drawLegend();
+
+      if (Math.floor(timestamp / 100) !== Math.floor((timestamp - dt * 1000) / 100)) {
+        updateUI();
+      }
+    }
+  );
+}
+
+init();
+</script>
+</body>
+</html>

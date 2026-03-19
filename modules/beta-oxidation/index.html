@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>&beta;-Oxidation &mdash; Fat Fuels to Electron Carriers</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .control-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  .control-group select {
+    background: #0f3460;
+    color: #e0e0e0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 160px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 200px;
+    accent-color: #E88020;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #tutorial-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #tutorial-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #tutorial-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  #process-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #process-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #process-panel::-webkit-scrollbar { width: 6px; }
+  #process-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-fadh2 { background: #3AADA8; }
+  .tag-nadh  { background: #4A90D9; }
+  .tag-acetyl { background: #E8A040; }
+  .tag-cpt1  { background: #9B59B6; }
+  .tag-reg   { background: #D94A4A; }
+  .tag-ox    { background: #E88020; }
+  .tag-water { background: #6AB0E0; }
+  .tag-thiol { background: #C08050; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-body .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; vertical-align: 1px; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* Finished overlay */
+  #finished-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(17, 24, 40, 0.88);
+    z-index: 50;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    padding: 20px;
+  }
+  #finished-overlay.visible { display: flex; }
+  #finished-overlay h2 { font-size: 1.2rem; color: #FFD700; }
+  #finished-overlay .summary { font-size: 0.9rem; line-height: 1.7; color: #c0c8d4; }
+  #finished-overlay .summary strong { color: #e0e0e0; }
+  #reset-btn {
+    background: #E88020;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #reset-btn:hover { background: #D07018; }
+
+  @media (max-width: 700px) {
+    #controls { gap: 8px 12px; }
+    .slider-group { min-width: 120px; }
+    input[type="range"] { max-width: 120px; }
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>&beta;-Oxidation &mdash; Fat Fuels to Electron Carriers</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="finished-overlay">
+    <h2>Oxidation Complete</h2>
+    <div class="summary" id="finished-summary"></div>
+    <button id="reset-btn">Reset</button>
+  </div>
+</div>
+<div id="controls">
+  <div class="control-group">
+    <label for="fa-select">Fatty Acid:</label>
+    <select id="fa-select">
+      <option value="8">8C (Octanoate)</option>
+      <option value="12">12C (Laurate)</option>
+      <option value="14">14C (Myristate)</option>
+      <option value="16" selected>16C (Palmitate)</option>
+      <option value="18">18C (Stearate)</option>
+    </select>
+  </div>
+  <div class="slider-group">
+    <label for="supply-slider">Supply Rate:</label>
+    <input type="range" id="supply-slider" min="0" max="100" value="50">
+  </div>
+  <div class="slider-group">
+    <label for="malonyl-slider">Malonyl-CoA:</label>
+    <input type="range" id="malonyl-slider" min="0" max="100" value="0">
+  </div>
+  <div class="stats">
+    <span>Cycle: <span class="stat-val" id="cycle-count">0/7</span></span>
+    <span>Acetyl-CoA: <span class="stat-val" id="acetyl-count">0</span></span>
+    <span>NADH: <span class="stat-val" id="nadh-count">0</span></span>
+    <span>FADH&#8322;: <span class="stat-val" id="fadh2-count">0</span></span>
+    <span>~ATP: <span class="stat-val" id="atp-count">0</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="tutorial-btn">Tutorial</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Select a fatty acid and adjust supply to drive &beta;-oxidation.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+    <div class="analogy"><strong>Analogy:</strong> Think of &beta;-oxidation as a wood chipper that shears 2-carbon chunks off a long log (the fatty acid). The chipper&rsquo;s intake gate is CPT-1 &mdash; controlled by a &ldquo;safety interlock&rdquo; (malonyl-CoA) that shuts the gate when the cell is already building new fat.</div>
+    <h3>The Bottleneck</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>CPT-1 is the rate-limiter.</strong> Malonyl-CoA (the first committed intermediate of fatty acid synthesis) inhibits CPT-1, blocking fatty acyl-CoA entry into the mitochondrion. In the fed/resting state, insulin activates acetyl-CoA carboxylase &rarr; high malonyl-CoA &rarr; CPT-1 blocked &rarr; fat oxidation suppressed. During exercise, AMPK phosphorylates and inactivates ACC &rarr; malonyl-CoA drops &rarr; CPT-1 opens.</div>
+    </div>
+    <h3>Endurance Training Adaptations</h3>
+    <div class="step">
+      <div class="step-num" style="background:#E88020">1</div>
+      <div class="step-body"><strong>Mitochondrial biogenesis (~2&times; density).</strong> PGC-1&alpha; upregulation doubles mitochondrial volume, providing more &beta;-oxidation machinery in parallel. More spirals running simultaneously = higher total fat flux.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#E88020">2</div>
+      <div class="step-body"><strong>CPT-1 expression increases 20-40%.</strong> More transporter protein on the outer membrane means faster fatty acyl-CoA import at any given malonyl-CoA level.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#E88020">3</div>
+      <div class="step-body"><strong>Peak fat oxidation: ~1.0 g/min (trained) vs 0.5-0.7 g/min (untrained).</strong> Trained individuals oxidise roughly twice as much fat at moderate intensities, sparing glycogen and delaying fatigue.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#E88020">4</div>
+      <div class="step-body"><strong>Crossover point shifts rightward.</strong> The intensity at which carbohydrate overtakes fat as the dominant fuel moves from ~50% VO&#8322;max (untrained) to ~65-70% VO&#8322;max (trained). This is not about a &ldquo;fat-burning zone&rdquo; &mdash; absolute fat oxidation rises across all intensities.</div>
+    </div>
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">~2&times;</div><div class="lbl">Mitochondrial density</div></div>
+      <div class="num-card"><div class="val">20-40%</div><div class="lbl">More CPT-1</div></div>
+      <div class="num-card"><div class="val">~1.0 g/min</div><div class="lbl">Peak fat oxidation (trained)</div></div>
+      <div class="num-card"><div class="val">~106 ATP</div><div class="lbl">Per palmitate</div></div>
+    </div>
+    <div class="analogy"><strong>&ldquo;Fat-burning zone&rdquo; misconception:</strong> The zone of maximal fat oxidation rate does exist (~60-65% VO&#8322;max), but exercising at higher intensities burns more total calories and more total fat over time. Training shifts the crossover point, making fat a bigger contributor at any given intensity. The real adaptation is metabolic flexibility, not a magic heart-rate window.</div>
+  </div>
+</div>
+
+<div id="process-panel">
+  <div class="process-inner">
+    <h2>How &beta;-Oxidation Works &mdash; Step by Step</h2>
+
+    <div class="analogy">
+      <strong>Think of a spiral staircase.</strong> A long fatty acyl-CoA chain enters the staircase at the top. Each turn around the staircase clips off a 2-carbon acetyl-CoA piece, handing off FADH&#8322; and NADH to the ETC as it goes. The shortened chain re-enters the spiral for the next turn, getting shorter every lap until only a 4-carbon fragment remains and splits into 2 final acetyl-CoAs.
+    </div>
+
+    <h3>Part 1 &mdash; Activation &amp; Import</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#E88020">1</div>
+      <div class="step-body">
+        <strong>Activation: fatty acid &rarr; fatty acyl-CoA (cytoplasm).</strong>
+        Acyl-CoA synthetase attaches CoA at the cost of <strong>2 ATP equivalents</strong> (ATP &rarr; AMP + PP&#7522;, then PP&#7522; hydrolyzed). This &ldquo;priming cost&rdquo; is subtracted from the final yield. The resulting thioester bond stores energy that will be used later in thiolysis.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#9B59B6">2</div>
+      <div class="step-body">
+        <strong>Carnitine shuttle: CPT-1 &rarr; CACT &rarr; CPT-2.</strong>
+        <span class="tag tag-cpt1">CPT-1</span> on the outer membrane swaps CoA for carnitine. <span class="tag tag-reg">Malonyl-CoA inhibits CPT-1</span> &mdash; this is the master switch between fat synthesis and fat oxidation. CACT translocates acyl-carnitine across the inner membrane. CPT-2 swaps carnitine back for matrix CoA, releasing free carnitine for recycling.
+      </div>
+    </div>
+
+    <h3>Part 2 &mdash; The Four-Step Spiral</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#3AADA8">3</div>
+      <div class="step-body">
+        <strong>Step 1 &mdash; Oxidation: Acyl-CoA DH (FAD &rarr; FADH&#8322;).</strong>
+        <span class="tag tag-fadh2">FADH&#8322;</span> Introduces a <em>trans</em>-&Delta;&#178; double bond between C2 and C3. Electrons go to FAD, producing FADH&#8322; that feeds directly into the ETC at Complex II via electron-transferring flavoprotein (ETF). This is an oxidation &mdash; the chain loses 2 hydrogens.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#6AB0E0">4</div>
+      <div class="step-body">
+        <strong>Step 2 &mdash; Hydration: Enoyl-CoA Hydratase (+ H&#8322;O).</strong>
+        <span class="tag tag-water">H&#8322;O</span> Water adds across the double bond, producing L-3-hydroxyacyl-CoA. No electron carriers consumed or produced &mdash; simply prepares the &beta;-carbon for the next oxidation. Stereospecific: only the L-isomer is produced.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">5</div>
+      <div class="step-body">
+        <strong>Step 3 &mdash; Oxidation: 3-Hydroxyacyl-CoA DH (NAD&#8314; &rarr; NADH).</strong>
+        <span class="tag tag-nadh">NADH</span> Oxidizes the hydroxyl group at the &beta;-carbon to a ketone (=O), producing NADH. This NADH feeds into the ETC at Complex I. Now the &beta;-carbon is primed for cleavage.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#C08050">6</div>
+      <div class="step-body">
+        <strong>Step 4 &mdash; Thiolysis: Thiolase (CoA-SH cleaves off acetyl-CoA).</strong>
+        <span class="tag tag-acetyl">Acetyl-CoA</span> Free CoA attacks the &beta;-carbon, cleaving the chain. One acetyl-CoA (2C) is released &rarr; Krebs cycle. The remaining shortened acyl-CoA re-enters the spiral at Step 1. On the final cycle (4C chain), thiolysis yields 2 acetyl-CoAs.
+      </div>
+    </div>
+
+    <h3>Part 3 &mdash; Energy Accounting (Palmitate, 16C)</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">7</div>
+      <div class="step-body">
+        <strong>Per cycle:</strong> 1 FADH&#8322; (~1.5 ATP) + 1 NADH (~2.5 ATP) + 1 acetyl-CoA (~10 ATP via Krebs/ETC). That&rsquo;s ~14 ATP per cycle. Palmitate runs 7 cycles producing 7 FADH&#8322; + 7 NADH + 8 acetyl-CoA.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#FFD700">8</div>
+      <div class="step-body">
+        <strong>Total yield (palmitate):</strong> 8&times;10 + 7&times;1.5 + 7&times;2.5 &minus; 2 = <strong>~106 ATP</strong>. Compare glucose (~30-32 ATP). Fat is energy-dense because the carbons are highly reduced &mdash; more electrons to strip per molecule. That&rsquo;s why 1 g fat = 9 kcal vs 4 kcal for carbs.
+      </div>
+    </div>
+
+    <h3>By the Numbers</h3>
+
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">8</div><div class="lbl">Acetyl-CoA (palmitate)</div></div>
+      <div class="num-card"><div class="val">7</div><div class="lbl">FADH&#8322; per palmitate</div></div>
+      <div class="num-card"><div class="val">7</div><div class="lbl">NADH per palmitate</div></div>
+      <div class="num-card"><div class="val">~106</div><div class="lbl">ATP per palmitate</div></div>
+    </div>
+
+    <div class="analogy" style="margin-top:16px">
+      <strong>Key insight:</strong> &beta;-oxidation doesn&rsquo;t produce ATP directly &mdash; it generates acetyl-CoA, NADH, and FADH&#8322; that feed downstream into the Krebs cycle and ETC. The spiral is a fuel processor, not a power plant. Its output is the input to everything you&rsquo;ve already explored.
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { lerp, toRad, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const COLORS = {
+  pageBg:      '#1a1a2e',
+  matrixBg:    '#F5E6D0',
+  imsBg:       '#D0D8E4',
+  membrane:    '#4A6A8A',
+  activeArc:   '#E88020',
+  fattyChain:  '#E88020',
+  nodeStroke:  '#4A3A2A',
+  nodeFill:    '#2A1E14',
+  nodeText:    '#F0E8D8',
+  acetylCoA:   '#E8A040',
+  nadh:        '#4A90D9',
+  fadh2:       '#3AADA8',
+  water:       '#6AB0E0',
+  regulatory:  '#D94A4A',
+  carnitine:   '#9B59B6',
+  enzyme:      '#907060',
+  label:       '#705040',
+  labelLight:  '#f0f0f0',
+  cyclePath:   '#8A7A60',
+};
+
+const CHAIN_CONFIGS = {
+  8:  { name: 'Octanoate (8C)',  carbons: 8 },
+  12: { name: 'Laurate (12C)',   carbons: 12 },
+  14: { name: 'Myristate (14C)', carbons: 14 },
+  16: { name: 'Palmitate (16C)', carbons: 16 },
+  18: { name: 'Stearate (18C)',  carbons: 18 },
+};
+
+// 4 intermediates arranged clockwise (spiral positions)
+const INTERMEDIATES = [
+  { name: 'Acyl-CoA',              short: 'Acyl-CoA',   angle: 0 },
+  { name: 'trans-Enoyl-CoA',       short: 'Enoyl-CoA',  angle: 90 },
+  { name: 'L-3-Hydroxyacyl-CoA',   short: 'OH-Acyl',    angle: 180 },
+  { name: '3-Ketoacyl-CoA',        short: 'Keto-CoA',   angle: 270 },
+];
+
+const ENZYMES = [
+  'Acyl-CoA DH',
+  'Enoyl-CoA Hydratase',
+  '3-OH-Acyl-CoA DH',
+  'Thiolase',
+];
+
+// Products spawned when completing each step
+const STEP_PRODUCTS = [
+  ['fadh2'],     // 0: Acyl-CoA DH — FADH2
+  ['water'],     // 1: Enoyl-CoA Hydratase — consumes H2O (visual)
+  ['nadh'],      // 2: 3-OH-Acyl-CoA DH — NADH
+  ['acetylCoA'], // 3: Thiolase — Acetyl-CoA
+];
+
+const STEP_ACCENT = [
+  null, '#E88020', '#9B59B6', '#3AADA8', '#6AB0E0',
+  '#4A90D9', '#C08050', '#E8A040', '#D94A4A',
+];
+
+const GLOSSARY = {
+  acylCoA: {
+    title: 'Acyl-CoA (Fatty Acyl-CoA)',
+    body: 'The activated form of a fatty acid, with CoA attached via a thioester bond. Entry substrate for each turn of the \u03B2-oxidation spiral. Long-chain acyl-CoAs (12-18C) require the carnitine shuttle to enter the mitochondrial matrix.',
+  },
+  transEnoylCoA: {
+    title: 'trans-Enoyl-CoA',
+    body: 'Produced by the first oxidation step. Contains a <em>trans</em>-\u0394\u00B2 double bond between C2 and C3. The <em>trans</em> geometry is important \u2014 natural unsaturated fatty acids are <em>cis</em>, which requires additional isomerase enzymes to process.',
+  },
+  hydroxyacylCoA: {
+    title: 'L-3-Hydroxyacyl-CoA',
+    body: 'Formed by hydration of the double bond. The hydroxyl group on the \u03B2-carbon (C3) is in the L-configuration. This stereospecificity matters \u2014 the D-isomer from unsaturated FA oxidation requires an epimerase.',
+  },
+  ketoacylCoA: {
+    title: '3-Ketoacyl-CoA',
+    body: 'The \u03B2-keto intermediate formed by the second oxidation. The carbonyl at C3 weakens the C2\u2013C3 bond, making it susceptible to thiolytic cleavage by free CoA in the next step.',
+  },
+  acylCoADH: {
+    title: 'Acyl-CoA Dehydrogenase',
+    body: 'Catalyzes the first step: introduces a <em>trans</em>-\u0394\u00B2 double bond. Uses <strong>FAD</strong> as cofactor. Multiple isoforms exist for different chain lengths: VLCAD (very long), LCAD (long), MCAD (medium), SCAD (short). MCAD deficiency is the most common inherited fatty acid oxidation disorder.',
+  },
+  enoylCoAHydratase: {
+    title: 'Enoyl-CoA Hydratase (Crotonase)',
+    body: 'Adds water across the trans double bond to form L-3-hydroxyacyl-CoA. No electron carriers involved \u2014 a simple hydration reaction. Part of the mitochondrial trifunctional protein (MTP) for long-chain substrates.',
+  },
+  hydroxyacylCoADH: {
+    title: '3-Hydroxyacyl-CoA Dehydrogenase',
+    body: 'Oxidizes the \u03B2-hydroxyl to a \u03B2-keto group, producing <strong>NADH</strong>. Uses NAD\u207A as electron acceptor. Part of the mitochondrial trifunctional protein (MTP) for long-chain substrates. The NADH feeds into Complex I of the ETC.',
+  },
+  thiolase: {
+    title: 'Thiolase (\u03B2-Ketothiolase)',
+    body: 'Cleaves the 3-ketoacyl-CoA between C2 and C3, using free CoA-SH. Releases one <strong>acetyl-CoA</strong> (2C) and a shortened acyl-CoA that re-enters the spiral. The thiolysis reaction is thermodynamically favorable because it breaks the weakened C\u2013C bond adjacent to the carbonyl.',
+  },
+  cpt1: {
+    title: 'CPT-1 (Carnitine Palmitoyltransferase 1)',
+    body: 'Outer mitochondrial membrane enzyme. Replaces CoA with carnitine on the fatty acyl group. <strong>Rate-limiting step</strong> of \u03B2-oxidation. Allosterically inhibited by <strong>malonyl-CoA</strong> (first intermediate of fatty acid synthesis). Three tissue-specific isoforms: CPT-1A (liver), CPT-1B (muscle), CPT-1C (brain).',
+  },
+  cpt2: {
+    title: 'CPT-2 (Carnitine Palmitoyltransferase 2)',
+    body: 'Inner mitochondrial membrane enzyme. Reverses CPT-1\u2019s reaction: swaps carnitine back for matrix CoA, regenerating fatty acyl-CoA inside the matrix. Not regulated by malonyl-CoA. Deficiency causes exercise-induced myoglobinuria.',
+  },
+  cact: {
+    title: 'CACT (Carnitine-Acylcarnitine Translocase)',
+    body: 'An antiporter in the inner mitochondrial membrane. Imports acyl-carnitine while exporting free carnitine. Ensures carnitine recycling so the shuttle can continue operating. Deficiency is a severe, often fatal metabolic disorder.',
+  },
+  carnitine: {
+    title: 'Carnitine',
+    body: 'A small, water-soluble molecule that acts as a ferry for long-chain fatty acyl groups across the inner mitochondrial membrane. Synthesized from lysine and methionine; also obtained from dietary meat and dairy. Medium-chain fatty acids (< 12C) can bypass the carnitine shuttle.',
+  },
+  malonylCoA: {
+    title: 'Malonyl-CoA',
+    body: 'The first committed intermediate of fatty acid <strong>synthesis</strong>. Made by acetyl-CoA carboxylase (ACC). Acts as a potent allosteric inhibitor of CPT-1, preventing simultaneous synthesis and oxidation of fatty acids. During exercise, <strong>AMPK phosphorylates ACC</strong>, lowering malonyl-CoA and releasing CPT-1 inhibition.',
+  },
+  ampk: {
+    title: 'AMPK (AMP-Activated Protein Kinase)',
+    body: 'The cell\u2019s master energy sensor. Activated by rising AMP/ATP ratio during exercise. Phosphorylates and <strong>inactivates ACC</strong> \u2192 malonyl-CoA drops \u2192 CPT-1 opens \u2192 fat oxidation increases. Also stimulates glucose uptake and mitochondrial biogenesis. Key mediator of the metabolic switch from rest to exercise.',
+  },
+  acetylCoA: {
+    title: 'Acetyl-CoA',
+    body: 'The 2-carbon product released at each turn of the spiral. Feeds directly into the <strong>Krebs cycle</strong>, where it generates 3 NADH + 1 FADH\u2082 + 1 GTP (\u2248 10 ATP). Palmitate (16C) yields 8 acetyl-CoA. This is the metabolic link between fat oxidation and the final common pathway of aerobic energy production.',
+  },
+  fadh2: {
+    title: 'FADH\u2082',
+    body: 'Produced by <strong>acyl-CoA dehydrogenase</strong> (step 1) each cycle. Electrons are transferred via ETF and ETF-QO to ubiquinone in the ETC, entering at the level of Complex II. Each FADH\u2082 yields <strong>~1.5 ATP</strong> via oxidative phosphorylation.',
+  },
+  nadh: {
+    title: 'NADH',
+    body: 'Produced by <strong>3-hydroxyacyl-CoA dehydrogenase</strong> (step 3) each cycle. Donates electrons to Complex I of the ETC. Each NADH yields <strong>~2.5 ATP</strong> via oxidative phosphorylation. Between \u03B2-oxidation NADH and Krebs cycle NADH, fat generates an enormous electron flow.',
+  },
+  matrix: {
+    title: 'Mitochondrial Matrix',
+    body: 'The innermost compartment where \u03B2-oxidation takes place. Contains all four spiral enzymes, plus the Krebs cycle enzymes and pyruvate dehydrogenase. Slightly alkaline (pH ~7.8). The matrix receives fatty acyl-CoA via the carnitine shuttle and exports acetyl-CoA, NADH, and FADH\u2082 to downstream pathways.',
+  },
+};
+
+let L = {};
+
+// ============================================================
+// 2. STATE MANAGEMENT
+// ============================================================
+class SimState {
+  constructor() {
+    this.chainCarbons = 16;
+    this.totalCycles = 7;
+    this.carbonsRemaining = 16;
+    this.cyclePhase = 0;       // 0–3.999 continuous
+    this.cyclesCompleted = 0;
+    this.supplyRate = 0.5;
+    this.malonylCoA = 0;
+    this.finished = false;
+    this.running = true;
+
+    // Product counters
+    this.acetylCoAProduced = 0;
+    this.nadhProduced = 0;
+    this.fadh2Produced = 0;
+
+    // Tutorial state
+    this.tutorialStep = null;
+    this.savedSupply = 0.5;
+    this.savedMalonyl = 0;
+    this.stepTransition = 1;
+    this.tutorialTime = 0;
+  }
+
+  get effectiveSupply() {
+    if (this.tutorialStep !== null) return 0.4;
+    return this.supplyRate * (1 - this.malonylCoA * 0.85);
+  }
+
+  get atpYield() {
+    return (this.acetylCoAProduced * 10) + (this.fadh2Produced * 1.5) + (this.nadhProduced * 2.5) - 2;
+  }
+
+  reset(carbons) {
+    this.chainCarbons = carbons;
+    this.totalCycles = carbons / 2 - 1;
+    this.carbonsRemaining = carbons;
+    this.cyclePhase = 0;
+    this.cyclesCompleted = 0;
+    this.finished = false;
+    this.acetylCoAProduced = 0;
+    this.nadhProduced = 0;
+    this.fadh2Produced = 0;
+    clearAllParticles();
+    hideFinished();
+  }
+
+  update(dt) {
+    if (!this.running || this.finished) return;
+
+    const supply = this.effectiveSupply;
+
+    if (this.tutorialStep !== null) {
+      this.tutorialTime += dt;
+      if (this.stepTransition < 1) {
+        this.stepTransition = Math.min(1, this.stepTransition + dt / 0.3);
+      }
+    }
+
+    if (supply < 0.03) return;
+
+    const prevPhase = this.cyclePhase;
+    // Speed: at full supply, ~0.6 steps/s => full cycle in ~6.7s
+    this.cyclePhase += supply * 0.6 * dt;
+
+    // Detect step crossings for product spawns
+    const prevStep = Math.floor(prevPhase) % 4;
+
+    if (this.cyclePhase >= 4) {
+      // Completed one cycle
+      this.cyclePhase = this.cyclePhase % 4;
+      this.cyclesCompleted++;
+      this.carbonsRemaining -= 2;
+
+      // Final cycle produces 2 acetyl-CoA (the last 4C splits into 2)
+      if (this.cyclesCompleted >= this.totalCycles) {
+        this.acetylCoAProduced++; // extra acetyl-CoA from final 4C split
+        this.finished = true;
+        showFinished();
+      }
+    }
+
+    // newStep computed after wrap so it reflects the actual current position
+    const newStep = Math.floor(this.cyclePhase) % 4;
+
+    // Check each step crossing
+    if (prevStep !== newStep) {
+      let s = (prevStep + 1) % 4;
+      for (let i = 0; i < 4; i++) {
+        this.onStepComplete(s);
+        if (s === newStep) break;
+        s = (s + 1) % 4;
+      }
+    }
+  }
+
+  onStepComplete(step) {
+    const products = STEP_PRODUCTS[step];
+    for (const p of products) {
+      if (p === 'fadh2') {
+        this.fadh2Produced++;
+        spawnProduct('fadh2', step);
+      } else if (p === 'nadh') {
+        this.nadhProduced++;
+        spawnProduct('nadh', step);
+      } else if (p === 'acetylCoA') {
+        this.acetylCoAProduced++;
+        spawnProduct('acetylCoA', step);
+      } else if (p === 'water') {
+        spawnProduct('water', step);
+      }
+    }
+  }
+}
+
+const sim = new SimState();
+
+function tCfg() {
+  return sim.tutorialStep !== null ? { highlightStep: sim.tutorialStep } : null;
+}
+
+function stepOpacity(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return 1;
+  // Map tutorial steps 3-6 to spiral steps 0-3
+  const spiralMap = { 3: 0, 4: 1, 5: 2, 6: 3 };
+  const mapped = spiralMap[cfg.highlightStep];
+  if (mapped === undefined) return 0.6; // non-spiral tutorial steps dim everything equally
+  const target = mapped === stepIdx ? 1 : 0.25;
+  return lerp(0.25, target, sim.stepTransition);
+}
+
+function isHighlightedSpiralStep(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return false;
+  const spiralMap = { 3: 0, 4: 1, 5: 2, 6: 3 };
+  return spiralMap[cfg.highlightStep] === stepIdx;
+}
+
+function clearAllParticles() {
+  for (const key of Object.keys(POOL)) {
+    for (const p of POOL[key]) p.active = false;
+  }
+}
+
+// ============================================================
+// 3. PARTICLE SYSTEM
+// ============================================================
+const POOL = {
+  fadh2: [],
+  nadh: [],
+  acetylCoA: [],
+  water: [],
+  carnitine: [],
+};
+
+function initParticles() {
+  for (let i = 0; i < 12; i++) POOL.fadh2.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 12; i++) POOL.nadh.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 12; i++) POOL.acetylCoA.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 6; i++) POOL.water.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 4; i++) POOL.carnitine.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+}
+
+function spawnProduct(type, step) {
+  const pool = POOL[type];
+  if (!pool) return;
+  const p = getInactive(pool);
+  if (!p) return;
+
+  const node = L.nodes ? L.nodes[step] : null;
+  if (!node) return;
+
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+  p.x = node.x;
+  p.y = node.y;
+
+  // Products fly outward from the spiral center
+  const dx = node.x - L.spiralCx;
+  const dy = node.y - L.spiralCy;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const speed = 35 + Math.random() * 25;
+
+  if (type === 'acetylCoA') {
+    // Drift toward chain zone (right and down)
+    p.vx = 30 + Math.random() * 20;
+    p.vy = 15 + Math.random() * 15;
+  } else if (type === 'fadh2') {
+    // Drift down-right toward ETC label
+    p.vx = (dx / dist) * speed + 15;
+    p.vy = (dy / dist) * speed + 20;
+  } else if (type === 'nadh') {
+    // Drift down-left toward ETC label
+    p.vx = (dx / dist) * speed - 10;
+    p.vy = (dy / dist) * speed + 20;
+  } else if (type === 'water') {
+    // Water is consumed — drift inward then fade
+    p.vx = -(dx / dist) * 15;
+    p.vy = -(dy / dist) * 15;
+  } else {
+    p.vx = (dx / dist) * speed + (Math.random() - 0.5) * 20;
+    p.vy = (dy / dist) * speed + (Math.random() - 0.5) * 20;
+  }
+}
+
+function updateParticles(dt) {
+  const productPools = ['fadh2', 'nadh', 'acetylCoA', 'water', 'carnitine'];
+  for (const poolName of productPools) {
+    for (const p of POOL[poolName]) {
+      if (!p.active) continue;
+      p.life += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+      const maxLife = poolName === 'water' ? 1.5 : 3.0;
+      p.opacity = Math.max(0, 1 - p.life / maxLife);
+      if (p.opacity <= 0) p.active = false;
+    }
+  }
+}
+
+// ============================================================
+// 4. RENDERING
+// ============================================================
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+function computeLayout() {
+  const w = cm.cssWidth;
+  const h = cm.cssHeight;
+  const s = Math.min(w / 800, h / 600);
+
+  // Zone A: Carnitine shuttle (left ~15%)
+  const shuttleX = w * 0.08;
+  const shuttleW = w * 0.12;
+
+  // Zone B: Spiral (center ~40%)
+  const spiralCx = w * 0.38;
+  const spiralCy = h * 0.48;
+  const spiralR = Math.min(w * 0.16, h * 0.28);
+
+  // Zone C: Fatty acid chain (right ~35%)
+  const chainX = w * 0.62;
+  const chainW = w * 0.34;
+
+  // Pre-compute 4 node positions
+  const nodes = INTERMEDIATES.map((inter, i) => {
+    const a = toRad(inter.angle - 90); // -90 so 0° is at top
+    return {
+      x: spiralCx + Math.cos(a) * spiralR,
+      y: spiralCy + Math.sin(a) * spiralR,
+      name: inter.name,
+      short: inter.short,
+      angle: inter.angle,
+    };
+  });
+
+  const nodeW = Math.max(56, 68 * s);
+  const nodeH = Math.max(28, 34 * s);
+
+  L = {
+    w, h, s,
+    shuttleX, shuttleW,
+    spiralCx, spiralCy, spiralR,
+    chainX, chainW,
+    nodes, nodeW, nodeH,
+    fontSm: Math.max(9, 10 * s) + 'px',
+    fontMd: Math.max(11, 12 * s) + 'px',
+    fontLg: Math.max(13, 15 * s) + 'px',
+    fontXs: Math.max(7, 8 * s) + 'px',
+  };
+}
+
+// --- Draw functions ---
+
+function drawBackground() {
+  const { w, h, s, shuttleX, shuttleW } = L;
+
+  // Warm matrix fill (main area)
+  ctx.fillStyle = COLORS.matrixBg;
+  ctx.fillRect(0, 0, w, h);
+
+  // IMS zone (cooler tint on far left)
+  const imsRight = shuttleX + shuttleW * 0.5;
+  ctx.fillStyle = COLORS.imsBg;
+  ctx.fillRect(0, 0, imsRight, h);
+
+  // Outer membrane line
+  const omx = shuttleX;
+  ctx.strokeStyle = COLORS.membrane;
+  ctx.lineWidth = 3 * s;
+  ctx.beginPath();
+  ctx.moveTo(omx, 0);
+  ctx.lineTo(omx, h);
+  ctx.stroke();
+
+  // Inner membrane line
+  const imx = shuttleX + shuttleW;
+  ctx.beginPath();
+  ctx.moveTo(imx, 0);
+  ctx.lineTo(imx, h);
+  ctx.stroke();
+
+  // Membrane labels
+  ctx.save();
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#5A7A9A';
+  ctx.translate(omx - 10 * s, h * 0.5);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('OUTER MEMBRANE', 0, 0);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#5A7A9A';
+  ctx.translate(imx + 10 * s, h * 0.5);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('INNER MEMBRANE', 0, 0);
+  ctx.restore();
+
+  // Zone labels
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#5A7A9A';
+  ctx.fillText('IMS', 4 * s, 14 * s);
+
+  ctx.fillStyle = '#907050';
+  ctx.fillText('MITOCHONDRIAL MATRIX', (shuttleX + shuttleW + 8) * 1, 14 * s);
+}
+
+function drawCarnitineShuttle() {
+  const { s, shuttleX, shuttleW, h } = L;
+  const omx = shuttleX;
+  const imx = shuttleX + shuttleW;
+  const midX = (omx + imx) / 2;
+
+  // CPT-1 gate
+  const cpt1Y = h * 0.3;
+  const gateW = 22 * s;
+  const gateH = 40 * s;
+  const blocked = sim.malonylCoA > 0.5;
+
+  // Gate background
+  ctx.fillStyle = blocked ? 'rgba(217, 74, 74, 0.3)' : 'rgba(155, 89, 182, 0.3)';
+  roundRect(ctx, omx - gateW / 2, cpt1Y - gateH / 2, gateW, gateH, 4 * s);
+  ctx.fill();
+  ctx.strokeStyle = blocked ? COLORS.regulatory : COLORS.carnitine;
+  ctx.lineWidth = 2 * s;
+  ctx.stroke();
+
+  // Gate opening indicator
+  const openFrac = 1 - sim.malonylCoA * 0.85;
+  const openH = gateH * 0.6 * openFrac;
+  ctx.fillStyle = blocked ? COLORS.regulatory : COLORS.carnitine;
+  ctx.globalAlpha = 0.6;
+  roundRect(ctx, omx - gateW / 2 + 2 * s, cpt1Y - openH / 2, gateW - 4 * s, openH, 2 * s);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // CPT-1 label
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = blocked ? COLORS.regulatory : COLORS.carnitine;
+  ctx.fillText('CPT-1', omx, cpt1Y - gateH / 2 - 6 * s);
+  if (blocked) {
+    ctx.fillStyle = COLORS.regulatory;
+    ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillText('BLOCKED', omx, cpt1Y + gateH / 2 + 10 * s);
+  }
+
+  // CACT translocase (between membranes)
+  const cactY = h * 0.5;
+  ctx.fillStyle = 'rgba(155, 89, 182, 0.2)';
+  roundRect(ctx, midX - 14 * s, cactY - 14 * s, 28 * s, 28 * s, 14 * s);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.carnitine;
+  ctx.lineWidth = 1.5 * s;
+  ctx.stroke();
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = COLORS.carnitine;
+  ctx.fillText('CACT', midX, cactY + 3 * s);
+
+  // Arrows showing transport direction
+  ctx.strokeStyle = COLORS.carnitine;
+  ctx.lineWidth = 1.5 * s;
+  ctx.globalAlpha = 0.6;
+  // Down arrow from CPT-1 to CACT
+  drawArrow(omx + 4 * s, cpt1Y + gateH / 2 + 4 * s, midX, cactY - 18 * s, s);
+  // Right arrow from CACT to CPT-2
+  drawArrow(midX + 16 * s, cactY, imx - 2 * s, h * 0.5, s);
+  ctx.globalAlpha = 1;
+
+  // CPT-2 gate (inner membrane)
+  const cpt2Y = h * 0.7;
+  ctx.fillStyle = 'rgba(155, 89, 182, 0.3)';
+  roundRect(ctx, imx - gateW / 2, cpt2Y - gateH / 2, gateW, gateH, 4 * s);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.carnitine;
+  ctx.lineWidth = 2 * s;
+  ctx.stroke();
+
+  ctx.fillStyle = COLORS.carnitine;
+  ctx.globalAlpha = 0.6;
+  roundRect(ctx, imx - gateW / 2 + 2 * s, cpt2Y - gateH * 0.3 / 2, gateW - 4 * s, gateH * 0.3, 2 * s);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.carnitine;
+  ctx.fillText('CPT-2', imx, cpt2Y - gateH / 2 - 6 * s);
+}
+
+function drawArrow(x1, y1, x2, y2, s) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - Math.cos(angle - 0.4) * 6 * s, y2 - Math.sin(angle - 0.4) * 6 * s);
+  ctx.lineTo(x2 - Math.cos(angle + 0.4) * 6 * s, y2 - Math.sin(angle + 0.4) * 6 * s);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawSpiralRing() {
+  const { spiralCx: cx, spiralCy: cy, spiralR: radius, s } = L;
+
+  // Dashed circular path
+  ctx.strokeStyle = COLORS.cyclePath;
+  ctx.lineWidth = 2.5 * s;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Active arc segment
+  const supply = sim.effectiveSupply;
+  if (supply >= 0.03 && !sim.finished) {
+    const phase = sim.cyclePhase;
+    const stepAngle = (Math.PI * 2) / 4;
+    const currentStep = Math.floor(phase) % 4;
+    const stepFrac = phase - Math.floor(phase);
+
+    const startAngle = toRad(INTERMEDIATES[currentStep].angle - 90);
+    const endAngle = startAngle + stepAngle * stepFrac;
+
+    ctx.strokeStyle = COLORS.activeArc;
+    ctx.lineWidth = 4 * s;
+    ctx.shadowColor = COLORS.activeArc;
+    ctx.shadowBlur = 10 * s;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startAngle, endAngle);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Direction arrows
+  ctx.fillStyle = COLORS.cyclePath;
+  for (let i = 0; i < 4; i++) {
+    const midAngle = toRad(INTERMEDIATES[i].angle + 45 - 90);
+    const ax = cx + Math.cos(midAngle) * radius;
+    const ay = cy + Math.sin(midAngle) * radius;
+    const tangent = midAngle + Math.PI / 2;
+    const size = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(ax + Math.cos(tangent) * size, ay + Math.sin(tangent) * size);
+    ctx.lineTo(ax + Math.cos(midAngle) * size * 0.6, ay + Math.sin(midAngle) * size * 0.6);
+    ctx.lineTo(ax - Math.cos(midAngle) * size * 0.6, ay - Math.sin(midAngle) * size * 0.6);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Cycle counter in center
+  ctx.font = `bold ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.label;
+  ctx.fillText(`Cycle ${sim.cyclesCompleted} / ${sim.totalCycles}`, cx, cy - 6 * s);
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#A09080';
+  ctx.fillText(`${sim.carbonsRemaining}C remaining`, cx, cy + 10 * s);
+}
+
+function drawNodes() {
+  const { nodes, nodeW, nodeH, s, spiralCx: cx, spiralCy: cy } = L;
+
+  for (let i = 0; i < 4; i++) {
+    const node = nodes[i];
+    const alpha = stepOpacity(i);
+    ctx.globalAlpha = alpha;
+
+    // Highlight glow for tutorial
+    if (isHighlightedSpiralStep(i)) {
+      const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+      const accent = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 12 + 10 * pulse;
+      ctx.globalAlpha = (0.4 + 0.35 * pulse) * alpha;
+      roundRect(ctx, node.x - nodeW / 2 - 4, node.y - nodeH / 2 - 4, nodeW + 8, nodeH + 8, 10 * s);
+      ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = alpha;
+    }
+
+    // Node body
+    const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, nodeW * 0.7);
+    grad.addColorStop(0, '#3A2E20');
+    grad.addColorStop(1, '#1E1610');
+    roundRect(ctx, node.x - nodeW / 2, node.y - nodeH / 2, nodeW, nodeH, 8 * s);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.nodeStroke;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Name
+    ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.nodeText;
+    ctx.fillText(node.short, node.x, node.y + 1);
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawEnzymeLabels() {
+  const { nodes, s, spiralCx: cx, spiralCy: cy, spiralR: radius } = L;
+
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i < 4; i++) {
+    const alpha = stepOpacity(i);
+    ctx.globalAlpha = alpha;
+
+    const midAngle = toRad(INTERMEDIATES[i].angle + 45 - 90);
+    const labelR = radius * 0.68;
+    const lx = cx + Math.cos(midAngle) * labelR;
+    const ly = cy + Math.sin(midAngle) * labelR;
+
+    ctx.fillStyle = COLORS.enzyme;
+    ctx.fillText(ENZYMES[i], lx, ly + 2 * s);
+
+    // Product tag below enzyme
+    const prodTags = [
+      { text: 'FADH\u2082', color: COLORS.fadh2 },
+      { text: '+H\u2082O', color: COLORS.water },
+      { text: 'NADH', color: COLORS.nadh },
+      { text: 'Acetyl-CoA', color: COLORS.acetylCoA },
+    ];
+    const tag = prodTags[i];
+    ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = tag.color;
+    ctx.fillText(tag.text, lx, ly + 14 * s);
+    ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawFattyAcidChain() {
+  const { s, chainX, chainW, h } = L;
+
+  const carbons = sim.carbonsRemaining;
+  const units = Math.ceil(carbons / 2); // 2C blocks
+  const blockW = Math.min(28 * s, (chainW - 20 * s) / Math.max(units, 1));
+  const blockH = 18 * s;
+  const startX = chainX + 10 * s;
+  const startY = h * 0.15;
+
+  // Title
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = COLORS.fattyChain;
+  ctx.fillText(`Fatty Acyl-CoA Chain (${carbons}C)`, startX, startY - 10 * s);
+
+  // Draw zigzag blocks
+  for (let i = 0; i < units; i++) {
+    const col = i % Math.max(1, Math.floor((chainW - 20 * s) / blockW));
+    const row = Math.floor(i / Math.max(1, Math.floor((chainW - 20 * s) / blockW)));
+    const bx = startX + col * (blockW + 2 * s);
+    const by = startY + row * (blockH + 4 * s);
+    const yOff = (i % 2) ? 4 * s : 0;
+
+    ctx.fillStyle = COLORS.fattyChain;
+    ctx.globalAlpha = 0.7 + 0.3 * (i / Math.max(1, units - 1));
+    roundRect(ctx, bx, by + yOff, blockW, blockH, 3 * s);
+    ctx.fill();
+    ctx.strokeStyle = '#C06818';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 2C label
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('2C', bx + blockW / 2, by + yOff + blockH / 2 + 3 * s);
+    ctx.globalAlpha = 1;
+
+    // Connector lines between blocks
+    if (i > 0) {
+      const prevCol = (i - 1) % Math.max(1, Math.floor((chainW - 20 * s) / blockW));
+      const prevRow = Math.floor((i - 1) / Math.max(1, Math.floor((chainW - 20 * s) / blockW)));
+      const prevX = startX + prevCol * (blockW + 2 * s) + blockW;
+      const prevY = startY + prevRow * (blockH + 4 * s) + ((i - 1) % 2 ? 4 * s : 0) + blockH / 2;
+      const curY = by + yOff + blockH / 2;
+
+      if (row === prevRow) {
+        ctx.strokeStyle = '#C06818';
+        ctx.lineWidth = 1.5 * s;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(bx, curY);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // Destination labels
+  const labelY = h * 0.65;
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = COLORS.acetylCoA;
+  ctx.fillText('Acetyl-CoA \u2192 Krebs', startX, labelY);
+  ctx.fillStyle = COLORS.fadh2;
+  ctx.fillText('FADH\u2082 \u2192 ETC (Complex II)', startX, labelY + 18 * s);
+  ctx.fillStyle = COLORS.nadh;
+  ctx.fillText('NADH \u2192 ETC (Complex I)', startX, labelY + 36 * s);
+}
+
+function drawParticles() {
+  const s = L.s;
+
+  // FADH2
+  for (const p of POOL.fadh2) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.fadh2;
+    ctx.shadowColor = COLORS.fadh2;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('FADH\u2082', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // NADH
+  for (const p of POOL.nadh) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.nadh;
+    ctx.shadowColor = COLORS.nadh;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('NADH', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // Acetyl-CoA
+  for (const p of POOL.acetylCoA) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.acetylCoA;
+    ctx.shadowColor = COLORS.acetylCoA;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('AcCoA', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // Water
+  for (const p of POOL.water) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.water;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('H\u2082O', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawLegend() {
+  const { s, w, h } = L;
+  const lx = w - 140 * s;
+  const ly = h - 70 * s;
+  const lineH = 16 * s;
+
+  const items = [
+    { color: COLORS.fattyChain, label: 'Fatty Acyl-CoA' },
+    { color: COLORS.acetylCoA, label: 'Acetyl-CoA' },
+    { color: COLORS.fadh2, label: 'FADH\u2082' },
+    { color: COLORS.nadh, label: 'NADH' },
+    { color: COLORS.carnitine, label: 'Carnitine shuttle' },
+  ];
+
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  if (ly > 40) {
+    items.forEach((item, i) => {
+      const y = ly + i * lineH;
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(lx + 5 * s, y - 4 * s, 5 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#705040';
+      ctx.fillText(item.label, lx + 14 * s, y);
+    });
+  }
+}
+
+// ============================================================
+// 5. UI & INFO PANEL
+// ============================================================
+const faSelect = document.getElementById('fa-select');
+const supplySlider = document.getElementById('supply-slider');
+const malonylSlider = document.getElementById('malonyl-slider');
+const cycleCountEl = document.getElementById('cycle-count');
+const acetylCountEl = document.getElementById('acetyl-count');
+const nadhCountEl = document.getElementById('nadh-count');
+const fadh2CountEl = document.getElementById('fadh2-count');
+const atpCountEl = document.getElementById('atp-count');
+const infoPanel = document.getElementById('info-panel');
+const finishedOverlay = document.getElementById('finished-overlay');
+const finishedSummary = document.getElementById('finished-summary');
+const resetBtn = document.getElementById('reset-btn');
+
+faSelect.addEventListener('change', () => {
+  sim.reset(parseInt(faSelect.value));
+});
+
+supplySlider.addEventListener('input', () => {
+  sim.supplyRate = supplySlider.value / 100;
+});
+
+malonylSlider.addEventListener('input', () => {
+  sim.malonylCoA = malonylSlider.value / 100;
+});
+
+resetBtn.addEventListener('click', () => {
+  sim.reset(parseInt(faSelect.value));
+});
+
+function showFinished() {
+  const cfg = CHAIN_CONFIGS[sim.chainCarbons];
+  const atp = Math.max(0, sim.atpYield);
+  finishedSummary.innerHTML = `
+    <strong>${cfg.name}</strong> fully oxidized.<br>
+    <strong>${sim.acetylCoAProduced}</strong> Acetyl-CoA &rarr; Krebs<br>
+    <strong>${sim.nadhProduced}</strong> NADH &rarr; ETC Complex I<br>
+    <strong>${sim.fadh2Produced}</strong> FADH&#8322; &rarr; ETC Complex II<br>
+    <strong>~${atp.toFixed(0)} ATP</strong> (after &minus;2 activation cost)
+  `;
+  finishedOverlay.classList.add('visible');
+}
+
+function hideFinished() {
+  finishedOverlay.classList.remove('visible');
+}
+
+function updateUI() {
+  cycleCountEl.textContent = `${sim.cyclesCompleted}/${sim.totalCycles}`;
+  acetylCountEl.textContent = sim.acetylCoAProduced;
+  nadhCountEl.textContent = sim.nadhProduced;
+  fadh2CountEl.textContent = sim.fadh2Produced;
+  atpCountEl.textContent = Math.max(0, sim.atpYield).toFixed(0);
+
+  const eff = sim.effectiveSupply;
+  const mal = sim.malonylCoA;
+  if (sim.finished) {
+    infoPanel.textContent = 'Oxidation complete! All carbons cleaved into acetyl-CoA. Click Reset to try another chain.';
+  } else if (mal > 0.7) {
+    infoPanel.textContent = 'CPT-1 mostly blocked by malonyl-CoA \u2014 simulating fed/resting state. Fat oxidation suppressed.';
+  } else if (eff < 0.03) {
+    infoPanel.textContent = 'No supply \u2014 spiral stalled. Increase supply rate or reduce malonyl-CoA.';
+  } else if (eff < 0.2) {
+    infoPanel.textContent = 'Low flux \u2014 spiral turning slowly. Each turn clips 2C and releases FADH\u2082 + NADH + acetyl-CoA.';
+  } else if (eff < 0.5) {
+    infoPanel.textContent = 'Steady \u03B2-oxidation \u2014 fatty acyl chain shortens by 2C each cycle. Products feed Krebs & ETC.';
+  } else {
+    infoPanel.textContent = 'High flux \u2014 exercise state. AMPK lowers malonyl-CoA, CPT-1 wide open, rapid fat oxidation.';
+  }
+}
+
+// ============================================================
+// 6. GLOSSARY TOOLTIPS
+// ============================================================
+function getHitRegions() {
+  const s = L.s || 1;
+  const regions = [];
+  const { nodes, nodeW, nodeH, spiralCx, spiralCy, spiralR, shuttleX, shuttleW, h } = L;
+
+  if (!nodes) return regions;
+
+  // Spiral node glossary mapping
+  const nodeGlossary = ['acylCoA', 'transEnoylCoA', 'hydroxyacylCoA', 'ketoacylCoA'];
+
+  for (let i = 0; i < 4; i++) {
+    const node = nodes[i];
+    const glossaryId = nodeGlossary[i];
+    regions.push({
+      id: glossaryId,
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - node.x) < nodeW / 2 + 8 * s
+          && Math.abs(my - node.y) < nodeH / 2 + 8 * s;
+      },
+    });
+  }
+
+  // Enzyme hit regions (between nodes)
+  const enzymeGlossary = ['acylCoADH', 'enoylCoAHydratase', 'hydroxyacylCoADH', 'thiolase'];
+  for (let i = 0; i < 4; i++) {
+    const midAngle = toRad(INTERMEDIATES[i].angle + 45 - 90);
+    const labelR = spiralR * 0.68;
+    const lx = spiralCx + Math.cos(midAngle) * labelR;
+    const ly = spiralCy + Math.sin(midAngle) * labelR;
+    regions.push({
+      id: enzymeGlossary[i],
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - lx) < 30 * s && Math.abs(my - ly) < 14 * s;
+      },
+    });
+  }
+
+  // Shuttle components
+  const omx = shuttleX;
+  const imx = shuttleX + shuttleW;
+  const midShuttle = (omx + imx) / 2;
+
+  regions.push({
+    id: 'cpt1', cursor: true,
+    test(mx, my) { return Math.abs(mx - omx) < 18 * s && Math.abs(my - h * 0.3) < 28 * s; },
+  });
+  regions.push({
+    id: 'cact', cursor: true,
+    test(mx, my) { return Math.abs(mx - midShuttle) < 18 * s && Math.abs(my - h * 0.5) < 18 * s; },
+  });
+  regions.push({
+    id: 'cpt2', cursor: true,
+    test(mx, my) { return Math.abs(mx - imx) < 18 * s && Math.abs(my - h * 0.7) < 28 * s; },
+  });
+
+  // Center of spiral -> matrix
+  regions.push({
+    id: 'matrix', cursor: false,
+    test(mx, my) {
+      const dx = mx - spiralCx;
+      const dy = my - spiralCy;
+      return Math.sqrt(dx * dx + dy * dy) < spiralR * 0.45;
+    },
+  });
+
+  return regions;
+}
+
+const tooltipMgr = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ============================================================
+// 7. TUTORIAL
+// ============================================================
+const tutorialDescriptions = [
+  // Step 1: Overview
+  `<strong>Fatty acid activation &amp; energy density.</strong> Before entering \u03B2-oxidation, a fatty acid must be activated to fatty acyl-CoA in the cytoplasm \u2014 costing <strong>2 ATP</strong> (ATP \u2192 AMP + PP\u1D62). This priming cost is subtracted from the final yield. Why is fat so energy-dense? Because its carbons are highly reduced \u2014 each C\u2013H bond stores energy. Palmitate (16C) yields <strong>~106 ATP</strong> vs glucose\u2019s ~30-32 ATP. That\u2019s ~3.3\u00D7 more ATP per molecule.`,
+  // Step 2: Carnitine Shuttle
+  `<strong>Carnitine shuttle: CPT-1 \u2192 CACT \u2192 CPT-2.</strong> Long-chain acyl-CoAs can\u2019t cross the inner membrane directly. <span class="tag" style="background:#9B59B6">CPT-1</span> on the outer membrane swaps CoA for carnitine. <span class="tag" style="background:#D94A4A">Malonyl-CoA</span> inhibits CPT-1 \u2014 this is the master switch between fat synthesis (fed state) and fat oxidation (exercise). CACT translocates acyl-carnitine across. CPT-2 restores CoA in the matrix. Try the malonyl-CoA slider to see CPT-1 block.`,
+  // Step 3: Oxidation (FAD)
+  `<strong>Step 1 \u2014 Oxidation: Acyl-CoA DH.</strong> <span class="tag" style="background:#3AADA8">FADH\u2082</span> The first enzyme introduces a <em>trans</em>-\u0394\u00B2 double bond between C2\u2013C3. FAD accepts the electrons, producing FADH\u2082 that transfers to the ETC via ETF \u2192 ETF-QO \u2192 ubiquinone (bypassing Complex I). Multiple chain-length-specific isoforms exist: VLCAD, LCAD, MCAD, SCAD.`,
+  // Step 4: Hydration
+  `<strong>Step 2 \u2014 Hydration: Enoyl-CoA Hydratase.</strong> <span class="tag" style="background:#6AB0E0">+H\u2082O</span> Water adds across the trans double bond, forming L-3-hydroxyacyl-CoA. No electron carriers consumed or produced \u2014 this step simply prepares the \u03B2-carbon for the next oxidation. Stereospecific: produces only the L-isomer.`,
+  // Step 5: Oxidation (NAD+)
+  `<strong>Step 3 \u2014 Oxidation: 3-Hydroxyacyl-CoA DH.</strong> <span class="tag" style="background:#4A90D9">NADH</span> Oxidizes the hydroxyl at the \u03B2-carbon to a ketone. NAD\u207A accepts the electrons, producing NADH that feeds into Complex I of the ETC. Now the \u03B2-carbon is primed for cleavage in the next step.`,
+  // Step 6: Thiolysis
+  `<strong>Step 4 \u2014 Thiolysis: Thiolase.</strong> <span class="tag" style="background:#E8A040">Acetyl-CoA</span> Free CoA-SH attacks the weakened C2\u2013C3 bond, cleaving off a 2-carbon acetyl-CoA that enters the Krebs cycle. The shortened acyl-CoA (\u22122C) re-enters at Step 1 for the next turn. On the final cycle (4C \u2192 2 + 2), thiolysis produces <strong>2 acetyl-CoAs</strong>.`,
+  // Step 7: Energy Accounting
+  `<strong>Energy accounting.</strong> Per cycle: 1 FADH\u2082 (~1.5 ATP) + 1 NADH (~2.5 ATP) + 1 acetyl-CoA (~10 ATP via Krebs/ETC) = <strong>~14 ATP per cycle</strong>. Palmitate (16C, 7 cycles): 8 acetyl-CoA \u00D7 10 + 7 FADH\u2082 \u00D7 1.5 + 7 NADH \u00D7 2.5 \u2212 2 activation = <strong>~106 ATP</strong>. Fat is 2.25\u00D7 more energy-dense per gram than carbs (9 vs 4 kcal/g).`,
+  // Step 8: Regulation
+  `<strong>Regulation &amp; integration.</strong> <span class="tag" style="background:#D94A4A">CPT-1</span> is the gatekeeper. Malonyl-CoA (from ACC) blocks it in the fed state. During exercise, <strong>AMPK</strong> phosphorylates ACC \u2192 malonyl-CoA drops \u2192 CPT-1 opens. \u03B2-oxidation output feeds into the same Krebs \u2192 ETC pathway as carbs. The crossover concept: at low intensity fat dominates; as intensity rises, carbs take over. Training shifts the crossover point rightward by increasing CPT-1 and mitochondrial density.`,
+];
+
+const tutorialMgr = new TutorialManager({
+  stepCount: 8,
+  accents: STEP_ACCENT,
+  descriptions: tutorialDescriptions,
+  onEnter() {
+    tooltipMgr.hide();
+    const panel = document.getElementById('process-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+      document.getElementById('how-btn').classList.remove('active');
+    }
+    const tPanel = document.getElementById('training-panel');
+    if (tPanel.classList.contains('open')) {
+      tPanel.classList.remove('open');
+      document.getElementById('training-btn').classList.remove('active');
+    }
+    const tutBtn = document.getElementById('tutorial-btn');
+    if (tutBtn) tutBtn.classList.add('active');
+    sim.savedSupply = sim.supplyRate;
+    sim.savedMalonyl = sim.malonylCoA;
+    sim.tutorialStep = 1;
+    sim.tutorialTime = 0;
+    sim.stepTransition = 0;
+    sim.reset(16);
+    sim.supplyRate = 0.5;
+    sim.malonylCoA = 0;
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onExit() {
+    sim.tutorialStep = null;
+    sim.supplyRate = sim.savedSupply;
+    sim.malonylCoA = sim.savedMalonyl;
+    supplySlider.value = sim.supplyRate * 100;
+    malonylSlider.value = sim.malonylCoA * 100;
+    clearAllParticles();
+    const tutBtn = document.getElementById('tutorial-btn');
+    if (tutBtn) tutBtn.classList.remove('active');
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onStepChange(n) {
+    sim.tutorialStep = n;
+    sim.stepTransition = 0;
+    clearAllParticles();
+  },
+});
+
+document.getElementById('how-btn').addEventListener('click', () => {
+  const panel = document.getElementById('process-panel');
+  const btn = document.getElementById('how-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  // Close training panel if open
+  const tPanel = document.getElementById('training-panel');
+  if (tPanel.classList.contains('open')) {
+    tPanel.classList.remove('open');
+    document.getElementById('training-btn').classList.remove('active');
+  }
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+document.getElementById('tutorial-btn').addEventListener('click', () => tutorialMgr.enter());
+
+document.getElementById('training-btn').addEventListener('click', () => {
+  const panel = document.getElementById('training-panel');
+  const btn = document.getElementById('training-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  // Close process panel if open
+  const pPanel = document.getElementById('process-panel');
+  if (pPanel.classList.contains('open')) {
+    pPanel.classList.remove('open');
+    document.getElementById('how-btn').classList.remove('active');
+  }
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+// ============================================================
+// 8. MAIN LOOP & INIT
+// ============================================================
+function resize() {
+  cm.resize();
+  computeLayout();
+}
+
+function init() {
+  initNav('beta-oxidation');
+  initParticles();
+  resize();
+  window.addEventListener('resize', () => { tooltipMgr.hide(); resize(); });
+  sim.supplyRate = supplySlider.value / 100;
+  sim.malonylCoA = malonylSlider.value / 100;
+  updateUI();
+
+  createAnimationLoop(
+    (dt) => {
+      sim.update(dt);
+      updateParticles(dt);
+    },
+    (dt, timestamp) => {
+      const w = cm.cssWidth;
+      const h = cm.cssHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawCarnitineShuttle();
+      drawSpiralRing();
+      drawNodes();
+      drawEnzymeLabels();
+      drawFattyAcidChain();
+      drawParticles();
+      drawLegend();
+
+      if (Math.floor(timestamp / 100) !== Math.floor((timestamp - dt * 1000) / 100)) {
+        updateUI();
+      }
+    }
+  );
+}
+
+init();
+</script>
+</body>
+</html>

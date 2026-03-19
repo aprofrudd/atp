@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATP Transport — How ATP Reaches the Cytoplasm</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #4A90D9;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  #process-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #process-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #process-panel::-webkit-scrollbar { width: 6px; }
+  #process-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-ant  { background: #6DBB6D; }
+  .tag-vdac { background: #8B7BB0; }
+  .tag-atp  { background: #B8960A; color: #fff; }
+  .tag-adp  { background: #4A90D9; }
+  .tag-psi  { background: #E85030; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-body .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; vertical-align: 1px; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>Reverse Engineering &mdash; ATP Transport: How ATP Reaches the Cytoplasm</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="potential-slider">Membrane Potential (&Delta;&psi;):</label>
+    <input type="range" id="potential-slider" min="0" max="100" value="50">
+  </div>
+  <div class="stats">
+    <span>ATP Exported: <span class="stat-val" id="atp-exported">0</span></span>
+    <span>Rate: <span class="stat-val" id="transport-rate">0.0</span> /s</span>
+    <span>ADP Returned: <span class="stat-val" id="adp-returned">0</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Adjust the membrane potential slider to drive ATP/ADP exchange through ANT and VDAC.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<!-- Hidden step descriptions for tutorial extraction -->
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+    <div class="analogy"><strong>Analogy:</strong> Imagine a factory that makes widgets perfectly — but there's only a single-lane bridge connecting it to the city. No matter how fast production runs, deliveries are limited by that one bridge. That's the ANT transporter: the sole route for ATP export.</div>
+    <h3>The Bottleneck</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>ANT protein density — the sole route for ATP export.</strong> The adenine nucleotide translocase (ANT) is the only way ATP leaves the mitochondrial matrix. Each ANT cycles 1,000-2,000 times per second, but there are a finite number per mitochondrion. Under high demand, every ANT is saturated — no matter how much ATP is produced inside, export capacity is the ceiling.</div>
+    </div>
+    <h3>How Endurance Training Adapts</h3>
+    <div class="step">
+      <div class="step-num" style="background:#5A9E5A">1</div>
+      <div class="step-body"><strong>ANT1 expression increases 2-3x.</strong> Training upregulates the muscle-specific ANT1 isoform, packing more transporter proteins into each mitochondrial inner membrane. More lanes on the bridge.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#5A9E5A">2</div>
+      <div class="step-body"><strong>More mitochondria = multiplicative gain (~4x total capacity).</strong> If each mitochondrion has 2-3x more ANT, and you have 2x more mitochondria, the total export capacity multiplies to roughly 4x. Training attacks the bottleneck from both sides.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#5A9E5A">3</div>
+      <div class="step-body"><strong>Maintained membrane potential under load.</strong> A stronger ETC (from training) keeps the proton gradient stable even at high flux. This matters because ANT is electrogenic — it relies on the membrane potential to drive the ATP&#8308;&#8315;/ADP&#179;&#8315; exchange.</div>
+    </div>
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">2-3x</div><div class="lbl">ANT1 expression increase</div></div>
+      <div class="num-card"><div class="val">~10%</div><div class="lbl">Membrane protein (ANT share)</div></div>
+      <div class="num-card"><div class="val">~4x</div><div class="lbl">Total export capacity gain</div></div>
+      <div class="num-card"><div class="val">1-2k/sec</div><div class="lbl">Cycles per ANT protein</div></div>
+    </div>
+    <div class="analogy"><strong>Key insight:</strong> Transport is the chokepoint between making ATP and using it. The mitochondrion can produce all the ATP it wants, but if it can't get out, it's useless to the cell. Training attacks both sides — more transporters per mitochondrion and more mitochondria in total.</div>
+  </div>
+</div>
+
+<div id="process-panel" style="display:none">
+  <div class="process-inner">
+    <div class="step"><div class="step-body">
+      <strong>The Transport Challenge.</strong> ATP synthase forges ATP in the mitochondrial <strong>matrix</strong> &mdash; but the sarcomere and other molecular machinery need it in the <strong>cytoplasm</strong>. Two membranes stand in the way: the inner membrane (nearly impermeable to charged molecules) and the outer membrane. Specialized transport proteins bridge this gap.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>The Inner Membrane Barrier.</strong> The inner mitochondrial membrane is a tight lipid bilayer that blocks ATP<sup>4&minus;</sup> and ADP<sup>3&minus;</sup> &mdash; they're too large and too charged to cross on their own. This impermeability is the same property that maintains the proton gradient for ATP synthase. A dedicated transporter is needed.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>ANT: The Exchanger.</strong> The <span class="tag tag-ant">ANT</span> (Adenine Nucleotide Translocase) is an antiporter embedded in the inner membrane. It swaps one <span class="tag tag-atp">ATP<sup>4&minus;</sup></span> (out to the IMS) for one <span class="tag tag-adp">ADP<sup>3&minus;</sup></span> (in to the matrix). It uses an <strong>alternating access</strong> mechanism, flipping between c-state (facing IMS) and m-state (facing matrix). It is the most abundant protein in the inner mitochondrial membrane.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>The Electrogenic Drive.</strong> ATP carries a 4&minus; charge, while ADP carries 3&minus;. Exporting ATP<sup>4&minus;</sup> and importing ADP<sup>3&minus;</sup> moves one net negative charge <em>out</em> of the matrix. The <span class="tag tag-psi">&Delta;&psi;</span> (membrane potential, ~180 mV, negative inside) drives this exchange &mdash; the electrical gradient <em>pulls</em> the more-negative ATP outward. Without membrane potential, transport stalls.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>The Intermembrane Space.</strong> After ANT exports ATP into the IMS, the molecule must still cross the outer membrane to reach the cytoplasm. The IMS is a narrow transit zone (~20 nm wide) where ATP briefly resides between the two transport steps.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>VDAC: The Outer Gateway.</strong> The <span class="tag tag-vdac">VDAC</span> (Voltage-Dependent Anion Channel), also called <strong>porin</strong>, is a large &beta;-barrel pore in the outer membrane. In its <em>open</em> state, it freely passes ATP, ADP, and other small metabolites. Unlike ANT's precise 1:1 exchange, VDAC is a relatively non-selective channel &mdash; a molecular gateway.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>The Complete Journey.</strong> Matrix &rarr; <span class="tag tag-ant">ANT</span> (inner membrane) &rarr; IMS &rarr; <span class="tag tag-vdac">VDAC</span> (outer membrane) &rarr; Cytoplasm. Simultaneously, ADP travels the reverse direction to be recycled by ATP synthase. This creates a continuous loop: ATP synthase <em>makes</em> ATP, ANT <em>exports</em> it, the sarcomere <em>uses</em> it, and ADP returns for recycling.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>By the Numbers.</strong> The human body recycles roughly <strong>~30 kg of ATP per day</strong> &mdash; nearly your own body weight. Almost all of it passes through ANT. At rest, turnover is ~40 kg/day; during intense exercise it can exceed 500 g/min. ANT is so abundant that it makes up ~10% of the total protein in the inner mitochondrial membrane.
+    </div></div>
+  </div>
+</div>
+
+<script type="module">
+import { lerp, toRad, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+
+const COLORS = {
+  cytoplasmBg:  '#1e2040',
+  imsBg:        '#1a2848',
+  matrixBg:     '#1e1830',
+  outerMem:     '#8B7BB0',
+  outerMemDark: '#6A5C94',
+  innerMem:     '#C4A862',
+  innerMemDark: '#A08840',
+  antBody:      '#6DBB6D',
+  antDark:      '#4D9B4D',
+  vdacBody:     '#8B7BB0',
+  vdacDark:     '#6A5C94',
+  atp:          '#FFD700',
+  atpGlow:      'rgba(255,215,0,0.4)',
+  adp:          '#4A90D9',
+  adpGlow:      'rgba(74,144,217,0.4)',
+  chargePos:    '#E85030',
+  chargeNeg:    '#4A90D9',
+  label:        '#8098b0',
+  labelBright:  '#c0d0e0',
+};
+
+const STEP_CONFIGS = [
+  null,
+  { potential: 0.5, speed: 0,   highlight: ['cytoplasm','ims','matrix'], dim: ['ant','vdac'], antCycles: false, particles: false },
+  { potential: 0,   speed: 0,   highlight: ['innerMembrane'], dim: ['vdac','cytoplasm'], antCycles: false, particles: false },
+  { potential: 0.5, speed: 0.3, highlight: ['ant'], dim: ['vdac'], antCycles: true, particles: true },
+  { potential: 0.7, speed: 0.4, highlight: ['charges','ant'], dim: ['vdac'], antCycles: true, particles: true },
+  { potential: 0.5, speed: 0.3, highlight: ['ims'], dim: [], antCycles: true, particles: true },
+  { potential: 0.5, speed: 0.3, highlight: ['vdac'], dim: ['ant'], antCycles: true, particles: true },
+  { potential: 0.7, speed: 0.7, highlight: [], dim: [], antCycles: true, particles: true },
+  { potential: 0.9, speed: 0.9, highlight: [], dim: [], antCycles: true, particles: true },
+];
+
+const STEP_ACCENT = [
+  null, '#4A90D9', '#C4A862', '#6DBB6D', '#E85030',
+  '#4A90D9', '#8B7BB0', '#FFD700', '#808890',
+];
+
+const GLOSSARY = {
+  ant: {
+    title: 'ANT (Adenine Nucleotide Translocase)',
+    body: '<strong>Etymology:</strong> "Translocase" = an enzyme that moves molecules across a membrane.<br><br>An antiporter in the inner mitochondrial membrane that swaps ATP\u2074\u207B (out) for ADP\u00B3\u207B (in). Uses alternating access: the protein flips between m-state (open to matrix) and c-state (open to IMS). It\'s the most abundant protein in the inner membrane and the bottleneck for ATP export.',
+  },
+  vdac: {
+    title: 'VDAC (Voltage-Dependent Anion Channel)',
+    body: '<strong>Also called:</strong> Mitochondrial porin.<br><br>A large \u03B2-barrel pore in the outer mitochondrial membrane. In its open state, VDAC allows ATP, ADP, and other metabolites to pass freely. At high membrane voltages, it partially closes and becomes more cation-selective. It\'s the primary route for metabolite traffic across the outer membrane.',
+  },
+  innerMembrane: {
+    title: 'Inner Mitochondrial Membrane',
+    body: 'A tightly sealed lipid bilayer that is nearly impermeable to ions and charged molecules. This impermeability serves a dual purpose: it maintains the proton gradient that drives ATP synthase, and it forces ATP/ADP exchange through the controlled ANT pathway. The membrane\'s many folds (cristae) increase surface area.',
+  },
+  outerMembrane: {
+    title: 'Outer Mitochondrial Membrane',
+    body: 'The outer boundary of the mitochondrion. More permeable than the inner membrane due to abundant VDAC pores. Small molecules (<5 kDa) can pass through VDAC channels. Larger proteins require specialized import machinery (TOM/TIM complexes).',
+  },
+  matrix: {
+    title: 'Mitochondrial Matrix',
+    body: 'The innermost compartment where ATP synthase releases newly made ATP. Contains Krebs cycle enzymes and mitochondrial DNA. ATP concentration here is kept relatively low because ANT continuously exports ATP and imports ADP, maintaining the favorable gradient for ATP synthase catalysis.',
+  },
+  ims: {
+    title: 'Intermembrane Space (IMS)',
+    body: 'The narrow space (~20 nm) between the inner and outer membranes. Serves as a transit zone for ATP traveling from ANT to VDAC. The IMS also has a high H\u207A concentration (maintained by the electron transport chain), which creates the proton-motive force driving ATP synthase.',
+  },
+  cytoplasm: {
+    title: 'Cytoplasm',
+    body: 'The cellular space outside the mitochondria where ATP is consumed. Major ATP consumers include: the sarcomere (muscle action), Na\u207A/K\u207A-ATPase (nerve and muscle function), biosynthetic reactions, and protein synthesis. The cytoplasmic ATP/ADP ratio is typically ~10:1, maintained by continuous mitochondrial export.',
+  },
+  membranePotential: {
+    title: 'Membrane Potential (\u0394\u03C8)',
+    body: 'An electrical voltage of ~180 mV across the inner mitochondrial membrane (negative inside). Created by the electron transport chain pumping H\u207A out of the matrix. This voltage is the primary driving force for ANT: exporting ATP\u2074\u207B (more negative) and importing ADP\u00B3\u207B (less negative) moves net negative charge outward, which is <em>favored</em> by the negative-inside potential.',
+  },
+  adpAtpExchange: {
+    title: 'ADP/ATP Exchange',
+    body: 'The 1:1 antiport reaction: one ATP\u2074\u207B exits the matrix while one ADP\u00B3\u207B enters. This is electrogenic \u2014 it moves one net negative charge out per cycle. The energy cost is ~25% of the total proton-motive force per ATP exported, which is why the transport cost is included in the ~4 H\u207A per ATP calculation.',
+  },
+  cState: {
+    title: 'c-state (ANT Conformation)',
+    body: '"c" = cytoplasmic-facing (toward the IMS). In this conformation, ANT\'s binding pocket is open to the intermembrane space. ATP\u2074\u207B is released into the IMS, and ADP\u00B3\u207B from the IMS can bind. Inhibitor: <strong>atractyloside</strong> locks ANT in the c-state.',
+  },
+  mState: {
+    title: 'm-state (ANT Conformation)',
+    body: '"m" = matrix-facing. In this conformation, ANT\'s binding pocket is open to the matrix. ADP\u00B3\u207B is released into the matrix (for recycling by ATP synthase), and ATP\u2074\u207B from the matrix can bind. Inhibitor: <strong>bongkrekic acid</strong> locks ANT in the m-state.',
+  },
+  porin: {
+    title: 'Porin (VDAC)',
+    body: '<strong>Etymology:</strong> Greek <em>poros</em> (passage).<br><br>General name for \u03B2-barrel channel proteins in outer membranes. Mitochondrial porin (VDAC) forms a water-filled pore ~2.5 nm in diameter, large enough for ATP, ADP, pyruvate, and other metabolites. Found in both mitochondrial and bacterial outer membranes.',
+  },
+};
+
+let L = {};
+
+// ============================================================
+// 2. STATE
+// ============================================================
+
+class SimState {
+  constructor() {
+    this.potential = 0.5;
+    this.atpExported = 0;
+    this.adpReturned = 0;
+    this.transportTimes = [];
+    this.running = true;
+
+    // ANT cycling
+    this.antPhase = 0;          // 0-1 full cycle
+    this.antFlip = 0;           // 0 = m-state, 1 = c-state (smooth)
+
+    // VDAC
+    this.vdacOpenness = 1;
+
+    // Tutorial
+    this.tutorialStep = null;
+    this.savedPotential = 0.5;
+    this.stepTransition = 1;
+    this.tutorialTime = 0;
+  }
+
+  get effectivePotential() {
+    if (this.tutorialStep !== null) {
+      return STEP_CONFIGS[this.tutorialStep].potential;
+    }
+    return this.potential;
+  }
+
+  get transportRate() {
+    if (this.transportTimes.length < 2) return 0;
+    const span = (this.transportTimes[this.transportTimes.length - 1] - this.transportTimes[0]) / 1000;
+    return span > 0 ? ((this.transportTimes.length - 1) / span) : 0;
+  }
+
+  update(dt) {
+    if (!this.running) return;
+    const psi = this.effectivePotential;
+
+    if (this.tutorialStep !== null) {
+      this.tutorialTime += dt;
+      if (this.stepTransition < 1) {
+        this.stepTransition = Math.min(1, this.stepTransition + dt / 0.3);
+      }
+    }
+
+    const cfg = this.tutorialStep !== null ? STEP_CONFIGS[this.tutorialStep] : null;
+    const speed = cfg ? cfg.speed : psi;
+
+    // ANT cycling
+    if (speed > 0.01 && (!cfg || cfg.antCycles)) {
+      const cycleSpeed = speed * 1.8;
+      this.antPhase += cycleSpeed * dt;
+      if (this.antPhase >= 1) {
+        this.antPhase -= 1;
+        this.atpExported++;
+        this.adpReturned++;
+        this.transportTimes.push(performance.now());
+      }
+    }
+
+    // Smooth flip: 0-0.5 = m-state→c-state, 0.5-1 = c-state→m-state
+    const targetFlip = (this.antPhase < 0.5) ?
+      Math.min(1, this.antPhase * 4) :
+      Math.max(0, 1 - (this.antPhase - 0.5) * 4);
+    this.antFlip = lerp(this.antFlip, targetFlip, Math.min(1, dt * 12));
+
+    // VDAC openness
+    this.vdacOpenness = lerp(1, 0.5, Math.max(0, (psi - 0.8) * 5));
+
+    // Prune timestamps
+    const now = performance.now();
+    while (this.transportTimes.length && this.transportTimes[0] < now - 3000) {
+      this.transportTimes.shift();
+    }
+  }
+}
+
+const sim = new SimState();
+
+function tCfg() {
+  return sim.tutorialStep !== null ? STEP_CONFIGS[sim.tutorialStep] : null;
+}
+
+function componentOpacity(id) {
+  const cfg = tCfg();
+  if (!cfg) return 1;
+  const target = cfg.dim.includes(id) ? 0.25 : 1;
+  return lerp(0.25, target, sim.stepTransition);
+}
+
+function isHighlighted(id) {
+  const cfg = tCfg();
+  return cfg ? cfg.highlight.includes(id) : false;
+}
+
+// ============================================================
+// 3. PARTICLE SYSTEM
+// ============================================================
+
+const POOL = {
+  bgAtp:      [],  // background ATP in matrix
+  bgAdp:      [],  // background ADP in cytoplasm
+  transitAtp: [],  // ATP moving matrix→ANT→IMS→VDAC→cytoplasm
+  transitAdp: [],  // ADP moving cytoplasm→VDAC→IMS→ANT→matrix
+};
+
+function initParticles() {
+  for (let i = 0; i < 12; i++) POOL.bgAtp.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, opacity: 1 });
+  for (let i = 0; i < 12; i++) POOL.bgAdp.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, opacity: 1 });
+  for (let i = 0; i < 10; i++) POOL.transitAtp.push({ x: 0, y: 0, progress: 0, active: false, opacity: 1 });
+  for (let i = 0; i < 10; i++) POOL.transitAdp.push({ x: 0, y: 0, progress: 0, active: false, opacity: 1 });
+}
+
+function clearAllParticles() {
+  for (const key of Object.keys(POOL)) {
+    for (const p of POOL[key]) p.active = false;
+  }
+}
+
+// Spawn background particles
+function ensureBgParticles() {
+  const s = L.s || 1;
+  // Matrix ATP
+  let activeCount = POOL.bgAtp.filter(p => p.active).length;
+  const targetAtp = Math.floor(sim.effectivePotential * 6) + 3;
+  while (activeCount < targetAtp) {
+    const p = getInactive(POOL.bgAtp);
+    if (!p) break;
+    p.active = true;
+    p.x = L.cx + (Math.random() - 0.5) * L.w * 0.7;
+    p.y = L.matrixTop + Math.random() * (L.matrixBot - L.matrixTop - 10 * s);
+    p.vx = (Math.random() - 0.5) * 30 * s;
+    p.vy = (Math.random() - 0.5) * 20 * s;
+    p.opacity = 0.5 + Math.random() * 0.3;
+    activeCount++;
+  }
+  // Cytoplasm ADP
+  activeCount = POOL.bgAdp.filter(p => p.active).length;
+  const targetAdp = Math.floor(sim.effectivePotential * 5) + 2;
+  while (activeCount < targetAdp) {
+    const p = getInactive(POOL.bgAdp);
+    if (!p) break;
+    p.active = true;
+    p.x = L.cx + (Math.random() - 0.5) * L.w * 0.7;
+    p.y = L.cytoTop + 10 * s + Math.random() * (L.cytoBot - L.cytoTop - 20 * s);
+    p.vx = (Math.random() - 0.5) * 30 * s;
+    p.vy = (Math.random() - 0.5) * 20 * s;
+    p.opacity = 0.5 + Math.random() * 0.3;
+    activeCount++;
+  }
+}
+
+let transitSpawnTimer = 0;
+
+function spawnTransit() {
+  const s = L.s || 1;
+  // Spawn ATP transit
+  const atpP = getInactive(POOL.transitAtp);
+  if (atpP) {
+    atpP.active = true;
+    atpP.progress = 0;
+    atpP.opacity = 1;
+    atpP.x = L.antCenter.x + (Math.random() - 0.5) * 10 * s;
+    atpP.y = L.matrixTop + 20 * s;
+  }
+  // Spawn ADP transit
+  const adpP = getInactive(POOL.transitAdp);
+  if (adpP) {
+    adpP.active = true;
+    adpP.progress = 0;
+    adpP.opacity = 1;
+    adpP.x = L.vdacCenter.x + (Math.random() - 0.5) * 10 * s;
+    adpP.y = L.cytoBot - 20 * (L.s || 1);
+  }
+}
+
+function transitY(progress, isAtp) {
+  // ATP path: matrix(0) → ANT bottom(0.15) → ANT top(0.4) → IMS mid(0.55) → VDAC bot(0.7) → VDAC top(0.85) → cyto(1)
+  // ADP path: cyto(0) → VDAC top(0.15) → VDAC bot(0.3) → IMS mid(0.45) → ANT top(0.6) → ANT bot(0.85) → matrix(1)
+  if (isAtp) {
+    if (progress < 0.15) return lerp(L.matrixTop + 20 * L.s, L.innerMemBot, progress / 0.15);
+    if (progress < 0.4)  return lerp(L.innerMemBot, L.innerMemTop, (progress - 0.15) / 0.25);
+    if (progress < 0.55) return lerp(L.innerMemTop, (L.imsTop + L.imsBot) / 2, (progress - 0.4) / 0.15);
+    if (progress < 0.7)  return lerp((L.imsTop + L.imsBot) / 2, L.outerMemBot, (progress - 0.55) / 0.15);
+    if (progress < 0.85) return lerp(L.outerMemBot, L.outerMemTop, (progress - 0.7) / 0.15);
+    return lerp(L.outerMemTop, L.cytoBot - 20 * L.s, (progress - 0.85) / 0.15);
+  } else {
+    if (progress < 0.15) return lerp(L.cytoBot - 20 * L.s, L.outerMemTop, progress / 0.15);
+    if (progress < 0.3)  return lerp(L.outerMemTop, L.outerMemBot, (progress - 0.15) / 0.15);
+    if (progress < 0.45) return lerp(L.outerMemBot, (L.imsTop + L.imsBot) / 2, (progress - 0.3) / 0.15);
+    if (progress < 0.6)  return lerp((L.imsTop + L.imsBot) / 2, L.innerMemTop, (progress - 0.45) / 0.15);
+    if (progress < 0.85) return lerp(L.innerMemTop, L.innerMemBot, (progress - 0.6) / 0.25);
+    return lerp(L.innerMemBot, L.matrixTop + 20 * L.s, (progress - 0.85) / 0.15);
+  }
+}
+
+function updateParticles(dt) {
+  const s = L.s || 1;
+  const psi = sim.effectivePotential;
+  const cfg = tCfg();
+  const doParticles = !cfg || cfg.particles;
+
+  // Background brownian
+  for (const p of POOL.bgAtp) {
+    if (!p.active) continue;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    // Bounce within matrix
+    if (p.x < L.cx - L.w * 0.35 || p.x > L.cx + L.w * 0.35) p.vx *= -1;
+    if (p.y < L.matrixTop + 4 * s || p.y > L.matrixBot - 4 * s) p.vy *= -1;
+    // Random jitter
+    p.vx += (Math.random() - 0.5) * 60 * s * dt;
+    p.vy += (Math.random() - 0.5) * 40 * s * dt;
+    p.vx *= 0.98; p.vy *= 0.98;
+  }
+  for (const p of POOL.bgAdp) {
+    if (!p.active) continue;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    if (p.x < L.cx - L.w * 0.35 || p.x > L.cx + L.w * 0.35) p.vx *= -1;
+    if (p.y < L.cytoTop + 4 * s || p.y > L.cytoBot - 4 * s) p.vy *= -1;
+    p.vx += (Math.random() - 0.5) * 60 * s * dt;
+    p.vy += (Math.random() - 0.5) * 40 * s * dt;
+    p.vx *= 0.98; p.vy *= 0.98;
+  }
+
+  // Transit particles
+  if (doParticles && psi > 0.03) {
+    transitSpawnTimer += dt;
+    const interval = Math.max(0.4, 2.0 - psi * 1.6);
+    if (transitSpawnTimer >= interval) {
+      transitSpawnTimer = 0;
+      spawnTransit();
+    }
+  }
+
+  const speed = cfg ? cfg.speed : psi;
+  const travelSpeed = speed * 0.8;
+  for (const p of POOL.transitAtp) {
+    if (!p.active) continue;
+    p.progress += travelSpeed * dt;
+    p.x = lerp(p.x, L.antCenter.x, dt * 3);
+    p.y = transitY(Math.min(p.progress, 1), true);
+    if (p.progress > 0.9) p.opacity = Math.max(0, 1 - (p.progress - 0.9) / 0.1);
+    if (p.progress >= 1) p.active = false;
+  }
+  for (const p of POOL.transitAdp) {
+    if (!p.active) continue;
+    p.progress += travelSpeed * dt;
+    p.x = lerp(p.x, L.vdacCenter.x, dt * 3);
+    p.y = transitY(Math.min(p.progress, 1), false);
+    if (p.progress > 0.9) p.opacity = Math.max(0, 1 - (p.progress - 0.9) / 0.1);
+    if (p.progress >= 1) p.active = false;
+  }
+
+  ensureBgParticles();
+}
+
+// ============================================================
+// 4. RENDERING
+// ============================================================
+
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+function computeLayout() {
+  const w = cm.cssWidth;
+  const h = cm.cssHeight;
+  const s = Math.min(w / 700, h / 500);
+
+  const cx = w / 2;
+  const outerMemY = h * 0.28;
+  const innerMemY = h * 0.65;
+  const memH = Math.max(24, 32 * s);
+
+  L = {
+    w, h, s, cx,
+    cytoTop: 0,
+    cytoBot: outerMemY - memH / 2,
+    outerMemY,
+    outerMemTop: outerMemY - memH / 2,
+    outerMemBot: outerMemY + memH / 2,
+    imsTop: outerMemY + memH / 2,
+    imsBot: innerMemY - memH / 2,
+    innerMemY,
+    innerMemTop: innerMemY - memH / 2,
+    innerMemBot: innerMemY + memH / 2,
+    matrixTop: innerMemY + memH / 2,
+    matrixBot: h,
+    memH,
+    antCenter: { x: cx, y: innerMemY },
+    antW: Math.max(48, 60 * s),
+    antH: memH + Math.max(16, 20 * s),
+    vdacCenter: { x: cx, y: outerMemY },
+    vdacW: Math.max(40, 50 * s),
+    vdacH: memH + Math.max(12, 16 * s),
+    poreW: Math.max(14, 18 * s),
+    particleR: Math.max(5, 7 * s),
+    fontSm: Math.max(9, 10 * s) + 'px',
+    fontMd: Math.max(11, 12 * s) + 'px',
+    fontLg: Math.max(13, 15 * s) + 'px',
+  };
+}
+
+// --- Draw helpers ---
+
+function drawHighlightGlow(x, y, w, h, color) {
+  const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 12 + pulse * 8;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.5 + pulse * 0.5;
+  roundRect(ctx, x, y, w, h, 6);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBackground() {
+  const { w, h } = L;
+
+  // Cytoplasm
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('cytoplasm');
+  ctx.fillStyle = COLORS.cytoplasmBg;
+  ctx.fillRect(0, L.cytoTop, w, L.cytoBot - L.cytoTop);
+  ctx.restore();
+
+  // IMS
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('ims');
+  ctx.fillStyle = COLORS.imsBg;
+  ctx.fillRect(0, L.imsTop, w, L.imsBot - L.imsTop);
+  ctx.restore();
+
+  // Matrix
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('matrix');
+  ctx.fillStyle = COLORS.matrixBg;
+  ctx.fillRect(0, L.matrixTop, w, L.matrixBot - L.matrixTop);
+  ctx.restore();
+
+  // Compartment labels
+  ctx.save();
+  ctx.font = `600 ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  const lx = 12 * L.s;
+
+  ctx.globalAlpha = componentOpacity('cytoplasm') * 0.6;
+  ctx.fillStyle = COLORS.label;
+  ctx.fillText('CYTOPLASM', lx, L.cytoTop + 20 * L.s);
+
+  ctx.globalAlpha = componentOpacity('ims') * 0.6;
+  ctx.fillText('IMS', lx, L.imsTop + 18 * L.s);
+
+  ctx.globalAlpha = componentOpacity('matrix') * 0.6;
+  ctx.fillText('MATRIX', lx, L.matrixTop + 20 * L.s);
+  ctx.restore();
+
+  // Highlight glows
+  if (isHighlighted('cytoplasm')) drawHighlightGlow(2, L.cytoTop + 2, L.w - 4, L.cytoBot - L.cytoTop - 4, STEP_ACCENT[sim.tutorialStep]);
+  if (isHighlighted('ims')) drawHighlightGlow(2, L.imsTop + 2, L.w - 4, L.imsBot - L.imsTop - 4, STEP_ACCENT[sim.tutorialStep]);
+  if (isHighlighted('matrix')) drawHighlightGlow(2, L.matrixTop + 2, L.w - 4, L.matrixBot - L.matrixTop - 4, STEP_ACCENT[sim.tutorialStep]);
+}
+
+function drawMembrane(y, memH, color, darkColor, label, opacityId) {
+  ctx.save();
+  ctx.globalAlpha = componentOpacity(opacityId);
+  const grad = ctx.createLinearGradient(0, y - memH / 2, 0, y + memH / 2);
+  grad.addColorStop(0, color);
+  grad.addColorStop(1, darkColor);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, y - memH / 2, L.w, memH);
+
+  // Dashed midline
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(L.w, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Label on right
+  ctx.font = `600 ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(label, L.w - 10 * L.s, y + 4 * L.s);
+  ctx.restore();
+
+  if (isHighlighted(opacityId)) {
+    drawHighlightGlow(2, y - memH / 2 - 2, L.w - 4, memH + 4, STEP_ACCENT[sim.tutorialStep]);
+  }
+}
+
+function drawOuterMembrane() {
+  drawMembrane(L.outerMemY, L.memH, COLORS.outerMem, COLORS.outerMemDark, 'Outer Membrane', 'outerMembrane');
+}
+
+function drawInnerMembrane() {
+  drawMembrane(L.innerMemY, L.memH, COLORS.innerMem, COLORS.innerMemDark, 'Inner Membrane', 'innerMembrane');
+}
+
+function drawChargeIndicators() {
+  const psi = sim.effectivePotential;
+  if (psi < 0.02) return;
+
+  ctx.save();
+  const alpha = Math.min(1, psi * 1.5) * componentOpacity('charges');
+  ctx.globalAlpha = alpha * 0.7;
+  ctx.font = `700 ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const count = Math.floor(psi * 8) + 2;
+  const spacing = L.w / (count + 1);
+
+  // + signs on IMS side of inner membrane
+  ctx.fillStyle = COLORS.chargePos;
+  for (let i = 1; i <= count; i++) {
+    const x = spacing * i;
+    if (Math.abs(x - L.antCenter.x) < L.antW / 2 + 5) continue;
+    ctx.fillText('+', x, L.innerMemTop - 8 * L.s);
+  }
+
+  // - signs on matrix side of inner membrane
+  ctx.fillStyle = COLORS.chargeNeg;
+  for (let i = 1; i <= count; i++) {
+    const x = spacing * i;
+    if (Math.abs(x - L.antCenter.x) < L.antW / 2 + 5) continue;
+    ctx.fillText('\u2212', x, L.innerMemBot + 10 * L.s);
+  }
+
+  ctx.restore();
+
+  if (isHighlighted('charges')) {
+    const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+    ctx.save();
+    ctx.globalAlpha = 0.3 + pulse * 0.3;
+    ctx.strokeStyle = STEP_ACCENT[sim.tutorialStep];
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(4, L.innerMemTop - 18 * L.s, L.w - 8, L.memH + 36 * L.s);
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+}
+
+function drawPsiArrow() {
+  const psi = sim.effectivePotential;
+  if (psi < 0.02) return;
+
+  ctx.save();
+  const x = L.w - 40 * L.s;
+  const top = L.innerMemTop - 30 * L.s;
+  const bot = L.innerMemBot + 30 * L.s;
+  const mid = (top + bot) / 2;
+
+  ctx.globalAlpha = Math.min(1, psi * 2) * 0.7;
+  ctx.strokeStyle = '#E85030';
+  ctx.lineWidth = 2 * L.s;
+  ctx.beginPath();
+  ctx.moveTo(x, top);
+  ctx.lineTo(x, bot);
+  ctx.stroke();
+
+  // Arrow head pointing down (negative inside = matrix)
+  ctx.fillStyle = '#E85030';
+  ctx.beginPath();
+  ctx.moveTo(x - 5 * L.s, bot - 6 * L.s);
+  ctx.lineTo(x + 5 * L.s, bot - 6 * L.s);
+  ctx.lineTo(x, bot);
+  ctx.fill();
+
+  // Label
+  ctx.font = `600 ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#E85030';
+  ctx.fillText('\u0394\u03C8', x, top - 6 * L.s);
+
+  ctx.font = `${Math.max(8, 9 * L.s)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = COLORS.chargePos;
+  ctx.fillText('+', x + 14 * L.s, L.innerMemTop - 4 * L.s);
+  ctx.fillStyle = COLORS.chargeNeg;
+  ctx.fillText('\u2212', x + 14 * L.s, L.innerMemBot + 6 * L.s);
+
+  ctx.restore();
+}
+
+function drawANT() {
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('ant');
+
+  const { x, y } = L.antCenter;
+  const hw = L.antW / 2;
+  const hh = L.antH / 2;
+  const flip = sim.antFlip; // 0=m-state, 1=c-state
+
+  // Body
+  const grad = ctx.createLinearGradient(x - hw, 0, x + hw, 0);
+  grad.addColorStop(0, COLORS.antDark);
+  grad.addColorStop(0.5, COLORS.antBody);
+  grad.addColorStop(1, COLORS.antDark);
+  ctx.fillStyle = grad;
+  roundRect(ctx, x - hw, y - hh, L.antW, L.antH, 8 * L.s);
+  ctx.fill();
+
+  // Outline
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, x - hw, y - hh, L.antW, L.antH, 8 * L.s);
+  ctx.stroke();
+
+  // Channel opening visualization
+  // m-state (flip=0): bottom open (matrix side)
+  // c-state (flip=1): top open (IMS side)
+  const openW = L.antW * 0.35;
+  const openH = 6 * L.s;
+
+  // Top opening (c-state)
+  ctx.fillStyle = `rgba(74,144,217,${0.3 + flip * 0.6})`;
+  const topOpenW = openW * flip;
+  if (topOpenW > 1) {
+    roundRect(ctx, x - topOpenW / 2, y - hh - 1, topOpenW, openH + 2, 3);
+    ctx.fill();
+  }
+
+  // Bottom opening (m-state)
+  ctx.fillStyle = `rgba(212,168,67,${0.3 + (1 - flip) * 0.6})`;
+  const botOpenW = openW * (1 - flip);
+  if (botOpenW > 1) {
+    roundRect(ctx, x - botOpenW / 2, y + hh - openH - 1, botOpenW, openH + 2, 3);
+    ctx.fill();
+  }
+
+  // Central cavity indicator
+  const cavityR = 4 * L.s;
+  const cavityAlpha = 0.4 + 0.3 * Math.sin(sim.antPhase * Math.PI * 2);
+  ctx.fillStyle = `rgba(255,255,255,${cavityAlpha * 0.3})`;
+  ctx.beginPath();
+  ctx.arc(x, y, cavityR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ANT label
+  ctx.font = `700 ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.labelBright;
+  ctx.fillText('ANT', x, y + hh + 16 * L.s);
+
+  // State label
+  ctx.font = `${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = flip > 0.5 ? '#4A90D9' : '#D4A843';
+  ctx.fillText(flip > 0.5 ? 'c-state' : 'm-state', x, y + hh + 28 * L.s);
+
+  ctx.restore();
+
+  if (isHighlighted('ant')) {
+    drawHighlightGlow(x - hw - 4, y - hh - 4, L.antW + 8, L.antH + 8, STEP_ACCENT[sim.tutorialStep]);
+  }
+}
+
+function drawVDAC() {
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('vdac');
+
+  const { x, y } = L.vdacCenter;
+  const hw = L.vdacW / 2;
+  const hh = L.vdacH / 2;
+  const poreHW = (L.poreW * sim.vdacOpenness) / 2;
+
+  // Left barrel wall
+  const wallW = (L.vdacW - L.poreW) / 2;
+  ctx.fillStyle = COLORS.vdacBody;
+  roundRect(ctx, x - hw, y - hh, wallW, L.vdacH, 5 * L.s);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, x - hw, y - hh, wallW, L.vdacH, 5 * L.s);
+  ctx.stroke();
+
+  // Right barrel wall
+  ctx.fillStyle = COLORS.vdacBody;
+  roundRect(ctx, x + hw - wallW, y - hh, wallW, L.vdacH, 5 * L.s);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  roundRect(ctx, x + hw - wallW, y - hh, wallW, L.vdacH, 5 * L.s);
+  ctx.stroke();
+
+  // Pore (gap between walls)
+  const poreColor = sim.vdacOpenness > 0.7 ? 'rgba(90,173,165,0.25)' : 'rgba(217,74,74,0.2)';
+  ctx.fillStyle = poreColor;
+  ctx.fillRect(x - poreHW, y - hh + 2, poreHW * 2, L.vdacH - 4);
+
+  // VDAC label
+  ctx.font = `700 ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.labelBright;
+  ctx.fillText('VDAC', x, y - hh - 8 * L.s);
+
+  ctx.restore();
+
+  if (isHighlighted('vdac')) {
+    drawHighlightGlow(x - hw - 4, y - hh - 4, L.vdacW + 8, L.vdacH + 8, STEP_ACCENT[sim.tutorialStep]);
+  }
+}
+
+function drawParticle(x, y, r, color, glowColor, label, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  if (label && r > 4) {
+    ctx.font = `700 ${Math.max(7, r * 1.1)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color === COLORS.atp ? '#333' : '#fff';
+    ctx.fillText(label, x, y + 0.5);
+  }
+  ctx.restore();
+}
+
+function drawParticles() {
+  const r = L.particleR;
+  const sr = r * 0.7; // smaller for background
+
+  // Background ATP in matrix
+  for (const p of POOL.bgAtp) {
+    if (!p.active) continue;
+    drawParticle(p.x, p.y, sr, COLORS.atp, COLORS.atpGlow, '', p.opacity * 0.5);
+  }
+  // Background ADP in cytoplasm
+  for (const p of POOL.bgAdp) {
+    if (!p.active) continue;
+    drawParticle(p.x, p.y, sr, COLORS.adp, COLORS.adpGlow, '', p.opacity * 0.5);
+  }
+  // Transit ATP
+  for (const p of POOL.transitAtp) {
+    if (!p.active) continue;
+    drawParticle(p.x, p.y, r, COLORS.atp, COLORS.atpGlow, 'ATP', p.opacity);
+  }
+  // Transit ADP
+  for (const p of POOL.transitAdp) {
+    if (!p.active) continue;
+    drawParticle(p.x, p.y, r, COLORS.adp, COLORS.adpGlow, 'ADP', p.opacity);
+  }
+}
+
+function drawLegend() {
+  ctx.save();
+  const y = L.matrixBot - 14 * L.s;
+  const r = 5 * L.s;
+
+  ctx.font = `${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.6;
+
+  // ATP legend
+  const x1 = L.w - 120 * L.s;
+  ctx.fillStyle = COLORS.atp;
+  ctx.beginPath(); ctx.arc(x1, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = COLORS.label;
+  ctx.fillText('ATP\u2074\u207B', x1 + r + 4 * L.s, y);
+
+  // ADP legend
+  const x2 = L.w - 60 * L.s;
+  ctx.fillStyle = COLORS.adp;
+  ctx.beginPath(); ctx.arc(x2, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = COLORS.label;
+  ctx.fillText('ADP\u00B3\u207B', x2 + r + 4 * L.s, y);
+
+  ctx.restore();
+}
+
+function drawDirectionArrows() {
+  // Show the overall transport direction: ATP upward, ADP downward
+  const psi = sim.effectivePotential;
+  if (psi < 0.05) return;
+
+  ctx.save();
+  ctx.globalAlpha = Math.min(0.4, psi * 0.5);
+  const s = L.s;
+  const offsetX = 70 * s;
+
+  // ATP arrow (left side, pointing up)
+  const ax = L.cx - offsetX;
+  ctx.strokeStyle = COLORS.atp;
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(ax, L.matrixTop - 10 * s);
+  ctx.lineTo(ax, L.cytoBot + 10 * s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Arrowhead up
+  ctx.fillStyle = COLORS.atp;
+  ctx.beginPath();
+  ctx.moveTo(ax - 4 * s, L.cytoBot + 16 * s);
+  ctx.lineTo(ax + 4 * s, L.cytoBot + 16 * s);
+  ctx.lineTo(ax, L.cytoBot + 8 * s);
+  ctx.fill();
+
+  // ADP arrow (right side, pointing down)
+  const bx = L.cx + offsetX;
+  ctx.strokeStyle = COLORS.adp;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(bx, L.cytoBot + 10 * s);
+  ctx.lineTo(bx, L.matrixTop - 10 * s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = COLORS.adp;
+  ctx.beginPath();
+  ctx.moveTo(bx - 4 * s, L.matrixTop - 16 * s);
+  ctx.lineTo(bx + 4 * s, L.matrixTop - 16 * s);
+  ctx.lineTo(bx, L.matrixTop - 8 * s);
+  ctx.fill();
+
+  // Labels
+  ctx.font = `${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = Math.min(0.35, psi * 0.4);
+  ctx.fillStyle = COLORS.atp;
+  ctx.fillText('ATP \u2191', ax, (L.imsTop + L.imsBot) / 2);
+  ctx.fillStyle = COLORS.adp;
+  ctx.fillText('ADP \u2193', bx, (L.imsTop + L.imsBot) / 2);
+
+  ctx.restore();
+}
+
+// ============================================================
+// 5. UI & INFO PANEL
+// ============================================================
+
+const slider = document.getElementById('potential-slider');
+const atpExportedEl = document.getElementById('atp-exported');
+const transportRateEl = document.getElementById('transport-rate');
+const adpReturnedEl = document.getElementById('adp-returned');
+const infoPanel = document.getElementById('info-panel');
+
+slider.addEventListener('input', () => {
+  sim.potential = slider.value / 100;
+});
+
+function updateUI() {
+  atpExportedEl.textContent = sim.atpExported;
+  transportRateEl.textContent = sim.transportRate.toFixed(1);
+  adpReturnedEl.textContent = sim.adpReturned;
+
+  if (sim.tutorialStep !== null) return;
+
+  const psi = sim.potential;
+  if (psi < 0.03) {
+    infoPanel.textContent = 'No membrane potential. Without \u0394\u03C8 there is no driving force for the electrogenic ATP/ADP exchange. ANT is stalled \u2014 ATP remains trapped in the matrix.';
+  } else if (psi < 0.25) {
+    infoPanel.textContent = 'Low potential. ANT exchanges ATP\u2074\u207B for ADP\u00B3\u207B sluggishly. The small charge difference provides weak driving force. Transport barely keeps up with demand.';
+  } else if (psi < 0.6) {
+    infoPanel.textContent = 'Moderate potential. ANT cycles steadily \u2014 each conformational flip exports one ATP and imports one ADP. VDAC channels are fully open, providing easy transit through the outer membrane.';
+  } else if (psi < 0.85) {
+    infoPanel.textContent = 'Strong potential. Rapid ANT cycling exports ATP at high rates. The 180 mV electrical gradient strongly favors the outward movement of the more-negative ATP\u2074\u207B. The full matrix\u2192IMS\u2192cytoplasm pathway runs efficiently.';
+  } else {
+    infoPanel.textContent = 'Maximum potential! ANT is at peak throughput \u2014 the most abundant inner membrane protein running at full capacity. At this rate, the body recycles ~30 kg of ATP daily. VDAC begins partial closure at extreme voltage.';
+  }
+}
+
+// ============================================================
+// 6. HIT REGIONS & TOOLTIP
+// ============================================================
+
+function getHitRegions() {
+  const s = L.s || 1;
+  return [
+    { id: 'ant', cursor: true, test(mx, my) {
+      return Math.abs(mx - L.antCenter.x) < L.antW / 2 + 8 * s
+        && Math.abs(my - L.antCenter.y) < L.antH / 2 + 8 * s;
+    }},
+    { id: 'vdac', cursor: true, test(mx, my) {
+      return Math.abs(mx - L.vdacCenter.x) < L.vdacW / 2 + 8 * s
+        && Math.abs(my - L.vdacCenter.y) < L.vdacH / 2 + 8 * s;
+    }},
+    { id: 'membranePotential', cursor: true, test(mx, my) {
+      return mx > L.w * 0.78 && Math.abs(my - L.innerMemY) < 40 * s;
+    }},
+    { id: 'innerMembrane', cursor: false, test(mx, my) {
+      return my > L.innerMemTop && my < L.innerMemBot
+        && Math.abs(mx - L.antCenter.x) > L.antW / 2 + 10 * s;
+    }},
+    { id: 'outerMembrane', cursor: false, test(mx, my) {
+      return my > L.outerMemTop && my < L.outerMemBot
+        && Math.abs(mx - L.vdacCenter.x) > L.vdacW / 2 + 10 * s;
+    }},
+    { id: 'cytoplasm', cursor: false, test(mx, my) {
+      return my >= 0 && my < L.outerMemTop;
+    }},
+    { id: 'ims', cursor: false, test(mx, my) {
+      return my > L.imsTop && my < L.imsBot;
+    }},
+    { id: 'matrix', cursor: false, test(mx, my) {
+      return my > L.matrixTop;
+    }},
+  ];
+}
+
+const tooltipMgr = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ============================================================
+// 7. TUTORIAL
+// ============================================================
+
+function extractStepDescriptions() {
+  const bodies = document.querySelectorAll('#process-panel .step .step-body');
+  return Array.from(bodies).map(el => el.innerHTML);
+}
+
+const stepDescriptions = extractStepDescriptions();
+
+const tutorialMgr = new TutorialManager({
+  stepCount: 8,
+  accents: STEP_ACCENT,
+  descriptions: stepDescriptions,
+  onEnter() {
+    tooltipMgr.hide();
+    const tPanel = document.getElementById('training-panel');
+    if (tPanel.classList.contains('open')) {
+      tPanel.classList.remove('open');
+      document.getElementById('training-btn').classList.remove('active');
+    }
+    sim.savedPotential = sim.potential;
+    sim.tutorialStep = 1;
+    sim.tutorialTime = 0;
+    sim.stepTransition = 0;
+    sim.atpExported = 0;
+    sim.adpReturned = 0;
+    sim.transportTimes = [];
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onExit() {
+    sim.tutorialStep = null;
+    sim.potential = sim.savedPotential;
+    slider.value = sim.potential * 100;
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onStepChange(n) {
+    sim.tutorialStep = n;
+    sim.stepTransition = 0;
+    sim.tutorialTime = 0;
+    clearAllParticles();
+  },
+});
+
+document.getElementById('how-btn').addEventListener('click', () => tutorialMgr.enter());
+
+document.getElementById('training-btn').addEventListener('click', () => {
+  const panel = document.getElementById('training-panel');
+  const btn = document.getElementById('training-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+// ============================================================
+// 8. MAIN LOOP & INIT
+// ============================================================
+
+function resize() {
+  cm.resize();
+  computeLayout();
+}
+
+function init() {
+  initNav('transport');
+  initParticles();
+  resize();
+  window.addEventListener('resize', () => { tooltipMgr.hide(); resize(); });
+  sim.potential = slider.value / 100;
+  updateUI();
+
+  createAnimationLoop(
+    (dt) => {
+      sim.update(dt);
+      updateParticles(dt);
+    },
+    (dt, timestamp) => {
+      const w = cm.cssWidth;
+      const h = cm.cssHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawInnerMembrane();
+      drawOuterMembrane();
+      drawChargeIndicators();
+      drawPsiArrow();
+      drawDirectionArrows();
+      drawVDAC();
+      drawANT();
+      drawParticles();
+      drawLegend();
+
+      if (Math.floor(timestamp / 100) !== Math.floor((timestamp - dt * 1000) / 100)) {
+        updateUI();
+        computeLayout(); // recompute in case of layout changes
+      }
+    }
+  );
+}
+
+init();
+</script>
+</body>
+</html>

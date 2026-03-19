@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metabolic Profile &mdash; Fuel Systems Across Intensity</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #E8A040;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn, #training-btn, #details-btn, #phases-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover, #training-btn:hover, #details-btn:hover, #phases-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active, #training-btn.active, #details-btn.active, #phases-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #trained-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #trained-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #trained-btn.active { background: #2a6040; color: #80ffa0; border-color: #80ffa0; }
+
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  #phases-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #phases-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #phases-panel::-webkit-scrollbar { width: 6px; }
+  #phases-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .phase-row {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    transition: background 0.2s;
+  }
+  .phase-row:hover { background: rgba(255, 255, 255, 0.04); }
+  .phase-row.active { background: rgba(255, 215, 0, 0.08); outline: 1px solid rgba(255, 215, 0, 0.3); }
+  .phase-meta dl { margin: 6px 0 0; }
+  .phase-meta dt {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #a0b0c0;
+    margin-top: 6px;
+  }
+  .phase-meta dd {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #c0c8d4;
+    margin: 2px 0 0;
+  }
+  .phase-insight {
+    background: #0d1a30;
+    border-left: 3px solid #FFD700;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .phase-insight strong { color: #FFD700; }
+
+  #process-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #process-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #process-panel::-webkit-scrollbar { width: 6px; }
+  #process-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-zone1 { background: #2a7a3a; }
+  .tag-zone2 { background: #b8860b; }
+  .tag-zone3 { background: #D94A4A; }
+  .tag-lactate { background: #D4A843; }
+  .tag-fat { background: #E8802080; border: 1px solid #E88020; color: #E88020; }
+  .tag-carb { background: #3AADA880; border: 1px solid #3AADA8; color: #3AADA8; }
+  .tag-mito { background: #4A90D9; }
+  .tag-threshold { background: #9B59B6; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .misconception {
+    background: #1a0d0d;
+    border-left: 3px solid #D94A4A;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #c0a0a0;
+  }
+  .misconception strong { color: #e0c0c0; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>Metabolic Profile &mdash; Fuel Systems Across Intensity</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="intensity-slider">Intensity (% VO&#8322;max):</label>
+    <input type="range" id="intensity-slider" min="50" max="90" value="55">
+  </div>
+  <div class="stats">
+    <span>Zone: <span class="stat-val" id="zone-display">1</span></span>
+    <span>Lactate: <span class="stat-val" id="lactate-display">0.8</span> mmol/L</span>
+    <span>RER: <span class="stat-val" id="rer-display">0.73</span></span>
+  </div>
+  <button id="trained-btn">Trained</button>
+  <button id="how-btn">How It Works</button>
+  <button id="details-btn">Details</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <button id="phases-btn">Critical Phases</button>
+  <div id="info-panel">Drag the intensity slider to see how fuel systems change across exercise intensity.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&larr; Prev</button>
+      <button id="next-step">Next &rarr;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+
+    <div class="analogy">
+      <strong>Analogy:</strong> Think of your mitochondria as furnaces. At low intensity, the furnaces burn fat and carbs comfortably. As intensity rises, fuel arrives faster than the furnaces can burn it &mdash; excess pyruvate spills over into lactate. Training builds more furnaces and makes each one bigger.
+    </div>
+
+    <h3>The Bottleneck</h3>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">!</div>
+      <div class="step-body">
+        <strong>Mitochondrial capacity</strong> is the rate-limiter. When exercise intensity exceeds the mitochondria's ability to oxidize both fatty acids and pyruvate, glycolysis spills over into lactate production. The bottleneck isn't lactate itself &mdash; it's the mismatch between glycolytic flux and oxidative capacity.
+      </div>
+    </div>
+
+    <h3>Training Adaptations</h3>
+    <div class="step">
+      <div class="step-num" style="background: #4A90D9;">1</div>
+      <div class="step-body">
+        <strong>Mitochondrial biogenesis:</strong> Endurance training increases both the number and size of mitochondria. More mitochondria = higher fat oxidation rate = the intensity at which lactate begins accumulating (LT1) shifts rightward. Trained athletes can burn fat at intensities that would overwhelm an untrained person's oxidative capacity.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background: #3AADA8;">2</div>
+      <div class="step-body">
+        <strong>MCT1 upregulation:</strong> Training increases the expression of monocarboxylate transporter 1 (MCT1) on oxidative muscle fibers. This lets them import and oxidize lactate faster &mdash; effectively treating lactate as fuel rather than waste. Better clearance means LT2 (MLSS) shifts rightward.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background: #2a7a3a;">3</div>
+      <div class="step-body">
+        <strong>Capillary density:</strong> New capillaries grow around muscle fibers, improving O&#8322; delivery and CO&#8322; removal. Better oxygen supply sustains oxidative metabolism at higher intensities and delays the switch to anaerobic glycolysis.
+      </div>
+    </div>
+
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card">
+        <div class="val">65% &rarr; 75%</div>
+        <div class="lbl">LT1 (% VO&#8322;max)</div>
+      </div>
+      <div class="num-card">
+        <div class="val">75% &rarr; 85%</div>
+        <div class="lbl">LT2 / MLSS (% VO&#8322;max)</div>
+      </div>
+      <div class="num-card">
+        <div class="val">~0.5 &rarr; ~0.7 g/min</div>
+        <div class="lbl">Peak fat oxidation</div>
+      </div>
+      <div class="num-card">
+        <div class="val">~0.5 &rarr; ~0.8 mmol/L/min</div>
+        <div class="lbl">Lactate clearance rate</div>
+      </div>
+    </div>
+
+    <div class="misconception">
+      <strong>Common misconception:</strong> "Lactate causes fatigue." In fact, lactate production by LDH <em>consumes</em> an H&#8314; ion, temporarily buffering acidosis. The real fatigue drivers are H&#8314; accumulation from ATP hydrolysis and Pi from creatine kinase &mdash; not lactate itself.
+    </div>
+  </div>
+</div>
+
+<div id="phases-panel">
+  <div class="process-inner">
+    <h2>Critical Phases &mdash; Metabolic Mechanisms &amp; Bottlenecks</h2>
+
+    <div class="phase-row" data-phase-intensity="50">
+      <div class="step">
+        <div class="step-num" style="background: #2a7a3a;">1</div>
+        <div class="step-body">
+          <strong>50% VO&#8322;max &mdash; Steady-State Aerobic</strong> <span class="tag tag-zone1">Zone 1</span>
+          <div class="phase-meta">
+            <dl>
+              <dt>Key Mechanisms</dt>
+              <dd>O&#8322; supply matches demand. Type I fibers only. Fat via &beta;-oxidation &rarr; Krebs &rarr; ETC provides most ATP. Low glycolytic flux, all pyruvate enters mitochondria. Lactate ~1.3 mmol/L.</dd>
+              <dt>Bottleneck</dt>
+              <dd>None meaningful &mdash; system is demand-limited, not supply-limited. Mitochondrial capacity far exceeds ATP requirement.</dd>
+              <dt>Fatigue Mechanism</dt>
+              <dd>Duration-limited, not intensity-limited. Fat stores vast (~80,000 kcal). Fatigue from dehydration/thermal/neuromuscular factors over many hours, not metabolic crisis.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row" data-phase-intensity="55">
+      <div class="step">
+        <div class="step-num" style="background: #E88020;">2</div>
+        <div class="step-body">
+          <strong>~55% VO&#8322;max &mdash; Fatmax</strong> <span class="tag tag-fat">Peak Fat Ox</span>
+          <div class="phase-meta">
+            <dl>
+              <dt>Key Mechanisms</dt>
+              <dd>CPT-I shuttle at peak throughput. &beta;-oxidation maximal (~0.5 g/min untrained, ~0.7 trained). Carb oxidation rising but secondary. Krebs well-supplied.</dd>
+              <dt>Bottleneck</dt>
+              <dd>CPT-I capacity ceiling. Fat oxidation physically cannot go higher &mdash; carnitine shuttle maxed. Further ATP demand must come from glycolysis. This is why fat burning <em>decreases</em> above this intensity.</dd>
+              <dt>Fatigue Mechanism</dt>
+              <dd>Still duration-limited. Glycogen use moderate (~30&ndash;40% of fuel). Primary fatigue factors: peripheral (dehydration, thermal, GI) not metabolic.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row" data-phase-intensity="65">
+      <div class="step">
+        <div class="step-num" style="background: #9B59B6;">3</div>
+        <div class="step-body">
+          <strong>65% VO&#8322;max &mdash; LT1</strong> <span class="tag tag-threshold">Threshold</span>
+          <div class="phase-meta">
+            <dl>
+              <dt>Key Mechanisms</dt>
+              <dd>Fuel crossover &mdash; carb oxidation exceeds fat. Type II fiber recruitment begins (fewer mitochondria, higher glycolytic enzymes). Rising catecholamines accelerate glycogenolysis. Cytoplasmic NADH from glycolysis relies on the malate-aspartate shuttle to cross the inner mitochondrial membrane and reach the ETC. Lactate ~2 mmol/L but shuttle clearance keeps up. Fat oxidation declining from peak.</dd>
+              <dt>Bottleneck</dt>
+              <dd>Mitochondrial capacity in newly recruited Type II fibers. They produce pyruvate faster than their limited mitochondria can oxidize &rarr; first lactate &ldquo;spillover.&rdquo; Fibre-level bottleneck, not systemic.</dd>
+              <dt>Fatigue Mechanism</dt>
+              <dd>Glycogen consumption ~doubles vs Fatmax. At ~60% carb fuel, muscle glycogen becomes limiting. Time to exhaustion: ~2&ndash;4 hours. Acidosis negligible (pH ~7.35).</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row" data-phase-intensity="75">
+      <div class="step">
+        <div class="step-num" style="background: #D94A4A;">4</div>
+        <div class="step-body">
+          <strong>75% VO&#8322;max &mdash; LT2 / MLSS</strong> <span class="tag tag-zone3">Zone 3</span>
+          <div class="phase-meta">
+            <dl>
+              <dt>Key Mechanisms</dt>
+              <dd>Malonyl-CoA inhibits CPT-I &rarr; fat oxidation drops sharply. ~85% carbohydrate fuel. Massive Type II recruitment. Lactate at maximal clearance capacity (~4 mmol/L = MLSS). Any further increase breaks steady state. H&#8314; from ATP hydrolysis stressing bicarbonate buffer.</dd>
+              <dt>Bottleneck</dt>
+              <dd>Systemic lactate clearance capacity. MCT1 importers, heart, liver Cori cycle all near capacity. Simultaneously, CPT-I inhibition means mitochondria are single-fuel (pyruvate/lactate only) &mdash; loss of fuel flexibility.</dd>
+              <dt>Fatigue Mechanism</dt>
+              <dd>Dual threat: (1) Glycogen depletion accelerates at ~85% carb &mdash; time to exhaustion ~45&ndash;90 min. (2) pH declining (~7.25) as H&#8314; exceeds buffering. Margin is razor-thin &mdash; small intensity increase triggers exponential lactate rise.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-row" data-phase-intensity="90">
+      <div class="step">
+        <div class="step-num" style="background: #8B2020;">5</div>
+        <div class="step-body">
+          <strong>90% VO&#8322;max &mdash; Glycolytic Crisis</strong> <span class="tag tag-zone3">Zone 3</span>
+          <div class="phase-meta">
+            <dl>
+              <dt>Key Mechanisms</dt>
+              <dd>~100% carb. Glycolytic flux maximal, pyruvate production vastly exceeds mitochondrial capacity. LDH converts excess to lactate (~8 mmol/L), consuming H&#8314; (buffering role). ETC at VO&#8322;max. PCr substantially depleted.</dd>
+              <dt>Bottleneck</dt>
+              <dd>Mitochondrial electron transport capacity (VO&#8322;max). ETC cannot process more NADH/FADH&#8322;. The malate-aspartate shuttle is saturated &mdash; cytoplasmic NADH can no longer enter mitochondria fast enough, so LDH must regenerate NAD&#8314; by converting pyruvate to lactate. H&#8314; inhibits PFK-1, creating negative feedback that slows glycolysis itself.</dd>
+              <dt>Fatigue Mechanism</dt>
+              <dd>Acute metabolic failure: (1) pH &lt; 7.1 reduces Ca&#178;&#8314; sensitivity of troponin &rarr; impaired force. (2) Pi from PCr inhibits cross-bridge force. (3) Glycogen depleted in 15&ndash;30 min. (4) CNS reduces motor drive. Unsustainable &mdash; terminates within minutes.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-insight">
+      <strong>Key insight:</strong> Fatigue transitions from a <strong>duration problem</strong> (substrate depletion) to an <strong>intensity problem</strong> (metabolic crisis) as intensity rises. At 50% you run out of fuel. At 90% you run out of buffering capacity and force production. LT1 and LT2 mark where these transitions occur.
+    </div>
+  </div>
+</div>
+
+<div id="process-panel">
+  <div class="process-inner">
+    <h2>How It Works &mdash; The Lactate Profile</h2>
+
+    <div class="analogy">
+      <strong>Analogy:</strong> Imagine a bathtub with the tap running (lactate production) and the drain open (lactate clearance). At low intensity the drain keeps up easily. As you turn the tap higher, the water level rises slowly. At a critical point the tap overwhelms the drain and the tub starts overflowing &mdash; that's your lactate threshold.
+    </div>
+
+    <h3>Step 1 &mdash; The Lactate Profile</h3>
+    <div class="step">
+      <div class="step-num" style="background: #D4A843;">1</div>
+      <div class="step-body">
+        The <strong>lactate profile curve</strong> plots blood lactate concentration against exercise intensity. It's the single most important graph in exercise physiology. At rest, blood lactate sits around <strong>0.8 mmol/L</strong> &mdash; a baseline reflecting normal glycolytic flux. The curve is J-shaped: a gentle rise through moderate intensity, then an exponential surge. This shape reflects the balance between lactate <strong>production</strong> (by glycolysis in working muscle) and <strong>clearance</strong> (by oxidative fibers, heart, liver). When production outpaces clearance, blood lactate accumulates.
+      </div>
+    </div>
+
+    <h3>Step 2 &mdash; Zone 1: Fat Oxidation Dominates</h3>
+    <div class="step">
+      <div class="step-num" style="background: #2a7a3a;">2</div>
+      <div class="step-body">
+        At low intensity (&lt;65% VO&#8322;max), <strong>fat oxidation</strong> is the primary fuel source. Fatty acids enter mitochondria via the <span class="tag tag-fat">CPT-I shuttle</span>, undergo &beta;-oxidation to produce acetyl-CoA, which feeds the Krebs cycle and generates NADH/FADH&#8322; for the ETC. Fat is slow but high-yield: one palmitate molecule produces ~<strong>130 ATP</strong> compared to 30&ndash;32 from glucose. The tradeoff is speed &mdash; fat oxidation requires abundant oxygen and can't ramp up quickly enough for intense work.
+      </div>
+    </div>
+
+    <h3>Step 3 &mdash; LT1 &amp; The Fuel Crossover</h3>
+    <div class="step">
+      <div class="step-num" style="background: #9B59B6;">3</div>
+      <div class="step-body">
+        At ~65% VO&#8322;max, <strong>glycolysis starts outpacing fat oxidation</strong>. Why? The body recruits more <span class="tag tag-threshold">Type II muscle fibers</span> that have fewer mitochondria and rely more heavily on glycolysis. Rising catecholamines (adrenaline) further stimulate glycogen breakdown. Lactate begins appearing in the blood, but clearance still keeps up &mdash; oxidative fibers and the heart readily consume it. This is the <strong>fuel crossover point</strong> where carbohydrate oxidation begins to exceed fat oxidation.
+      </div>
+    </div>
+
+    <h3>Step 4 &mdash; Zone 2: Mixed Metabolism</h3>
+    <div class="step">
+      <div class="step-num" style="background: #b8860b;">4</div>
+      <div class="step-body">
+        Between LT1 and LT2, both fuel systems are running hard. Lactate rises but a <strong>steady state is possible</strong> &mdash; this is the zone of <span class="tag tag-lactate">Maximal Lactate Steady State</span> (MLSS). The <span class="tag tag-carb">MCT1/MCT4 lactate shuttle</span> is active: glycolytic fibers export lactate via MCT4, while oxidative fibers import it via MCT1 and burn it as fuel. This is the "tempo" zone &mdash; hard but sustainable for extended periods.
+      </div>
+    </div>
+
+    <h3>Step 5 &mdash; LT2 &amp; The Tipping Point</h3>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">5</div>
+      <div class="step-body">
+        At ~75% VO&#8322;max, the system tips. High glycolytic flux produces <span class="tag tag-carb">malonyl-CoA</span>, which <strong>inhibits CPT-I</strong> &mdash; the gateway for fat entry into mitochondria. Fat oxidation drops sharply. Glycolytic flux now vastly exceeds mitochondrial oxidative capacity. H&#8314; from ATP hydrolysis (as seen in the <strong>Sarcomere module</strong>) overwhelms bicarbonate and phosphate buffering. LDH converts pyruvate to lactate, consuming some H&#8314;, but it's not enough to prevent acidosis.
+      </div>
+    </div>
+
+    <h3>Step 6 &mdash; Zone 3: Glycolytic Crisis</h3>
+    <div class="step">
+      <div class="step-num" style="background: #8B2020;">6</div>
+      <div class="step-body">
+        Above LT2, it's nearly <strong>100% carbohydrate</strong> fuel. Lactate rises steeply toward ~8 mmol/L, pH drops below 7.1, and fatigue becomes overwhelming. This intensity is <strong>unsustainable</strong> &mdash; glycogen stores deplete rapidly, H&#8314; inhibits PFK-1 (slowing glycolysis itself), and cross-bridge cycling in the sarcomere degrades as calcium sensitivity drops. This connects directly to the Sarcomere module's rigor state: when ATP supply can't match demand, the muscle fails.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { lerp, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ─── Physiological Constants ───
+
+const THRESHOLDS_UNTRAINED = { lt1: 0.65, lt2: 0.75, fatmax: 0.55 };
+const THRESHOLDS_TRAINED   = { lt1: 0.75, lt2: 0.85, fatmax: 0.65 };
+
+const MIN_T = 0.50;        // graph & slider start at 50% VO₂max
+const MAX_T = 0.90;        // graph & slider cap at 90% VO₂max
+const T_RANGE = MAX_T - MIN_T;  // 0.40
+const MAX_LACTATE = 8;     // Y-axis cap
+
+// ─── Physiological Curve Functions ───
+
+function getLactate(t, th) {
+  // J-shaped: baseline ~0.8, gentle rise to LT1 (~2), linear to LT2 (~4),
+  // then continues linearly + quadratic acceleration to ~8 at 90%
+  if (t <= 0) return 0.8;
+  if (t <= th.lt1) {
+    const frac = t / th.lt1;
+    return 0.8 + 1.2 * frac * frac;
+  }
+  // Linear slope from LT1 to LT2 (2 → 4 mmol/L)
+  const linSlope = 2.0 / (th.lt2 - th.lt1);
+  if (t <= th.lt2) {
+    return 2.0 + linSlope * (t - th.lt1);
+  }
+  // Above LT2: continue same linear slope + quadratic acceleration (C1 smooth)
+  const dt = t - th.lt2;
+  const dtMax = MAX_T - th.lt2;
+  const accel = (MAX_LACTATE - 4.0 - linSlope * dtMax) / (dtMax * dtMax);
+  return 4.0 + linSlope * dt + accel * dt * dt;
+}
+
+function getFatOxRate(t, th) {
+  // Bell curve peaking at fatmax (~0.6 g/min untrained, ~0.7 trained)
+  const peak = th === THRESHOLDS_TRAINED ? 0.7 : 0.5;
+  const sigma = 0.22;
+  const raw = Math.exp(-((t - th.fatmax) ** 2) / (2 * sigma * sigma));
+  // Taper to near zero above LT2
+  let taper = 1;
+  if (t > th.lt2) {
+    taper = Math.max(0, 1 - ((t - th.lt2) / (1 - th.lt2)) * 2);
+  }
+  return peak * raw * taper * Math.min(1, t / 0.1); // fade in from rest
+}
+
+function getCarbOxRate(t, th) {
+  // Sigmoid rise: ~0.3 g/min at rest, ~3.5 g/min at max
+  const midpoint = (th.lt1 + th.lt2) / 2;
+  const k = 8;
+  const sig = 1 / (1 + Math.exp(-k * (t - midpoint)));
+  return 0.3 + 3.2 * sig;
+}
+
+function getRER(t, th) {
+  // 0.71 at rest, ~0.85 at LT1, ~0.95 at LT2, 1.0+ above
+  if (t <= 0) return 0.71;
+  if (t <= th.lt1) return 0.71 + 0.14 * (t / th.lt1);
+  if (t <= th.lt2) return 0.85 + 0.10 * ((t - th.lt1) / (th.lt2 - th.lt1));
+  const excess = Math.min(1, (t - th.lt2) / (1 - th.lt2));
+  return 0.95 + 0.10 * excess;
+}
+
+function getpH(t, th) {
+  // 7.40 at rest, ~7.35 at LT1, ~7.25 at LT2, ~7.10 at 90%
+  if (t <= 0) return 7.40;
+  if (t <= th.lt1) return 7.40 - 0.05 * (t / th.lt1);
+  if (t <= th.lt2) return 7.35 - 0.10 * ((t - th.lt1) / (th.lt2 - th.lt1));
+  const excess = Math.min(1, (t - th.lt2) / (1 - th.lt2));
+  return 7.25 - 0.25 * excess;
+}
+
+function getHPlusRate(t, th) {
+  // Arbitrary units: proportional to ATP turnover * glycolytic fraction
+  const carbFrac = getCarbOxRate(t, th) / (getCarbOxRate(t, th) + getFatOxRate(t, th) + 0.01);
+  const turnover = 0.1 + 0.9 * t;
+  return turnover * carbFrac * 10;
+}
+
+function getZone(t, th) {
+  if (t < th.lt1) return 1;
+  if (t < th.lt2) return 2;
+  return 3;
+}
+
+function getZoneLabel(zone) {
+  return zone === 1 ? 'Zone 1 (Aerobic)' : zone === 2 ? 'Zone 2 (Threshold)' : 'Zone 3 (Anaerobic)';
+}
+
+// ─── State ───
+
+const state = {
+  intensity: 0.55,
+  trained: false,
+  get th() { return this.trained ? THRESHOLDS_TRAINED : THRESHOLDS_UNTRAINED; },
+  get lactate() { return getLactate(this.intensity, this.th); },
+  get fatRate() { return getFatOxRate(this.intensity, this.th); },
+  get carbRate() { return getCarbOxRate(this.intensity, this.th); },
+  get rer() { return getRER(this.intensity, this.th); },
+  get pH() { return getpH(this.intensity, this.th); },
+  get hPlusRate() { return getHPlusRate(this.intensity, this.th); },
+  get zone() { return getZone(this.intensity, this.th); },
+  showFatCurve: true,
+  showCarbCurve: true,
+};
+
+// ─── Canvas Setup ───
+
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+// ─── Layout ───
+
+let L = {};
+
+function computeLayout() {
+  const W = cm.cssWidth;
+  const H = cm.cssHeight;
+  const narrow = W < 700;
+
+  const pad = { top: 20, right: 16, bottom: 10, left: 16 };
+
+  if (narrow) {
+    // Stack: graph on top, dashboard below
+    const graphH = H * 0.62;
+    L = {
+      narrow,
+      graph: {
+        x: pad.left + 50,
+        y: pad.top + 10,
+        w: W - pad.left - pad.right - 60,
+        h: graphH - pad.top - 50,
+      },
+      dash: {
+        x: pad.left + 10,
+        y: graphH + 6,
+        w: W - pad.left - pad.right - 20,
+        h: H - graphH - pad.bottom - 6,
+      },
+      W, H,
+    };
+  } else {
+    const graphW = W * 0.62;
+    L = {
+      narrow,
+      graph: {
+        x: pad.left + 50,
+        y: pad.top + 10,
+        w: graphW - pad.left - 70,
+        h: H - pad.top - 50,
+      },
+      dash: {
+        x: graphW + 10,
+        y: pad.top,
+        w: W - graphW - pad.right - 10,
+        h: H - pad.top - pad.bottom,
+      },
+      W, H,
+    };
+  }
+}
+
+// ─── Drawing Helpers ───
+
+const COLORS = {
+  zone1: 'rgba(42, 122, 58, 0.12)',
+  zone2: 'rgba(184, 134, 11, 0.12)',
+  zone3: 'rgba(217, 74, 74, 0.12)',
+  zone1Border: '#2a7a3a',
+  zone2Border: '#b8860b',
+  zone3Border: '#D94A4A',
+  lactateCurve: '#D4A843',
+  fatCurve: '#E88020',
+  carbCurve: '#3AADA8',
+  intensityLine: 'rgba(255, 215, 0, 0.7)',
+  axes: '#506070',
+  axisLabel: '#8098b8',
+  gridLine: 'rgba(80, 96, 112, 0.2)',
+  lt1Line: '#9B59B6',
+  lt2Line: '#D94A4A',
+  dashBg: 'rgba(17, 24, 40, 0.6)',
+  dashBorder: '#0f3460',
+};
+
+function graphToCanvas(t, val, maxVal) {
+  const g = L.graph;
+  const x = g.x + ((t - MIN_T) / T_RANGE) * g.w;
+  const y = g.y + g.h - (val / maxVal) * g.h;
+  return { x, y };
+}
+
+function drawBackground() {
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, L.W, L.H);
+}
+
+function drawZoneShading() {
+  const g = L.graph;
+  const th = state.th;
+  const toX = (t) => g.x + ((t - MIN_T) / T_RANGE) * g.w;
+
+  // Zone 1: MIN_T to LT1
+  ctx.fillStyle = COLORS.zone1;
+  const z1Left = toX(MIN_T);
+  const z1Right = toX(th.lt1);
+  ctx.fillRect(z1Left, g.y, z1Right - z1Left, g.h);
+
+  // Zone 2: LT1 to LT2
+  ctx.fillStyle = COLORS.zone2;
+  const z2Right = toX(th.lt2);
+  ctx.fillRect(z1Right, g.y, z2Right - z1Right, g.h);
+
+  // Zone 3: LT2 to MAX_T
+  ctx.fillStyle = COLORS.zone3;
+  const z3Right = toX(MAX_T);
+  ctx.fillRect(z2Right, g.y, z3Right - z2Right, g.h);
+}
+
+function drawAxes() {
+  const g = L.graph;
+
+  ctx.strokeStyle = COLORS.axes;
+  ctx.lineWidth = 1.5;
+
+  // Y-axis
+  ctx.beginPath();
+  ctx.moveTo(g.x, g.y);
+  ctx.lineTo(g.x, g.y + g.h);
+  ctx.stroke();
+
+  // X-axis
+  ctx.beginPath();
+  ctx.moveTo(g.x, g.y + g.h);
+  ctx.lineTo(g.x + g.w, g.y + g.h);
+  ctx.stroke();
+
+  ctx.fillStyle = COLORS.axisLabel;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = `${L.narrow ? 10 : 11}px 'Segoe UI', system-ui, sans-serif`;
+
+  // X-axis labels (50% to 90%)
+  const minPct = MIN_T * 100;
+  const maxPct = MAX_T * 100;
+  for (let pct = minPct; pct <= maxPct; pct += 10) {
+    const x = g.x + ((pct - minPct) / (maxPct - minPct)) * g.w;
+    ctx.fillText(pct + '%', x, g.y + g.h + 4);
+    // Tick
+    ctx.strokeStyle = COLORS.axes;
+    ctx.beginPath();
+    ctx.moveTo(x, g.y + g.h);
+    ctx.lineTo(x, g.y + g.h + 3);
+    ctx.stroke();
+    // Grid line
+    if (pct > minPct && pct < maxPct) {
+      ctx.strokeStyle = COLORS.gridLine;
+      ctx.beginPath();
+      ctx.moveTo(x, g.y);
+      ctx.lineTo(x, g.y + g.h);
+      ctx.stroke();
+    }
+  }
+
+  // X-axis title
+  ctx.font = `${L.narrow ? 10 : 12}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = COLORS.axisLabel;
+  ctx.fillText('% VO\u2082max', g.x + g.w / 2, g.y + g.h + (L.narrow ? 16 : 20));
+
+  // Y-axis labels (lactate)
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${L.narrow ? 9 : 11}px 'Segoe UI', system-ui, sans-serif`;
+  const yTicks = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  for (const val of yTicks) {
+    const y = g.y + g.h - (val / MAX_LACTATE) * g.h;
+    ctx.fillStyle = COLORS.axisLabel;
+    ctx.fillText(val.toString(), g.x - 6, y);
+    // Grid line
+    if (val > 0) {
+      ctx.strokeStyle = COLORS.gridLine;
+      ctx.beginPath();
+      ctx.moveTo(g.x, y);
+      ctx.lineTo(g.x + g.w, y);
+      ctx.stroke();
+    }
+  }
+
+  // Y-axis title (rotated)
+  ctx.save();
+  ctx.translate(g.x - (L.narrow ? 32 : 38), g.y + g.h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.font = `${L.narrow ? 10 : 12}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = COLORS.axisLabel;
+  ctx.fillText('Blood Lactate (mmol/L)', 0, 0);
+  ctx.restore();
+}
+
+function drawLT1LT2() {
+  const g = L.graph;
+  const th = state.th;
+
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth = 1.5;
+
+  // LT1
+  const lt1x = g.x + ((th.lt1 - MIN_T) / T_RANGE) * g.w;
+  ctx.strokeStyle = COLORS.lt1Line;
+  ctx.beginPath();
+  ctx.moveTo(lt1x, g.y);
+  ctx.lineTo(lt1x, g.y + g.h);
+  ctx.stroke();
+
+  // LT1 label
+  ctx.fillStyle = COLORS.lt1Line;
+  ctx.font = `bold ${L.narrow ? 9 : 11}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('LT1', lt1x, g.y - 2);
+
+  // LT1 lactate value
+  const lt1Lac = getLactate(th.lt1, th);
+  const lt1LacY = g.y + g.h - (lt1Lac / MAX_LACTATE) * g.h;
+  ctx.font = `${L.narrow ? 8 : 9}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText('~' + lt1Lac.toFixed(0) + ' mmol/L', lt1x, lt1LacY - 6);
+
+  // LT2
+  const lt2x = g.x + ((th.lt2 - MIN_T) / T_RANGE) * g.w;
+  ctx.strokeStyle = COLORS.lt2Line;
+  ctx.beginPath();
+  ctx.moveTo(lt2x, g.y);
+  ctx.lineTo(lt2x, g.y + g.h);
+  ctx.stroke();
+
+  // LT2 label
+  ctx.fillStyle = COLORS.lt2Line;
+  ctx.font = `bold ${L.narrow ? 9 : 11}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('LT2', lt2x, g.y - 2);
+
+  // LT2 lactate value
+  const lt2Lac = getLactate(th.lt2, th);
+  const lt2LacY = g.y + g.h - (lt2Lac / MAX_LACTATE) * g.h;
+  ctx.font = `${L.narrow ? 8 : 9}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText('~' + lt2Lac.toFixed(0) + ' mmol/L', lt2x, lt2LacY - 6);
+
+  ctx.setLineDash([]);
+}
+
+function drawCurve(curveFn, color, lineWidth, dashed) {
+  const steps = 200;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  if (dashed) ctx.setLineDash([8, 5]);
+
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const t = MIN_T + (i / steps) * T_RANGE;
+    const val = curveFn(t);
+    const p = graphToCanvas(t, val, MAX_LACTATE);
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawLactateCurve() {
+  drawCurve(
+    (t) => getLactate(t, state.th),
+    COLORS.lactateCurve, 3, false
+  );
+}
+
+function drawFatCurve() {
+  if (!state.showFatCurve) return;
+  // Scale fat (0-0.7 g/min) to fill ~85% of Y-axis
+  const scale = MAX_LACTATE / 0.8;
+  drawCurve(
+    (t) => getFatOxRate(t, state.th) * scale,
+    COLORS.fatCurve, 2, true
+  );
+}
+
+function drawCarbCurve() {
+  if (!state.showCarbCurve) return;
+  // Scale carb (0-3.5 g/min) to fill ~85% of Y-axis
+  const scale = MAX_LACTATE / 4.0;
+  drawCurve(
+    (t) => getCarbOxRate(t, state.th) * scale,
+    COLORS.carbCurve, 2, true
+  );
+}
+
+function drawIntensityMarker() {
+  const g = L.graph;
+  const t = state.intensity;
+  const x = g.x + ((t - MIN_T) / T_RANGE) * g.w;
+
+  // Vertical line
+  ctx.strokeStyle = COLORS.intensityLine;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(x, g.y);
+  ctx.lineTo(x, g.y + g.h);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Dot on lactate curve
+  const lacY = g.y + g.h - (state.lactate / MAX_LACTATE) * g.h;
+  ctx.fillStyle = COLORS.lactateCurve;
+  ctx.beginPath();
+  ctx.arc(x, lacY, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Dot on fat curve
+  if (state.showFatCurve) {
+    const fatScale = MAX_LACTATE / 0.8;
+    const fatY = g.y + g.h - (state.fatRate * fatScale / MAX_LACTATE) * g.h;
+    ctx.fillStyle = COLORS.fatCurve;
+    ctx.beginPath();
+    ctx.arc(x, fatY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Dot on carb curve
+  if (state.showCarbCurve) {
+    const carbScale = MAX_LACTATE / 4.0;
+    const carbY = g.y + g.h - (state.carbRate * carbScale / MAX_LACTATE) * g.h;
+    ctx.fillStyle = COLORS.carbCurve;
+    ctx.beginPath();
+    ctx.arc(x, carbY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Intensity % label at top
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold ${L.narrow ? 10 : 12}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(t * 100) + '%', x, g.y - 4);
+}
+
+function drawDashboard() {
+  const d = L.dash;
+  const th = state.th;
+  const zone = state.zone;
+
+  // Background
+  ctx.fillStyle = COLORS.dashBg;
+  ctx.strokeStyle = COLORS.dashBorder;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(d.x, d.y, d.w, d.h, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  const px = d.x + 14;
+  let py = d.y + 18;
+  const lineH = L.narrow ? 16 : 20;
+  const sectionGap = L.narrow ? 6 : 10;
+  const fontSize = L.narrow ? 10 : 12;
+  const smallFont = L.narrow ? 9 : 11;
+  const headerFont = L.narrow ? 11 : 13;
+
+  // Intensity
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold ${headerFont}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Intensity: ' + Math.round(state.intensity * 100) + '% VO\u2082max', px, py);
+  py += lineH + 2;
+
+  // Zone label
+  const zoneColors = { 1: COLORS.zone1Border, 2: COLORS.zone2Border, 3: COLORS.zone3Border };
+  ctx.fillStyle = zoneColors[zone];
+  ctx.font = `bold ${fontSize}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText(getZoneLabel(zone), px, py);
+  py += lineH + sectionGap;
+
+  // ── Fuel Mix Bar ──
+  ctx.fillStyle = '#8098b8';
+  ctx.font = `${smallFont}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText('Fuel Mix', px, py);
+  py += lineH - 2;
+
+  const barW = d.w - 28;
+  const barH = L.narrow ? 14 : 18;
+  const totalFuel = state.fatRate + state.carbRate;
+  const fatFrac = totalFuel > 0.01 ? state.fatRate / totalFuel : 0.5;
+  const carbFrac = 1 - fatFrac;
+
+  // Fat portion
+  ctx.fillStyle = COLORS.fatCurve;
+  ctx.beginPath();
+  ctx.roundRect(px, py, barW * fatFrac, barH, fatFrac > 0.05 ? [4, 0, 0, 4] : 0);
+  ctx.fill();
+
+  // Carb portion
+  ctx.fillStyle = COLORS.carbCurve;
+  ctx.beginPath();
+  ctx.roundRect(px + barW * fatFrac, py, barW * carbFrac, barH, carbFrac > 0.05 ? [0, 4, 4, 0] : 0);
+  ctx.fill();
+
+  // Bar outline
+  ctx.strokeStyle = '#2a3a5a';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(px, py, barW, barH, 4);
+  ctx.stroke();
+
+  // Fat/Carb % labels
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${L.narrow ? 8 : 9}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textBaseline = 'middle';
+  const barMidY = py + barH / 2;
+  if (fatFrac > 0.15) {
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(fatFrac * 100) + '% fat', px + barW * fatFrac / 2, barMidY);
+  }
+  if (carbFrac > 0.15) {
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(carbFrac * 100) + '% carb', px + barW * fatFrac + barW * carbFrac / 2, barMidY);
+  }
+  ctx.textBaseline = 'top';
+  py += barH + sectionGap;
+
+  // ── Rates ──
+  ctx.fillStyle = '#8098b8';
+  ctx.font = `${smallFont}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('Rates', px, py);
+  py += lineH - 2;
+
+  const rates = [
+    { label: 'Fat:', val: state.fatRate.toFixed(2) + ' g/min', color: COLORS.fatCurve },
+    { label: 'Carb:', val: state.carbRate.toFixed(1) + ' g/min', color: COLORS.carbCurve },
+    { label: 'Lactate:', val: state.lactate.toFixed(1) + ' mmol/L', color: COLORS.lactateCurve },
+    { label: 'pH:', val: state.pH.toFixed(2), color: state.pH < 7.25 ? '#D94A4A' : '#a0b0c0' },
+    { label: 'RER:', val: state.rer.toFixed(2), color: '#a0b0c0' },
+  ];
+
+  for (const r of rates) {
+    ctx.font = `${smallFont}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = '#8098b8';
+    ctx.fillText(r.label, px, py);
+    ctx.fillStyle = r.color;
+    ctx.font = `bold ${smallFont}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillText(r.val, px + (L.narrow ? 52 : 60), py);
+    py += lineH - 2;
+  }
+
+  py += sectionGap;
+
+  // ── Active Pathways ──
+  ctx.fillStyle = '#8098b8';
+  ctx.font = `${smallFont}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText('Active Pathways', px, py);
+  py += lineH;
+
+  const pathways = getActivePathways(state.intensity, state.th);
+  const pillH = L.narrow ? 16 : 20;
+  const pillGap = 4;
+  let pillX = px;
+
+  for (const p of pathways) {
+    ctx.font = `${L.narrow ? 8 : 10}px 'Segoe UI', system-ui, sans-serif`;
+    const tw = ctx.measureText(p.name).width + 12;
+    if (pillX + tw > d.x + d.w - 14) {
+      pillX = px;
+      py += pillH + pillGap;
+    }
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.roundRect(pillX, py, tw, pillH, 3);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.name, pillX + 6, py + pillH / 2);
+    ctx.textBaseline = 'top';
+    ctx.globalAlpha = 1;
+    pillX += tw + pillGap;
+  }
+}
+
+function getActivePathways(t, th) {
+  const fatFrac = getFatOxRate(t, th) / (getFatOxRate(t, th) + getCarbOxRate(t, th) + 0.01);
+  return [
+    { name: '\u03B2-Oxidation', color: '#E88020', opacity: Math.max(0.2, fatFrac) },
+    { name: 'Glycolysis', color: '#D4A843', opacity: Math.max(0.3, 1 - fatFrac) },
+    { name: 'Krebs', color: '#4A90D9', opacity: Math.max(0.3, 0.4 + t * 0.5) },
+    { name: 'ETC', color: '#8B7BB0', opacity: Math.max(0.3, 0.4 + t * 0.5) },
+    { name: 'Sarcomere', color: '#5A9E5A', opacity: Math.max(0.2, t) },
+  ];
+}
+
+function drawLegend() {
+  const g = L.graph;
+  const items = [
+    { label: 'Lactate (mmol/L)', color: COLORS.lactateCurve, dashed: false },
+  ];
+  if (state.showFatCurve) items.push({ label: 'Fat Ox (scaled)', color: COLORS.fatCurve, dashed: true });
+  if (state.showCarbCurve) items.push({ label: 'Carb Ox (scaled)', color: COLORS.carbCurve, dashed: true });
+
+  const fontSize = L.narrow ? 9 : 10;
+  ctx.font = `${fontSize}px 'Segoe UI', system-ui, sans-serif`;
+
+  let lx = g.x + 8;
+  const ly = g.y + 8;
+
+  for (const item of items) {
+    // Line sample
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = item.dashed ? 1.5 : 2.5;
+    if (item.dashed) ctx.setLineDash([5, 3]);
+    ctx.beginPath();
+    ctx.moveTo(lx, ly + 6);
+    ctx.lineTo(lx + 20, ly + 6);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = '#8098b8';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.label, lx + 24, ly + 6);
+
+    lx += ctx.measureText(item.label).width + 40;
+  }
+}
+
+// ─── Main Render ───
+
+function render() {
+  computeLayout();
+  drawBackground();
+  drawZoneShading();
+  drawAxes();
+  drawLT1LT2();
+  drawLactateCurve();
+  drawFatCurve();
+  drawCarbCurve();
+  drawIntensityMarker();
+  drawDashboard();
+  drawLegend();
+}
+
+// ─── Controls ───
+
+const intensitySlider = document.getElementById('intensity-slider');
+const zoneDisplay = document.getElementById('zone-display');
+const lactateDisplay = document.getElementById('lactate-display');
+const rerDisplay = document.getElementById('rer-display');
+const trainedBtn = document.getElementById('trained-btn');
+const howBtn = document.getElementById('how-btn');
+const trainingBtn = document.getElementById('training-btn');
+const detailsBtn = document.getElementById('details-btn');
+const phasesBtn = document.getElementById('phases-btn');
+const processPanel = document.getElementById('process-panel');
+const trainingPanel = document.getElementById('training-panel');
+const phasesPanel = document.getElementById('phases-panel');
+const infoPanel = document.getElementById('info-panel');
+
+function updateStats() {
+  zoneDisplay.textContent = state.zone;
+  lactateDisplay.textContent = state.lactate.toFixed(1);
+  rerDisplay.textContent = state.rer.toFixed(2);
+
+  const zone = state.zone;
+  const zoneColors = { 1: '#2a7a3a', 2: '#b8860b', 3: '#D94A4A' };
+  zoneDisplay.style.color = zoneColors[zone];
+
+  // Sync phase row highlight
+  if (phasesPanel.classList.contains('open')) {
+    highlightPhaseRow();
+  }
+
+  // Update info panel
+  if (!tutorial.isActive) {
+    const msgs = {
+      1: 'Zone 1 \u2014 Aerobic base. Fat oxidation dominates. Lactate clearance exceeds production.',
+      2: 'Zone 2 \u2014 Threshold territory. Mixed fuel, rising lactate. Steady-state is still possible (MLSS).',
+      3: 'Zone 3 \u2014 Anaerobic. Glycolytic crisis. Lactate surging, pH dropping. Unsustainable.',
+    };
+    infoPanel.textContent = msgs[zone];
+  }
+}
+
+intensitySlider.addEventListener('input', (e) => {
+  if (tutorial.isActive) return;
+  state.intensity = parseInt(e.target.value) / 100;
+});
+
+trainedBtn.addEventListener('click', () => {
+  state.trained = !state.trained;
+  trainedBtn.classList.toggle('active', state.trained);
+  trainedBtn.textContent = state.trained ? 'Trained \u2713' : 'Trained';
+});
+
+howBtn.addEventListener('click', () => {
+  if (tutorial.isActive) return;
+  tutorial.enter();
+});
+
+detailsBtn.addEventListener('click', () => {
+  const isOpen = processPanel.classList.toggle('open');
+  detailsBtn.classList.toggle('active', isOpen);
+  if (isOpen) {
+    trainingPanel.classList.remove('open');
+    trainingBtn.classList.remove('active');
+    phasesPanel.classList.remove('open');
+    phasesBtn.classList.remove('active');
+  }
+});
+
+trainingBtn.addEventListener('click', () => {
+  if (tutorial.isActive) tutorial.exit();
+  const isOpen = trainingPanel.classList.toggle('open');
+  trainingBtn.classList.toggle('active', isOpen);
+  if (isOpen) {
+    processPanel.classList.remove('open');
+    detailsBtn.classList.remove('active');
+    phasesPanel.classList.remove('open');
+    phasesBtn.classList.remove('active');
+  }
+});
+
+phasesBtn.addEventListener('click', () => {
+  if (tutorial.isActive) tutorial.exit();
+  const isOpen = phasesPanel.classList.toggle('open');
+  phasesBtn.classList.toggle('active', isOpen);
+  if (isOpen) {
+    processPanel.classList.remove('open');
+    detailsBtn.classList.remove('active');
+    trainingPanel.classList.remove('open');
+    trainingBtn.classList.remove('active');
+  }
+});
+
+// ─── Phase Row Click → Set Intensity ───
+
+const PHASE_INTENSITIES = [50, 55, 65, 75, 90];
+
+function highlightPhaseRow() {
+  const pct = Math.round(state.intensity * 100);
+  for (const row of phasesPanel.querySelectorAll('.phase-row')) {
+    row.classList.toggle('active', parseInt(row.dataset.phaseIntensity) === pct);
+  }
+}
+
+phasesPanel.addEventListener('click', (e) => {
+  const row = e.target.closest('.phase-row');
+  if (!row) return;
+  const pct = parseInt(row.dataset.phaseIntensity);
+  state.intensity = pct / 100;
+  intensitySlider.value = pct;
+  highlightPhaseRow();
+});
+
+// ─── Glossary ───
+
+const GLOSSARY = {
+  lt1: {
+    title: 'LT1 \u2014 First Lactate Threshold',
+    body: '<strong>~2 mmol/L blood lactate.</strong> The intensity at which lactate begins accumulating above baseline. Below LT1, lactate clearance (via oxidative fibers, heart, liver) keeps pace with production. Above it, production starts to edge ahead. Typically ~65% VO\u2082max untrained, ~75% trained.',
+  },
+  lt2: {
+    title: 'LT2 \u2014 Second Lactate Threshold / MLSS',
+    body: '<strong>~4 mmol/L blood lactate.</strong> Maximal Lactate Steady State \u2014 the highest intensity at which blood lactate stabilizes. Above LT2, lactate rises continuously and exercise becomes unsustainable. Typically ~75% VO\u2082max untrained, ~85% trained.',
+  },
+  mlss: {
+    title: 'MLSS \u2014 Maximal Lactate Steady State',
+    body: 'The highest exercise intensity at which blood lactate concentration stabilizes over time (~30 min). Essentially synonymous with LT2. Above MLSS, lactate accumulates relentlessly and fatigue is inevitable.',
+  },
+  rer: {
+    title: 'RER \u2014 Respiratory Exchange Ratio',
+    body: 'VCO\u2082 / VO\u2082. Indicates fuel mix: <strong>0.70</strong> = 100% fat, <strong>0.85</strong> = ~50/50, <strong>1.00</strong> = 100% carbs. Values >1.0 indicate CO\u2082 from bicarbonate buffering of H\u207A (not just metabolism).',
+  },
+  betaOxidation: {
+    title: '\u03B2-Oxidation \u2014 Fatty Acid Spiral',
+    body: 'Mitochondrial pathway that cleaves 2-carbon units from fatty acid chains, producing <strong>acetyl-CoA</strong> + <strong>NADH</strong> + <strong>FADH\u2082</strong> each cycle. Feeds directly into the Krebs cycle. A 16-carbon palmitate yields ~130 ATP \u2014 far more than glucose, but requires more oxygen and is slower.',
+  },
+  fuelCrossover: {
+    title: 'Fuel Crossover Point',
+    body: 'The exercise intensity at which carbohydrate oxidation exceeds fat oxidation. Typically near LT1 (~65% VO\u2082max). Below crossover, fat is the primary fuel; above it, carbs take over. Training shifts this point rightward.',
+  },
+  cptI: {
+    title: 'CPT-I \u2014 Carnitine Palmitoyltransferase I',
+    body: 'The enzyme gatekeeper on the outer mitochondrial membrane. Attaches carnitine to fatty acyl-CoA so it can cross into the matrix for \u03B2-oxidation. <strong>Inhibited by malonyl-CoA</strong> at high glycolytic rates, which is why fat oxidation drops sharply above LT2.',
+  },
+  malonylCoA: {
+    title: 'Malonyl-CoA \u2014 Fat Oxidation Inhibitor',
+    body: 'Produced when acetyl-CoA carboxylase (ACC) is active at high carbohydrate flux. <strong>Inhibits CPT-I</strong>, blocking fatty acid entry into mitochondria. This is the molecular mechanism behind the drop in fat oxidation at high intensity.',
+  },
+  fatmax: {
+    title: 'Fatmax \u2014 Peak Fat Oxidation',
+    body: 'The exercise intensity at which fat oxidation rate peaks. Typically <strong>~55% VO\u2082max</strong> untrained, <strong>~65%</strong> in trained athletes. Below Fatmax, increasing intensity recruits more fat; above it, the shift toward glycolysis reduces fat oxidation.',
+  },
+  lactateShuttle: {
+    title: 'Lactate Shuttle (MCT1/MCT4)',
+    body: 'Glycolytic (Type II) fibers produce lactate and export it via <strong>MCT4</strong>. Neighboring oxidative (Type I) fibers import it via <strong>MCT1</strong> and oxidize it for fuel. The heart is also a major lactate consumer. This "shuttle" means lactate is a <em>fuel</em>, not just a waste product.',
+  },
+};
+
+function getHitRegions() {
+  const g = L.graph;
+  const th = state.th;
+  const regions = [];
+
+  // LT1 line
+  const lt1x = g.x + ((th.lt1 - MIN_T) / T_RANGE) * g.w;
+  regions.push({
+    id: 'lt1', cursor: true,
+    test: (mx, my) => Math.abs(mx - lt1x) < 12 && my > g.y && my < g.y + g.h,
+  });
+
+  // LT2 line
+  const lt2x = g.x + ((th.lt2 - MIN_T) / T_RANGE) * g.w;
+  regions.push({
+    id: 'lt2', cursor: true,
+    test: (mx, my) => Math.abs(mx - lt2x) < 12 && my > g.y && my < g.y + g.h,
+  });
+
+  // Fatmax region (near the peak of fat curve)
+  const fmx = g.x + ((th.fatmax - MIN_T) / T_RANGE) * g.w;
+  regions.push({
+    id: 'fatmax', cursor: true,
+    test: (mx, my) => Math.abs(mx - fmx) < 16 && my > g.y + g.h * 0.3 && my < g.y + g.h * 0.8,
+  });
+
+  // Dashboard labels — approximate positions
+  const d = L.dash;
+  const dashLabelRegions = [
+    { id: 'rer', yFrac: 0.55, hFrac: 0.05 },
+    { id: 'betaOxidation', yFrac: 0.75, hFrac: 0.05 },
+    { id: 'lactateShuttle', yFrac: 0.35, hFrac: 0.05 },
+  ];
+
+  for (const r of dashLabelRegions) {
+    regions.push({
+      id: r.id, cursor: true,
+      test: (mx, my) => mx > d.x && mx < d.x + d.w && Math.abs(my - (d.y + d.h * r.yFrac)) < d.h * r.hFrac + 8,
+    });
+  }
+
+  return regions;
+}
+
+const tooltip = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ─── Tutorial ───
+
+const TUTORIAL_CONFIGS = [
+  { intensity: 0.50, desc: '<strong>Step 1 \u2014 Easy Aerobic (50% VO\u2082max):</strong> Baseline for our figure. Lactate ~1.3 mmol/L \u2014 well below threshold. Fat oxidation is near its peak (<span class="tag tag-fat">Fatmax</span>). \u03B2-oxidation feeds acetyl-CoA into Krebs. This is the classic "fat-burning zone." RER ~0.80.' },
+  { intensity: 0.55, desc: '<strong>Step 2 \u2014 Fatmax (55% VO\u2082max):</strong> Peak fat oxidation rate. The CPT-I shuttle is running at full capacity, importing fatty acids into mitochondria. Lactate still low (~1.4 mmol/L). Both fuel systems active but fat dominates. RER ~0.82.' },
+  { intensity: 0.65, desc: '<strong>Step 3 \u2014 At LT1 (65% VO\u2082max):</strong> The <span class="tag tag-threshold">fuel crossover</span> point. Carb oxidation now exceeds fat. Type II fibers are being recruited, increasing glycolytic flux. Lactate starts rising above baseline (~2 mmol/L) but clearance still keeps pace.' },
+  { intensity: 0.72, desc: '<strong>Step 4 \u2014 Zone 2 (72% VO\u2082max):</strong> Mixed fuel territory. Both fat and carb burning hard. The <span class="tag tag-carb">lactate shuttle</span> (MCT1/MCT4) is active \u2014 lactate produced by glycolytic fibers is consumed by oxidative fibers. Lactate ~3 mmol/L, still below MLSS. This is tempo pace.' },
+  { intensity: 0.75, desc: '<strong>Step 5 \u2014 At LT2 (75% VO\u2082max):</strong> The tipping point. <span class="tag tag-zone3">Malonyl-CoA</span> inhibits CPT-I, blocking fat into mitochondria. Fat oxidation drops sharply. Glycolytic flux exceeds clearance \u2014 lactate ~4 mmol/L and climbing. H\u207A from ATP hydrolysis overwhelms buffering. pH dropping.' },
+  { intensity: 0.88, desc: '<strong>Step 6 \u2014 Zone 3 (88% VO\u2082max):</strong> <span class="tag tag-zone3">Glycolytic crisis</span>. Nearly 100% carb fuel. Lactate ~7 mmol/L and rising steeply. pH dropping below 7.1. This is unsustainable \u2014 glycogen depletes fast, H\u207A inhibits PFK-1, and cross-bridge cycling in the sarcomere degrades. Approaching failure.' },
+];
+
+const tutorial = new TutorialManager({
+  stepCount: 6,
+  accents: [null, '#2a7a3a', '#2a7a3a', '#9B59B6', '#b8860b', '#D94A4A', '#8B2020'],
+  // 1: Zone1, 2: Fatmax/Zone1, 3: LT1, 4: Zone2, 5: LT2, 6: Zone3
+  descriptions: TUTORIAL_CONFIGS.map(c => c.desc),
+  onEnter: () => {
+    processPanel.classList.remove('open');
+    detailsBtn.classList.remove('active');
+    trainingPanel.classList.remove('open');
+    trainingBtn.classList.remove('active');
+    phasesPanel.classList.remove('open');
+    phasesBtn.classList.remove('active');
+  },
+  onExit: () => {
+    state.intensity = parseInt(intensitySlider.value) / 100;
+  },
+  onStepChange: (step) => {
+    const config = TUTORIAL_CONFIGS[step - 1];
+    state.intensity = config.intensity;
+    intensitySlider.value = Math.round(config.intensity * 100);
+  },
+});
+
+// ─── Resize ───
+
+function onResize() {
+  cm.resize();
+  computeLayout();
+}
+
+window.addEventListener('resize', onResize);
+
+// ─── Init ───
+
+window.addEventListener('load', () => {
+  initNav('metabolic-profile');
+  cm.resize();
+  computeLayout();
+
+  createAnimationLoop(
+    () => {
+      updateStats();
+    },
+    () => {
+      render();
+    }
+  );
+});
+</script>
+</body>
+</html>

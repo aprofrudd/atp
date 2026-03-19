@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sarcomere — How ATP Powers Muscle Action</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #FFD700;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>Reverse Engineering &mdash; Sarcomere: How ATP Powers Muscle Action</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="atp-slider">ATP Concentration:</label>
+    <input type="range" id="atp-slider" min="0" max="100" value="50">
+  </div>
+  <div class="stats">
+    <span>Length: <span class="stat-val" id="length-display">100%</span></span>
+    <span>Force: <span class="stat-val" id="force-display">0</span></span>
+    <span>Cycling: <span class="stat-val" id="cycle-rate">0/s</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Adjust the ATP concentration slider to fuel the cross-bridge cycle and drive the sarcomere to shorten.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<!-- Hidden step descriptions for tutorial extraction -->
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+    <div class="analogy"><strong>Analogy:</strong> Imagine a factory floor where the machines work perfectly — but the power grid can't keep up. The motors are fine; it's the local power supply that fails under load. That's your sarcomere during intense exercise.</div>
+    <h3>The Bottleneck</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>Local ATP supply at the myofibrils.</strong> Each cross-bridge cycle consumes one ATP. During intense contraction, demand at the myosin heads outstrips local ATP regeneration. When ATP runs out, myosin heads lock in rigor — the muscle seizes, not because the motor is broken, but because it has no fuel.</div>
+    </div>
+    <h3>How Endurance Training Adapts</h3>
+    <div class="step">
+      <div class="step-num" style="background:#5A9E5A">1</div>
+      <div class="step-body"><strong>Intermyofibrillar mitochondria increase 40-100%.</strong> Training packs more mitochondria directly between the myofibrils — right where ATP is consumed. This slashes the diffusion distance between ATP production and the myosin heads that need it.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#5A9E5A">2</div>
+      <div class="step-body"><strong>Capillary-to-fiber ratio increases 1.5-2x.</strong> More capillaries surrounding each muscle fiber means more oxygen delivery. Mitochondria can only make ATP if they have O&#8322; — more capillaries keep the supply chain flowing under heavy demand.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#5A9E5A">3</div>
+      <div class="step-body"><strong>Shift toward Type I oxidative phenotype.</strong> Training converts fast-twitch fibers toward a more oxidative profile — more mitochondria, more myoglobin, greater fatigue resistance. The muscle trades peak power for sustained output.</div>
+    </div>
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">40-100%</div><div class="lbl">Mitochondrial density increase</div></div>
+      <div class="num-card"><div class="val">1.5-2x</div><div class="lbl">Capillary-to-fiber ratio</div></div>
+      <div class="num-card"><div class="val">&lt;1 &#181;m</div><div class="lbl">ATP diffusion distance</div></div>
+      <div class="num-card"><div class="val">Type I</div><div class="lbl">Oxidative fiber shift</div></div>
+    </div>
+    <div class="analogy"><strong>Key insight:</strong> The bottleneck isn't the motor — it's the supply infrastructure. Training doesn't make myosin heads cycle faster; it ensures they never run out of fuel by surrounding them with more mitochondria, more capillaries, and a more oxidative fiber type.</div>
+  </div>
+</div>
+
+<div id="process-panel" style="display:none">
+  <div class="process-inner">
+    <div class="step"><div class="step-body">
+      <strong>The Sarcomere at Rest.</strong> You're looking at one sarcomere &mdash; the smallest force-generating unit of a muscle fiber, about 2.5 &mu;m long. The <strong>Z-lines</strong> (blue bars) mark the boundaries. Between them, <strong>thin actin filaments</strong> (red lines) extend inward from each Z-line, while <strong>thick myosin filaments</strong> (green bars) sit anchored at the <strong>M-line</strong> (center). The distinct banding pattern &mdash; dark <strong>A-band</strong> (where myosin lives), light <strong>I-band</strong> (actin only), and pale <strong>H-zone</strong> (myosin only) &mdash; gives skeletal muscle its "striated" appearance.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>Rigor State &mdash; No ATP, No Movement.</strong> Look at the myosin heads (triangular projections). Without ATP, each head is locked tightly onto actin in its post-power-stroke position. This is <strong>rigor</strong> &mdash; the same state that causes rigor mortis after death, when ATP runs out and every cross-bridge freezes in place. The muscle is stiff and cannot relax. Set the ATP slider to zero to see this state.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>ATP Binds &rarr; Detachment.</strong> When an <span class="tag" style="background:#FFD700;color:#333">ATP</span> molecule arrives and binds to the myosin head, it triggers a conformational change that <em>releases</em> the head from actin. The cross-bridge is broken. ATP acts like a "key" that unlocks the tight grip. Without this step, the muscle stays rigid.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>Recovery Stroke &mdash; Cocking the Spring.</strong> The myosin head hydrolyzes the bound ATP into <span class="tag" style="background:#80B0E0">ADP</span> + <span class="tag" style="background:#90D090">P&#7522;</span> + <span class="tag" style="background:#D94A4A">H&#8314;</span>. The released energy is stored as mechanical strain &mdash; the head pivots ("cocks") back to its pre-stroke position, like pulling back a spring. Both ADP and P&#7522; remain bound. The head is now primed and searching for a new binding site on actin. This H&#8314; release is the real source of cytoplasmic acidosis during intense exercise &mdash; not lactate, which actually consumes H&#8314;.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>Power Stroke &mdash; The Force Generator.</strong> The cocked myosin head reattaches to actin at a <em>new</em> binding site (further along the filament). Contact triggers P&#7522; release, which initiates the <strong>power stroke</strong> &mdash; the head pivots forcefully, pulling the actin filament toward the M-line. ADP is then released. The head is now back in rigor, bound tightly to actin. One cycle complete.
+    </div></div>
+    <div class="step"><div class="step-body">
+      <strong>Sliding Filament Result.</strong> With many myosin heads cycling asynchronously (like a rowing crew), actin filaments slide inward past the myosin. The Z-lines move closer together and the sarcomere shortens. Note: the filaments themselves don't change length &mdash; they <em>slide</em> past each other. This is the <strong>sliding filament theory</strong> (Huxley & Huxley, 1954). Increase ATP to see rapid cycling and visible shortening.
+    </div></div>
+  </div>
+</div>
+
+<script type="module">
+import { lerp, toRad, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const COLORS = {
+  zLine:       '#4A90D9',
+  zLineDark:   '#3060A0',
+  mLine:       '#808890',
+  mLineDark:   '#606870',
+  actin:       '#D94A4A',
+  actinDark:   '#A03030',
+  actinSite:   '#FF6B6B',
+  myosin:      '#5A9E5A',
+  myosinDark:  '#3D7A3D',
+  headRigor:   '#D4A843',
+  headDetach:  '#4A90D9',
+  headCocked:  '#8B7BB0',
+  headStroke:  '#D94A4A',
+  atp:         '#FFD700',
+  adp:         '#80B0E0',
+  pi:          '#90D090',
+  hPlus:       '#D94A4A',
+  aBand:       'rgba(90, 158, 90, 0.08)',
+  iBand:       'rgba(74, 144, 217, 0.06)',
+  hZone:       'rgba(128, 136, 144, 0.06)',
+  bgTop:       '#1E2240',
+  bgBot:       '#1A1A2E',
+  bandLabel:   '#405060',
+};
+
+// Cross-bridge cycle states
+const STATE = { RIGOR: 0, DETACH: 1, COCKED: 2, STROKE: 3 };
+const STATE_COLORS = [COLORS.headRigor, COLORS.headDetach, COLORS.headCocked, COLORS.headStroke];
+const STATE_NAMES = ['Rigor', 'Detach', 'Recovery', 'Power Stroke'];
+
+const NUM_HEADS_PER_SIDE = 6;
+
+const STEP_CONFIGS = [
+  null,
+  // 1: Sarcomere at rest — show full structure
+  { atp: 0.5, highlight: ['zLine', 'mLine', 'actin', 'myosin'], dim: [], freezeHeads: false, forcedState: null, showAll: true, speed: 0.3 },
+  // 2: Rigor — highlight one head locked on
+  { atp: 0, highlight: ['myosinHead'], dim: ['zLine', 'mLine'], freezeHeads: true, forcedState: STATE.RIGOR, showAll: false, speed: 0 },
+  // 3: ATP binds → Detachment
+  { atp: 0.3, highlight: ['myosinHead'], dim: ['zLine', 'mLine'], freezeHeads: true, forcedState: STATE.DETACH, showAll: false, speed: 0 },
+  // 4: Recovery stroke
+  { atp: 0.3, highlight: ['myosinHead'], dim: ['zLine', 'mLine'], freezeHeads: true, forcedState: STATE.COCKED, showAll: false, speed: 0 },
+  // 5: Power stroke
+  { atp: 0.5, highlight: ['myosinHead'], dim: ['zLine', 'mLine'], freezeHeads: true, forcedState: STATE.STROKE, showAll: false, speed: 0 },
+  // 6: Sliding filament result
+  { atp: 0.8, highlight: [], dim: [], freezeHeads: false, forcedState: null, showAll: true, speed: 0.8 },
+];
+
+const STEP_ACCENT = [
+  null, '#4A90D9', '#D4A843', '#FFD700', '#8B7BB0', '#D94A4A', '#5A9E5A',
+];
+
+const GLOSSARY = {
+  sarcomere: {
+    title: 'Sarcomere',
+    body: '<strong>Etymology:</strong> Greek <em>sarx</em> (flesh) + <em>meros</em> (part).<br><br>The smallest force-generating unit of a muscle fiber, ~2.5 \u00B5m long. Bounded by Z-lines, it contains overlapping thin (actin) and thick (myosin) filaments. When myosin heads cycle through cross-bridge states, actin slides inward and the sarcomere shortens, generating force.',
+  },
+  zLine: {
+    title: 'Z-line (Z-disc)',
+    body: '<strong>Etymology:</strong> German <em>Zwischenscheibe</em> (between-disc).<br><br>A dense protein disc that defines the sarcomere boundary. Actin filaments are anchored here. During shortening, Z-lines move closer together as actin is pulled inward by myosin heads. The distance between adjacent Z-lines <em>is</em> the sarcomere length.',
+  },
+  mLine: {
+    title: 'M-line',
+    body: '<strong>Etymology:</strong> German <em>Mittelscheibe</em> (middle disc).<br><br>A structural line at the exact center of the sarcomere where myosin filaments are anchored and cross-linked. It keeps the thick filaments aligned in register. The M-line doesn\'t move during shortening \u2014 it\'s the reference point.',
+  },
+  aBand: {
+    title: 'A-band',
+    body: '<strong>Etymology:</strong> "Anisotropic" \u2014 appears dark under polarized light microscopy because the thick myosin filaments scatter light differently.<br><br>Spans the entire length of the myosin filament. The A-band does NOT change length during shortening \u2014 the myosin filament is rigid. What changes is how much actin overlaps within it.',
+  },
+  iBand: {
+    title: 'I-band',
+    body: '<strong>Etymology:</strong> "Isotropic" \u2014 appears light under polarized light because it contains only thin actin filaments.<br><br>The region of actin-only filament, between the Z-line and the edge of the myosin. The I-band <em>shortens</em> as actin slides deeper into the A-band.',
+  },
+  hZone: {
+    title: 'H-zone',
+    body: '<strong>Etymology:</strong> German <em>heller</em> (brighter) \u2014 appears lighter because no actin overlaps here.<br><br>The central portion of the A-band where only myosin is present. The H-zone <em>shortens</em> as actin filaments slide further inward to overlap with more myosin.',
+  },
+  actin: {
+    title: 'Actin (Thin Filament)',
+    body: '<strong>Etymology:</strong> Latin <em>actus</em> (motion, action).<br><br>A double-helical polymer that serves as the "track" for myosin heads to walk along. Each actin monomer has a myosin-binding site. In relaxed muscle, tropomyosin blocks these sites; when Ca\u00B2\u207A arrives (from the sarcoplasmic reticulum), tropomyosin shifts to expose them.',
+  },
+  myosin: {
+    title: 'Myosin (Thick Filament)',
+    body: '<strong>Etymology:</strong> Greek <em>mys</em> (muscle).<br><br>A bundle of ~300 myosin II molecules, each with a long tail and two globular heads. The tails pack together to form the thick filament backbone. The heads protrude outward, reaching for actin binding sites. Myosin is both a structural protein and a molecular motor (an ATPase).',
+  },
+  myosinHead: {
+    title: 'Myosin Head (Motor Domain)',
+    body: 'The business end of the myosin molecule. Each head contains an <strong>actin-binding site</strong>, an <strong>ATP-binding pocket</strong>, and a <strong>lever arm</strong> that pivots during the power stroke (~10 nm swing).<br><br>The head is an ATPase \u2014 it hydrolyzes ATP to ADP + P\u1d62, storing the energy as mechanical strain. This strain is released during the power stroke when the head pivots and pulls actin.',
+  },
+  crossBridge: {
+    title: 'Cross-Bridge',
+    body: 'The connection formed when a myosin head binds to an actin filament. Named because it "bridges" the gap between thick and thin filaments.<br><br>The cross-bridge cycle (attach \u2192 pivot \u2192 detach \u2192 re-cock) is the fundamental unit of muscle action. Each cycle moves actin ~10 nm and generates ~2 pN of force. Hundreds of heads cycling asynchronously produce smooth, sustained force.',
+  },
+  powerStroke: {
+    title: 'Power Stroke',
+    body: 'The force-generating step of the cross-bridge cycle. When the cocked myosin head reattaches to actin, P\u1d62 release triggers the lever arm to pivot ~70\u00B0, pulling the actin filament ~10 nm toward the M-line. ADP is then released.<br><br>The power stroke converts stored chemical energy (from ATP hydrolysis) into mechanical work. It\'s like releasing a mousetrap \u2014 the energy was stored during cocking, released during the stroke.',
+  },
+  rigor: {
+    title: 'Rigor',
+    body: '<strong>Etymology:</strong> Latin <em>rigor</em> (stiffness).<br><br>The state where myosin heads are locked onto actin with no ATP bound. In life, ATP quickly binds to release the head and continue cycling. After death, ATP depletes and all heads lock \u2014 this is <strong>rigor mortis</strong>, which persists until the proteins degrade (~24\u201348 hours).',
+  },
+  hPlus: {
+    title: 'H\u207A (Proton)',
+    body: 'ATP hydrolysis releases a proton: <strong>ATP + H\u2082O \u2192 ADP + P\u1d62 + H\u207A</strong>. During intense exercise, rapid cross-bridge cycling floods the cytoplasm with H\u207A, dropping pH \u2014 this is the real source of exercise-induced acidosis.<br><br>Contrary to popular belief, <strong>lactate does not cause acidosis</strong>. Lactate dehydrogenase (LDH) actually <em>consumes</em> H\u207A when converting pyruvate to lactate (NADH + H\u207A + pyruvate \u2192 NAD\u207A + lactate), acting as a buffer against the H\u207A produced here at the myosin heads.',
+  },
+  slidingFilament: {
+    title: 'Sliding Filament Theory',
+    body: 'Proposed independently by Hugh Huxley and Andrew Huxley in 1954. The key insight: muscle action occurs because actin and myosin filaments <em>slide past each other</em> \u2014 neither filament changes length.<br><br>Evidence: the A-band stays constant during shortening (myosin length unchanged), while I-bands and H-zones shrink (more overlap). This was revolutionary \u2014 previous theories assumed the proteins themselves shortened.',
+  },
+};
+
+// Layout computed dynamically
+let L = {};
+
+// ============================================================
+// 2. STATE
+// ============================================================
+class SarcoState {
+  constructor() {
+    this.atpLevel = 0.5;         // 0-1 from slider
+    this.contraction = 0;        // 0-1, how much the sarcomere has shortened
+    this.targetContraction = 0;
+    this.cycleCount = 0;
+    this.cycleTimes = [];
+    this.running = true;
+
+    // Tutorial
+    this.tutorialStep = null;
+    this.savedAtp = 0.5;
+    this.stepTransition = 1;
+    this.tutorialTime = 0;
+
+    // Myosin heads — each side has NUM_HEADS_PER_SIDE heads
+    this.headsLeft = [];
+    this.headsRight = [];
+    for (let i = 0; i < NUM_HEADS_PER_SIDE; i++) {
+      this.headsLeft.push({ state: STATE.RIGOR, phase: Math.random(), timer: Math.random() * 2 });
+      this.headsRight.push({ state: STATE.RIGOR, phase: Math.random(), timer: Math.random() * 2 });
+    }
+  }
+
+  get effectiveAtp() {
+    if (this.tutorialStep !== null) {
+      return STEP_CONFIGS[this.tutorialStep].atp;
+    }
+    return this.atpLevel;
+  }
+
+  get sarcomereLengthPct() {
+    // At rest = 100%, max contraction = ~65%
+    return Math.round(100 - this.contraction * 35);
+  }
+
+  get force() {
+    // Force proportional to # of heads in STROKE state and ATP level
+    let strokeHeads = 0;
+    for (const h of [...this.headsLeft, ...this.headsRight]) {
+      if (h.state === STATE.STROKE) strokeHeads++;
+    }
+    return strokeHeads;
+  }
+
+  get cyclesPerSecond() {
+    if (this.cycleTimes.length < 2) return 0;
+    const span = (this.cycleTimes[this.cycleTimes.length - 1] - this.cycleTimes[0]) / 1000;
+    return span > 0 ? ((this.cycleTimes.length - 1) / span) : 0;
+  }
+
+  update(dt) {
+    if (!this.running) return;
+
+    const atp = this.effectiveAtp;
+
+    if (this.tutorialStep !== null) {
+      this.tutorialTime += dt;
+      if (this.stepTransition < 1) {
+        this.stepTransition = Math.min(1, this.stepTransition + dt / 0.3);
+      }
+    }
+
+    const cfg = this.tutorialStep !== null ? STEP_CONFIGS[this.tutorialStep] : null;
+
+    // Update heads
+    const allHeads = [...this.headsLeft, ...this.headsRight];
+    for (const head of allHeads) {
+      if (cfg && cfg.freezeHeads && cfg.forcedState !== null) {
+        // In tutorial with forced state, smoothly transition the demo head
+        head.state = cfg.forcedState;
+        head.timer = 0;
+        head.phase = 0.5; // midpoint
+        continue;
+      }
+
+      head.timer += dt;
+
+      // Cycle speed depends on ATP
+      const cycleSpeed = atp * 3; // seconds per cycle at max ATP
+      if (cycleSpeed < 0.01) {
+        // No ATP → locked in rigor
+        head.state = STATE.RIGOR;
+        continue;
+      }
+
+      const stepDuration = 1 / (cycleSpeed + 0.01);
+
+      if (head.timer >= stepDuration) {
+        head.timer = 0;
+        const prevState = head.state;
+        head.state = (head.state + 1) % 4;
+        // ATP hydrolysis: DETACH → COCKED releases ADP + Pi + H⁺
+        if (prevState === STATE.DETACH && head.state === STATE.COCKED) {
+          // Compute head screen position for particle spawn
+          const isLeft = this.headsLeft.includes(head);
+          const idx = isLeft ? this.headsLeft.indexOf(head) : this.headsRight.indexOf(head);
+          const spacing = L.myosinHalfLen / (NUM_HEADS_PER_SIDE + 1);
+          const baseX = isLeft
+            ? L.mLineX - spacing * (idx + 1)
+            : L.mLineX + spacing * (idx + 1);
+          const baseY = L.myosinY;
+          spawnADP(baseX, baseY);
+          spawnPi(baseX, baseY);
+          spawnHPlus(baseX, baseY);
+        }
+        // Count full cycles (STROKE → RIGOR transition)
+        if (prevState === STATE.STROKE && head.state === STATE.RIGOR) {
+          this.cycleCount++;
+          this.cycleTimes.push(performance.now());
+        }
+      }
+
+      // Phase within current state (0-1)
+      head.phase = Math.min(head.timer / stepDuration, 1);
+    }
+
+    // Contraction: target based on fraction of heads doing work
+    const activeHeads = allHeads.filter(h => h.state !== STATE.RIGOR).length;
+    this.targetContraction = (activeHeads / allHeads.length) * atp;
+    this.contraction += (this.targetContraction - this.contraction) * 2 * dt;
+    this.contraction = Math.max(0, Math.min(1, this.contraction));
+
+    // Prune cycle timestamps
+    const now = performance.now();
+    while (this.cycleTimes.length && this.cycleTimes[0] < now - 3000) {
+      this.cycleTimes.shift();
+    }
+  }
+}
+
+const sim = new SarcoState();
+
+// Tutorial helpers
+function tCfg() {
+  return sim.tutorialStep !== null ? STEP_CONFIGS[sim.tutorialStep] : null;
+}
+function componentOpacity(id) {
+  const cfg = tCfg();
+  if (!cfg) return 1;
+  if (cfg.dim.includes(id)) return lerp(1, 0.25, sim.stepTransition);
+  return 1;
+}
+function isHighlighted(id) {
+  const cfg = tCfg();
+  return cfg ? cfg.highlight.includes(id) : false;
+}
+
+// ============================================================
+// 3. PARTICLE SYSTEM
+// ============================================================
+const POOL = {
+  atpArrivals: [],
+  adpRelease: [],
+  piRelease: [],
+  hPlusRelease: [],
+};
+
+function initParticles() {
+  for (let i = 0; i < 15; i++) {
+    POOL.atpArrivals.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, opacity: 1, life: 0 });
+  }
+  for (let i = 0; i < 10; i++) {
+    POOL.adpRelease.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, opacity: 1, life: 0 });
+  }
+  for (let i = 0; i < 10; i++) {
+    POOL.piRelease.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, opacity: 1, life: 0 });
+  }
+  for (let i = 0; i < 10; i++) {
+    POOL.hPlusRelease.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, opacity: 1, life: 0 });
+  }
+}
+
+function clearAllParticles() {
+  for (const key of Object.keys(POOL)) {
+    for (const p of POOL[key]) p.active = false;
+  }
+}
+
+let atpSpawnTimer = 0;
+
+function spawnATP() {
+  const p = getInactive(POOL.atpArrivals);
+  if (!p) return;
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+  // Spawn from edges
+  const side = Math.random() < 0.5;
+  p.x = side ? L.leftEdge - 20 : L.rightEdge + 20;
+  p.y = L.myosinY + (Math.random() - 0.5) * 40;
+  p.vx = side ? (30 + Math.random() * 40) : -(30 + Math.random() * 40);
+  p.vy = (Math.random() - 0.5) * 20;
+}
+
+function spawnADP(x, y) {
+  const p = getInactive(POOL.adpRelease);
+  if (!p) return;
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+  p.x = x;
+  p.y = y;
+  p.vx = (Math.random() - 0.5) * 40;
+  p.vy = 20 + Math.random() * 30;
+}
+
+function spawnPi(x, y) {
+  const p = getInactive(POOL.piRelease);
+  if (!p) return;
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+  p.x = x;
+  p.y = y;
+  p.vx = (Math.random() - 0.5) * 40;
+  p.vy = -(20 + Math.random() * 30);
+}
+
+function spawnHPlus(x, y) {
+  const p = getInactive(POOL.hPlusRelease);
+  if (!p) return;
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+  p.x = x;
+  p.y = y;
+  p.vx = (Math.random() - 0.5) * 50;
+  p.vy = -(25 + Math.random() * 35);
+}
+
+function updateParticles(dt) {
+  const atp = sim.effectiveAtp;
+
+  // Spawn ATP particles
+  if (atp > 0.05) {
+    atpSpawnTimer += dt;
+    const interval = Math.max(0.2, 1.0 - atp * 0.8);
+    if (atpSpawnTimer >= interval) {
+      atpSpawnTimer = 0;
+      spawnATP();
+    }
+  }
+
+  for (const p of POOL.atpArrivals) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.opacity = Math.max(0, 1 - p.life / 2.5);
+    if (p.opacity <= 0 || p.x < L.leftEdge - 60 || p.x > L.rightEdge + 60) p.active = false;
+    // Fade when entering sarcomere
+    if (p.x > L.leftZLine && p.x < L.rightZLine) {
+      p.opacity *= 0.95;
+      if (p.opacity < 0.05) p.active = false;
+    }
+  }
+
+  for (const p of POOL.adpRelease) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 10 * dt; // slight gravity
+    p.opacity = Math.max(0, 1 - p.life / 2);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  for (const p of POOL.piRelease) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 10 * dt;
+    p.opacity = Math.max(0, 1 - p.life / 2);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  for (const p of POOL.hPlusRelease) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 8 * dt; // slight gravity, lighter than Pi
+    p.opacity = Math.max(0, 1 - p.life / 2);
+    if (p.opacity <= 0) p.active = false;
+  }
+}
+
+// ============================================================
+// 4. RENDERING
+// ============================================================
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+function computeLayout() {
+  const w = cm.cssWidth;
+  const h = cm.cssHeight;
+  const s = Math.min(w / 900, h / 500);
+
+  const cx = w / 2;
+  const cy = h * 0.45;
+
+  // Sarcomere dimensions
+  const restWidth = 500 * s; // full sarcomere width at rest
+  const contractionOffset = sim.contraction * 120 * s;
+  const sarcWidth = restWidth - contractionOffset;
+
+  const leftZ = cx - sarcWidth / 2;
+  const rightZ = cx + sarcWidth / 2;
+
+  // Myosin extends ~40% from center on each side
+  const myosinHalfLen = restWidth * 0.36;
+  const actinLen = sarcWidth / 2 - 6 * s; // actin from Z-line toward center
+
+  L = {
+    w, h, s, cx, cy,
+    scale: s,
+
+    restWidth,
+    sarcWidth,
+
+    leftZLine: leftZ,
+    rightZLine: rightZ,
+    mLineX: cx,
+
+    // Actin Y positions (two per side, above and below myosin)
+    actinTopY: cy - 22 * s,
+    actinBotY: cy + 22 * s,
+    actinLen,
+
+    // Myosin
+    myosinY: cy,
+    myosinHalfLen,
+    myosinThick: 8 * s,
+
+    // Head dimensions
+    headLen: 18 * s,
+    headW: 8 * s,
+
+    // Banding
+    aBandLeft: cx - myosinHalfLen,
+    aBandRight: cx + myosinHalfLen,
+
+    // Edges (for particles)
+    leftEdge: leftZ - 40 * s,
+    rightEdge: rightZ + 40 * s,
+
+    // Fonts
+    fontSm: Math.max(10, 11 * s) + 'px',
+    fontMd: Math.max(12, 13 * s) + 'px',
+    fontLg: Math.max(14, 16 * s) + 'px',
+  };
+}
+
+function drawBackground() {
+  const { w, h, s } = L;
+  // Subtle gradient background
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, COLORS.bgTop);
+  grad.addColorStop(1, COLORS.bgBot);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function drawBanding() {
+  const { s, cy, leftZLine, rightZLine, mLineX, aBandLeft, aBandRight } = L;
+  const bandH = 100 * s;
+  const top = cy - bandH / 2;
+
+  // I-bands (actin only regions)
+  ctx.fillStyle = COLORS.iBand;
+  ctx.fillRect(leftZLine, top, aBandLeft - leftZLine, bandH);
+  ctx.fillRect(aBandRight, top, rightZLine - aBandRight, bandH);
+
+  // A-band
+  ctx.fillStyle = COLORS.aBand;
+  ctx.fillRect(aBandLeft, top, aBandRight - aBandLeft, bandH);
+
+  // H-zone (center of A-band where no actin overlaps)
+  const leftActinEnd = leftZLine + L.actinLen;
+  const rightActinEnd = rightZLine - L.actinLen;
+  if (rightActinEnd > leftActinEnd) {
+    // There IS a gap (H-zone exists)
+    ctx.fillStyle = COLORS.hZone;
+    ctx.fillRect(leftActinEnd, top, rightActinEnd - leftActinEnd, bandH);
+  }
+
+  // Band labels
+  ctx.font = `${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.bandLabel;
+
+  const labelY = top - 6 * s;
+
+  // I-band labels
+  const iLeft = (leftZLine + Math.min(aBandLeft, leftZLine + L.actinLen)) / 2;
+  const iRight = (rightZLine + Math.max(aBandRight, rightZLine - L.actinLen)) / 2;
+  if (aBandLeft - leftZLine > 30 * s) {
+    ctx.fillText('I-band', iLeft, labelY);
+    ctx.fillText('I-band', iRight, labelY);
+  }
+
+  // A-band label
+  if (aBandRight - aBandLeft > 60 * s) {
+    ctx.fillText('A-band', mLineX, labelY);
+  }
+
+  // H-zone label
+  if (rightActinEnd > leftActinEnd && rightActinEnd - leftActinEnd > 30 * s) {
+    ctx.fillText('H-zone', mLineX, cy + bandH / 2 + 14 * s);
+  }
+}
+
+function drawZLines() {
+  const { s, cy, leftZLine, rightZLine } = L;
+  const halfH = 55 * s;
+  const w = 4 * s;
+
+  const alpha = componentOpacity('zLine');
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  if (isHighlighted('zLine')) {
+    for (const x of [leftZLine, rightZLine]) {
+      const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+      ctx.save();
+      ctx.strokeStyle = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+      ctx.shadowBlur = 10 + 8 * pulse;
+      ctx.globalAlpha = 0.5 + 0.3 * pulse;
+      ctx.beginPath();
+      ctx.moveTo(x, cy - halfH - 4);
+      ctx.lineTo(x, cy + halfH + 4);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  for (const x of [leftZLine, rightZLine]) {
+    ctx.fillStyle = COLORS.zLine;
+    roundRect(ctx, x - w / 2, cy - halfH, w, halfH * 2, 2 * s);
+    ctx.fill();
+    ctx.strokeStyle = COLORS.zLineDark;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Labels
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.zLineDark;
+  ctx.fillText('Z', leftZLine, cy - halfH - 8 * s);
+  ctx.fillText('Z', rightZLine, cy - halfH - 8 * s);
+
+  ctx.restore();
+}
+
+function drawMLine() {
+  const { s, cy, mLineX } = L;
+  const halfH = 40 * s;
+
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('mLine');
+
+  if (isHighlighted('mLine')) {
+    const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+    ctx.save();
+    ctx.strokeStyle = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.shadowBlur = 10 + 8 * pulse;
+    ctx.globalAlpha = 0.5 + 0.3 * pulse;
+    ctx.beginPath();
+    ctx.moveTo(mLineX, cy - halfH - 4);
+    ctx.lineTo(mLineX, cy + halfH + 4);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.strokeStyle = COLORS.mLine;
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([4 * s, 4 * s]);
+  ctx.beginPath();
+  ctx.moveTo(mLineX, cy - halfH);
+  ctx.lineTo(mLineX, cy + halfH);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.mLineDark;
+  ctx.fillText('M', mLineX, cy - halfH - 8 * s);
+
+  ctx.restore();
+}
+
+function drawActinFilaments() {
+  const { s, cy, leftZLine, rightZLine, actinTopY, actinBotY, actinLen } = L;
+
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('actin');
+
+  const highlight = isHighlighted('actin');
+  if (highlight) {
+    const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+    ctx.save();
+    ctx.strokeStyle = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.lineWidth = 6;
+    ctx.shadowColor = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.shadowBlur = 8 + 6 * pulse;
+    ctx.globalAlpha = 0.3 + 0.2 * pulse;
+    // Left side top and bottom
+    ctx.beginPath();
+    ctx.moveTo(leftZLine, actinTopY);
+    ctx.lineTo(leftZLine + actinLen, actinTopY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(leftZLine, actinBotY);
+    ctx.lineTo(leftZLine + actinLen, actinBotY);
+    ctx.stroke();
+    // Right side
+    ctx.beginPath();
+    ctx.moveTo(rightZLine, actinTopY);
+    ctx.lineTo(rightZLine - actinLen, actinTopY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(rightZLine, actinBotY);
+    ctx.lineTo(rightZLine - actinLen, actinBotY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.strokeStyle = COLORS.actin;
+  ctx.lineWidth = 3 * s;
+
+  // Left actin (from left Z-line rightward)
+  for (const y of [actinTopY, actinBotY]) {
+    ctx.beginPath();
+    ctx.moveTo(leftZLine, y);
+    ctx.lineTo(leftZLine + actinLen, y);
+    ctx.stroke();
+  }
+
+  // Right actin (from right Z-line leftward)
+  for (const y of [actinTopY, actinBotY]) {
+    ctx.beginPath();
+    ctx.moveTo(rightZLine, y);
+    ctx.lineTo(rightZLine - actinLen, y);
+    ctx.stroke();
+  }
+
+  // Binding sites (dots along actin)
+  ctx.fillStyle = COLORS.actinSite;
+  const siteSpacing = 20 * s;
+  for (const startX of [leftZLine, rightZLine]) {
+    const dir = startX === leftZLine ? 1 : -1;
+    const len = actinLen;
+    for (let d = siteSpacing; d < len; d += siteSpacing) {
+      for (const y of [actinTopY, actinBotY]) {
+        ctx.beginPath();
+        ctx.arc(startX + d * dir, y, 2 * s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawMyosinFilaments() {
+  const { s, cy, mLineX, myosinHalfLen, myosinThick } = L;
+
+  ctx.save();
+  ctx.globalAlpha = componentOpacity('myosin');
+
+  if (isHighlighted('myosin')) {
+    const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+    ctx.save();
+    ctx.strokeStyle = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.shadowBlur = 10 + 8 * pulse;
+    ctx.globalAlpha = 0.3 + 0.2 * pulse;
+    roundRect(ctx, mLineX - myosinHalfLen, cy - myosinThick / 2 - 2, myosinHalfLen * 2, myosinThick + 4, 3 * s);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Main thick filament bar
+  const grad = ctx.createLinearGradient(0, cy - myosinThick / 2, 0, cy + myosinThick / 2);
+  grad.addColorStop(0, COLORS.myosin);
+  grad.addColorStop(0.5, '#6DB86D');
+  grad.addColorStop(1, COLORS.myosinDark);
+  ctx.fillStyle = grad;
+  roundRect(ctx, mLineX - myosinHalfLen, cy - myosinThick / 2, myosinHalfLen * 2, myosinThick, 3 * s);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.myosinDark;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function getHeadAngle(head, isLeft) {
+  // Returns the angle of the myosin head based on its state and phase
+  // Angle relative to the filament (0 = perpendicular, positive = toward Z-line)
+  const dir = isLeft ? -1 : 1;
+  switch (head.state) {
+    case STATE.RIGOR:
+      // Bound, post-stroke: angled toward Z-line (45 deg)
+      return dir * 45;
+    case STATE.DETACH:
+      // Releasing from actin: pivoting away
+      return dir * lerp(45, 0, head.phase);
+    case STATE.COCKED:
+      // Cocking back: angling away from Z-line
+      return dir * lerp(0, -50, head.phase);
+    case STATE.STROKE:
+      // Power stroke: swinging toward Z-line
+      return dir * lerp(-50, 45, head.phase);
+  }
+  return 0;
+}
+
+function getHeadAttachment(head) {
+  // Is the head attached to actin?
+  return head.state === STATE.RIGOR || head.state === STATE.STROKE;
+}
+
+function drawMyosinHeads() {
+  const { s, cy, mLineX, myosinHalfLen, myosinThick, headLen, headW, actinTopY, actinBotY } = L;
+
+  const highlight = isHighlighted('myosinHead');
+
+  // Left side heads (point left/upward toward left Z-line)
+  const leftSpacing = myosinHalfLen / (NUM_HEADS_PER_SIDE + 1);
+  for (let i = 0; i < NUM_HEADS_PER_SIDE; i++) {
+    const head = sim.headsLeft[i];
+    const isTop = i % 2 === 0;
+    const baseX = mLineX - leftSpacing * (i + 1);
+    const baseY = isTop ? cy - myosinThick / 2 : cy + myosinThick / 2;
+    const actinY = isTop ? actinTopY : actinBotY;
+    const angle = getHeadAngle(head, true);
+    const attached = getHeadAttachment(head);
+
+    drawSingleHead(baseX, baseY, actinY, angle, head.state, attached, isTop, highlight);
+  }
+
+  // Right side heads (point right/upward toward right Z-line)
+  const rightSpacing = myosinHalfLen / (NUM_HEADS_PER_SIDE + 1);
+  for (let i = 0; i < NUM_HEADS_PER_SIDE; i++) {
+    const head = sim.headsRight[i];
+    const isTop = i % 2 === 0;
+    const baseX = mLineX + rightSpacing * (i + 1);
+    const baseY = isTop ? cy - myosinThick / 2 : cy + myosinThick / 2;
+    const actinY = isTop ? actinTopY : actinBotY;
+    const angle = getHeadAngle(head, false);
+    const attached = getHeadAttachment(head);
+
+    drawSingleHead(baseX, baseY, actinY, angle, head.state, attached, isTop, highlight);
+  }
+}
+
+function drawSingleHead(baseX, baseY, actinY, angleDeg, state, attached, isTop, highlight) {
+  const { s, headLen, headW } = L;
+  const color = STATE_COLORS[state];
+
+  // Neck extends from filament toward actin
+  const dir = isTop ? -1 : 1;
+  const angleRad = toRad(angleDeg);
+
+  // Neck endpoint
+  const neckLen = Math.abs(actinY - baseY) * 0.7;
+  const tipX = baseX + Math.sin(angleRad) * neckLen;
+  const tipY = baseY + dir * Math.cos(Math.abs(angleRad)) * neckLen;
+
+  // Highlight glow
+  if (highlight) {
+    const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+    ctx.save();
+    ctx.strokeStyle = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.lineWidth = 6;
+    ctx.shadowColor = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+    ctx.shadowBlur = 8 + 6 * pulse;
+    ctx.globalAlpha = 0.3 + 0.2 * pulse;
+    ctx.beginPath();
+    ctx.arc(tipX, tipY, headW + 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Neck line
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(baseX, baseY);
+  ctx.lineTo(tipX, tipY);
+  ctx.stroke();
+
+  // Head (triangle/circle at tip)
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(tipX, tipY, headW, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Attachment indicator
+  if (attached) {
+    // Small line to actin
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 * s;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX, actinY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // State label on head
+  ctx.font = `bold ${Math.max(7, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  const labels = ['R', 'D', 'C', 'P'];
+  ctx.fillText(labels[state], tipX, tipY);
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawForceArrows() {
+  const { s, cy, leftZLine, rightZLine, sarcWidth } = L;
+
+  if (sim.contraction < 0.02) return;
+
+  const arrowLen = 20 * s * sim.contraction;
+  const arrowY = cy;
+  const alpha = Math.min(1, sim.contraction * 3);
+
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.6;
+  ctx.strokeStyle = '#FFD700';
+  ctx.fillStyle = '#FFD700';
+  ctx.lineWidth = 2 * s;
+
+  // Left arrow (pointing right, toward M-line)
+  const lx = leftZLine + 15 * s;
+  ctx.beginPath();
+  ctx.moveTo(lx, arrowY);
+  ctx.lineTo(lx + arrowLen, arrowY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(lx + arrowLen + 4 * s, arrowY);
+  ctx.lineTo(lx + arrowLen - 4 * s, arrowY - 4 * s);
+  ctx.lineTo(lx + arrowLen - 4 * s, arrowY + 4 * s);
+  ctx.closePath();
+  ctx.fill();
+
+  // Right arrow (pointing left, toward M-line)
+  const rx = rightZLine - 15 * s;
+  ctx.beginPath();
+  ctx.moveTo(rx, arrowY);
+  ctx.lineTo(rx - arrowLen, arrowY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rx - arrowLen - 4 * s, arrowY);
+  ctx.lineTo(rx - arrowLen + 4 * s, arrowY - 4 * s);
+  ctx.lineTo(rx - arrowLen + 4 * s, arrowY + 4 * s);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawParticles() {
+  const { s } = L;
+
+  // ATP arrivals
+  for (const p of POOL.atpArrivals) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.atp;
+    if (p.life < 0.5) {
+      ctx.shadowColor = COLORS.atp;
+      ctx.shadowBlur = 8 * s;
+    }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#333';
+    ctx.fillText('ATP', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // ADP release
+  for (const p of POOL.adpRelease) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.adp;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(7, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('ADP', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // Pi release
+  for (const p of POOL.piRelease) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.pi;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(7, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('P\u1d62', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // H⁺ release
+  for (const p of POOL.hPlusRelease) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.hPlus;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(7, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('H\u207A', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSarcomereLabel() {
+  const { s, cy, leftZLine, rightZLine } = L;
+
+  // Bracket below the sarcomere
+  const bracketY = cy + 70 * s;
+  const tick = 5 * s;
+
+  ctx.save();
+  ctx.strokeStyle = '#607888';
+  ctx.lineWidth = 1.5;
+
+  // Horizontal line
+  ctx.beginPath();
+  ctx.moveTo(leftZLine, bracketY);
+  ctx.lineTo(rightZLine, bracketY);
+  ctx.stroke();
+
+  // Left tick
+  ctx.beginPath();
+  ctx.moveTo(leftZLine, bracketY - tick);
+  ctx.lineTo(leftZLine, bracketY);
+  ctx.stroke();
+
+  // Right tick
+  ctx.beginPath();
+  ctx.moveTo(rightZLine, bracketY - tick);
+  ctx.lineTo(rightZLine, bracketY);
+  ctx.stroke();
+
+  // Label
+  ctx.font = `bold ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#7090A8';
+  ctx.fillText('SARCOMERE', (leftZLine + rightZLine) / 2, bracketY + 16 * s);
+
+  ctx.restore();
+}
+
+function drawLegend() {
+  const { s, w, h, cy } = L;
+  const lx = 14 * s;
+  const ly = cy + 100 * s;
+  const lineH = 16 * s;
+
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  const items = [
+    { color: COLORS.headRigor, label: 'R = Rigor (bound, post-stroke)' },
+    { color: COLORS.headDetach, label: 'D = Detach (ATP releases head)' },
+    { color: COLORS.headCocked, label: 'C = Cocked (ATP\u2192ADP+P\u1d62, head primed)' },
+    { color: COLORS.headStroke, label: 'P = Power stroke (head pulls actin)' },
+    { color: COLORS.hPlus, label: 'H\u207A (from ATP hydrolysis)' },
+  ];
+
+  if (ly + items.length * lineH < h - 10) {
+    items.forEach((item, i) => {
+      const y = ly + i * lineH;
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(lx + 6 * s, y - 4 * s, 5 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#708090';
+      ctx.fillText(item.label, lx + 16 * s, y);
+    });
+  }
+}
+
+// ============================================================
+// 5. UI
+// ============================================================
+const slider = document.getElementById('atp-slider');
+const lengthEl = document.getElementById('length-display');
+const forceEl = document.getElementById('force-display');
+const cycleRateEl = document.getElementById('cycle-rate');
+const infoPanel = document.getElementById('info-panel');
+
+slider.addEventListener('input', () => {
+  sim.atpLevel = slider.value / 100;
+});
+
+function updateUI() {
+  lengthEl.textContent = sim.sarcomereLengthPct + '%';
+  forceEl.textContent = sim.force;
+  cycleRateEl.textContent = sim.cyclesPerSecond.toFixed(1) + '/s';
+
+  const atp = sim.atpLevel;
+  if (atp < 0.03) {
+    infoPanel.textContent = 'No ATP. All myosin heads are locked in rigor \u2014 bound to actin with no way to release. This is the state of rigor mortis.';
+  } else if (atp < 0.25) {
+    infoPanel.textContent = 'Low ATP. A few heads can detach and re-cycle, but most remain in rigor. Shortening is weak and sluggish.';
+  } else if (atp < 0.6) {
+    infoPanel.textContent = 'Moderate ATP. Most myosin heads are cycling through detach \u2192 cock \u2192 power stroke. The sarcomere shortens steadily as actin slides inward.';
+  } else if (atp < 0.85) {
+    infoPanel.textContent = 'High ATP. Rapid cross-bridge cycling. Many heads in the power stroke simultaneously, generating strong force. Watch the Z-lines move closer together.';
+  } else {
+    infoPanel.textContent = 'Maximum ATP! All heads cycling rapidly. The sarcomere is near maximum shortening \u2014 actin filaments have slid deeply past the myosin. Strong, sustained force.';
+  }
+}
+
+// ============================================================
+// 6. GLOSSARY HIT REGIONS
+// ============================================================
+function getHitRegions() {
+  const s = L.s || 1;
+  const regions = [];
+
+  // Z-lines
+  regions.push({ id: 'zLine', cursor: true, test(mx, my) {
+    return (Math.abs(mx - L.leftZLine) < 12 * s || Math.abs(mx - L.rightZLine) < 12 * s)
+      && Math.abs(my - L.cy) < 60 * s;
+  }});
+
+  // M-line
+  regions.push({ id: 'mLine', cursor: true, test(mx, my) {
+    return Math.abs(mx - L.mLineX) < 10 * s && Math.abs(my - L.cy) < 45 * s;
+  }});
+
+  // Myosin heads — check before filaments
+  const leftSpacing = L.myosinHalfLen / (NUM_HEADS_PER_SIDE + 1);
+  const rightSpacing = L.myosinHalfLen / (NUM_HEADS_PER_SIDE + 1);
+  for (let i = 0; i < NUM_HEADS_PER_SIDE; i++) {
+    const lx = L.mLineX - leftSpacing * (i + 1);
+    const rx = L.mLineX + rightSpacing * (i + 1);
+    const isTop = i % 2 === 0;
+    const actinY = isTop ? L.actinTopY : L.actinBotY;
+    const headY = (L.cy + actinY) / 2;
+    for (const hx of [lx, rx]) {
+      ((x, y) => {
+        regions.push({ id: 'myosinHead', cursor: true, test(mx, my) {
+          return Math.hypot(mx - x, my - y) < 16 * s;
+        }});
+      })(hx, headY);
+    }
+  }
+
+  // Actin filaments
+  regions.push({ id: 'actin', cursor: true, test(mx, my) {
+    const nearActinY = Math.abs(my - L.actinTopY) < 8 * s || Math.abs(my - L.actinBotY) < 8 * s;
+    return nearActinY && mx > L.leftZLine - 5 && mx < L.rightZLine + 5;
+  }});
+
+  // Myosin filament
+  regions.push({ id: 'myosin', cursor: true, test(mx, my) {
+    return Math.abs(my - L.cy) < L.myosinThick + 5 * s
+      && mx > L.mLineX - L.myosinHalfLen - 5 && mx < L.mLineX + L.myosinHalfLen + 5;
+  }});
+
+  // Band regions
+  const bandTop = L.cy - 55 * s;
+  const bandBot = L.cy + 55 * s;
+  const leftActinEnd = L.leftZLine + L.actinLen;
+  const rightActinEnd = L.rightZLine - L.actinLen;
+
+  // H-zone (center)
+  if (rightActinEnd > leftActinEnd) {
+    regions.push({ id: 'hZone', cursor: false, test(mx, my) {
+      return mx > leftActinEnd && mx < rightActinEnd && my > bandBot && my < bandBot + 20 * s;
+    }});
+  }
+
+  // A-band
+  regions.push({ id: 'aBand', cursor: false, test(mx, my) {
+    return mx > L.aBandLeft && mx < L.aBandRight && my > bandTop - 20 * s && my < bandTop;
+  }});
+
+  // I-band
+  regions.push({ id: 'iBand', cursor: false, test(mx, my) {
+    return ((mx > L.leftZLine && mx < L.aBandLeft) || (mx > L.aBandRight && mx < L.rightZLine))
+      && my > bandTop - 20 * s && my < bandTop;
+  }});
+
+  // Sarcomere label area
+  regions.push({ id: 'sarcomere', cursor: false, test(mx, my) {
+    return mx > L.leftZLine && mx < L.rightZLine
+      && my > L.cy + 65 * s && my < L.cy + 90 * s;
+  }});
+
+  // Cross-bridge (clicking anywhere in overlap)
+  regions.push({ id: 'crossBridge', cursor: false, test(mx, my) {
+    return mx > L.aBandLeft && mx < L.aBandRight
+      && my > L.cy - 40 * s && my < L.cy + 40 * s;
+  }});
+
+  return regions;
+}
+
+const tooltipMgr = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ============================================================
+// 7. TUTORIAL
+// ============================================================
+function extractStepDescriptions() {
+  const bodies = document.querySelectorAll('#process-panel .step .step-body');
+  return Array.from(bodies).map(el => el.innerHTML);
+}
+
+const stepDescriptions = extractStepDescriptions();
+
+const tutorialMgr = new TutorialManager({
+  stepCount: 6,
+  accents: STEP_ACCENT,
+  descriptions: stepDescriptions,
+  onEnter() {
+    tooltipMgr.hide();
+    const tPanel = document.getElementById('training-panel');
+    if (tPanel.classList.contains('open')) {
+      tPanel.classList.remove('open');
+      document.getElementById('training-btn').classList.remove('active');
+    }
+    sim.savedAtp = sim.atpLevel;
+    sim.tutorialStep = 1;
+    sim.tutorialTime = 0;
+    sim.stepTransition = 0;
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onExit() {
+    sim.tutorialStep = null;
+    sim.atpLevel = sim.savedAtp;
+    slider.value = sim.atpLevel * 100;
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onStepChange(n) {
+    sim.tutorialStep = n;
+    sim.stepTransition = 0;
+    clearAllParticles();
+  },
+});
+
+document.getElementById('how-btn').addEventListener('click', () => tutorialMgr.enter());
+
+document.getElementById('training-btn').addEventListener('click', () => {
+  const panel = document.getElementById('training-panel');
+  const btn = document.getElementById('training-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+// ============================================================
+// 8. MAIN LOOP & INIT
+// ============================================================
+function resize() {
+  cm.resize();
+  computeLayout();
+}
+
+function init() {
+  initNav('sarcomere');
+  initParticles();
+  resize();
+  window.addEventListener('resize', () => { tooltipMgr.hide(); resize(); });
+  sim.atpLevel = slider.value / 100;
+  updateUI();
+
+  createAnimationLoop(
+    (dt, timestamp) => {
+      sim.update(dt);
+      updateParticles(dt);
+    },
+    (dt, timestamp) => {
+      computeLayout(); // recompute each frame because contraction changes layout
+      const w = cm.cssWidth;
+      const h = cm.cssHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawBanding();
+      drawActinFilaments();
+      drawMyosinFilaments();
+      drawMyosinHeads();
+      drawZLines();
+      drawMLine();
+      drawForceArrows();
+      drawParticles();
+      drawSarcomereLabel();
+      drawLegend();
+
+      if (Math.floor(timestamp / 100) !== Math.floor((timestamp - dt * 1000) / 100)) {
+        updateUI();
+      }
+    }
+  );
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Krebs Cycle &mdash; Carbon Fuels to Electron Carriers</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #9B59B6;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  #process-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #process-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #process-panel::-webkit-scrollbar { width: 6px; }
+  #process-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-cs   { background: #E8A040; }
+  .tag-aco  { background: #7BA0C0; }
+  .tag-idh  { background: #4A90D9; }
+  .tag-akgdh { background: #4A90D9; }
+  .tag-scs  { background: #D4A843; }
+  .tag-sdh  { background: #3AADA8; }
+  .tag-fum  { background: #8B7BB0; }
+  .tag-mdh  { background: #9B59B6; }
+  .tag-nadh { background: #4A90D9; }
+  .tag-fadh2 { background: #3AADA8; }
+  .tag-co2  { background: #A0A0A0; }
+  .tag-gtp  { background: #D4A843; }
+  .tag-reg  { background: #D94A4A; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-body .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; vertical-align: 1px; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>Krebs Cycle &mdash; Carbon Fuels to Electron Carriers</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="supply-slider">Acetyl-CoA Supply:</label>
+    <input type="range" id="supply-slider" min="0" max="100" value="50">
+  </div>
+  <div class="stats">
+    <span>NADH: <span class="stat-val" id="nadh-count">0</span></span>
+    <span>FADH&#8322;: <span class="stat-val" id="fadh2-count">0</span></span>
+    <span>GTP: <span class="stat-val" id="gtp-count">0</span></span>
+    <span>Turns/s: <span class="stat-val" id="turn-rate">0.0</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Adjust the acetyl-CoA supply slider to drive the cycle.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+    <div class="analogy"><strong>Analogy:</strong> Imagine a circular assembly line where raw parts (acetyl-CoA) enter at one station and finished goods (NADH, FADH&#8322;) roll off at several stations around the loop. Two stations &mdash; IDH and &alpha;-KG DH &mdash; are quality-control gatekeepers that check the cell's energy status before letting work proceed.</div>
+    <h3>The Bottleneck</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>NADH/NAD&plus; ratio controls cycle flux.</strong> Both regulatory enzymes (isocitrate DH and &alpha;-KG DH) are inhibited by NADH. When the ETC can&rsquo;t keep up, NADH accumulates, NAD&plus; runs low, and the cycle stalls &mdash; regardless of how much acetyl-CoA is available. The bottleneck is downstream demand, not upstream supply.</div>
+    </div>
+    <h3>How Endurance Training Adapts</h3>
+    <div class="step">
+      <div class="step-num" style="background:#9B59B6">1</div>
+      <div class="step-body"><strong>Larger ETC capacity keeps NADH/NAD&plus; low.</strong> Complex IV increases 30-40%, allowing faster NADH oxidation back to NAD&plus;. This relieves inhibition at IDH and &alpha;-KG DH, letting the cycle spin faster at the same acetyl-CoA supply.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#9B59B6">2</div>
+      <div class="step-body"><strong>Krebs enzyme levels increase 20-40%.</strong> Higher concentrations of all eight enzymes mean the same flux can be maintained at lower substrate saturation &mdash; each enzyme works further below its V<sub>max</sub>, providing a larger reserve capacity.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#9B59B6">3</div>
+      <div class="step-body"><strong>Mitochondrial biogenesis &mdash; more cycles in parallel.</strong> Trained muscle has roughly double the mitochondrial density, meaning twice as many complete Krebs cycles operating simultaneously. Each cycle produces the same 3 NADH + 1 FADH&#8322; + 1 GTP per turn.</div>
+    </div>
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">20-40%</div><div class="lbl">Krebs enzyme increase</div></div>
+      <div class="num-card"><div class="val">3 NADH</div><div class="lbl">Per turn</div></div>
+      <div class="num-card"><div class="val">~2&times;</div><div class="lbl">Mitochondrial density</div></div>
+      <div class="num-card"><div class="val">2 CO&#8322;</div><div class="lbl">Released per turn</div></div>
+    </div>
+    <div class="analogy"><strong>Key insight:</strong> Speed is set by downstream NADH demand, not upstream acetyl-CoA supply. Training removes the NADH brake by expanding the ETC&rsquo;s capacity to recycle NAD&plus;, and runs more cycles in parallel via mitochondrial biogenesis. Same chemistry, more throughput.</div>
+  </div>
+</div>
+
+<div id="process-panel">
+  <div class="process-inner">
+    <h2>How the Krebs Cycle Works &mdash; Step by Step</h2>
+
+    <div class="analogy">
+      <strong>Think of a circular assembly line.</strong> Acetyl-CoA delivers a 2-carbon unit to the line at the OAA station. As the workpiece travels around eight stations, two carbons leave as CO&sub2;, electrons are stripped onto carriers (NADH, FADH&sub2;), and one high-energy phosphate (GTP) is captured. When the workpiece returns to OAA, the line is ready for the next delivery.
+    </div>
+
+    <h3>Part 1 &mdash; Carbon Entry</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">1</div>
+      <div class="step-body">
+        <strong>Acetyl-CoA + OAA &rarr; Citrate.</strong>
+        <span class="tag tag-cs">Citrate Synthase</span> condenses the 2C acetyl group onto 4C oxaloacetate to form 6C citrate. This is the commitment step &mdash; irreversible. Inhibited by ATP, NADH, and citrate itself. CoA is released and recycled.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#7BA0C0">2</div>
+      <div class="step-body">
+        <strong>Citrate &rarr; Isocitrate.</strong>
+        <span class="tag tag-aco">Aconitase</span> isomerizes citrate via dehydration then rehydration, shifting the hydroxyl group to a position that allows the next oxidation. No products released &mdash; just a molecular rearrangement.
+      </div>
+    </div>
+
+    <h3>Part 2 &mdash; Oxidative Decarboxylations</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">3</div>
+      <div class="step-body">
+        <strong>Isocitrate &rarr; &alpha;-KG + CO&#8322; + NADH.</strong>
+        <span class="tag tag-idh">Isocitrate DH</span> <span class="tag tag-reg">Regulatory</span> First oxidative decarboxylation: 6C &rarr; 5C. NAD&plus; accepts electrons &rarr; <span class="tag tag-nadh">NADH</span>. CO&sub2; is released <span class="tag tag-co2">CO&#8322;</span>. Activated by ADP and Ca&sup2;&plus;; inhibited by ATP and NADH. A key control point.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">4</div>
+      <div class="step-body">
+        <strong>&alpha;-KG &rarr; Succinyl-CoA + CO&#8322; + NADH.</strong>
+        <span class="tag tag-akgdh">&alpha;-KG DH</span> <span class="tag tag-reg">Regulatory</span> Second decarboxylation: 5C &rarr; 4C. Similar mechanism to pyruvate DH &mdash; a multienzyme complex. Produces <span class="tag tag-nadh">NADH</span> + <span class="tag tag-co2">CO&#8322;</span>. Inhibited by NADH and succinyl-CoA; activated by Ca&sup2;&plus;. Both borrowed carbons are now gone.
+      </div>
+    </div>
+
+    <h3>Part 3 &mdash; Energy Capture</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#D4A843">5</div>
+      <div class="step-body">
+        <strong>Succinyl-CoA &rarr; Succinate + GTP.</strong>
+        <span class="tag tag-scs">Succinyl-CoA Synthetase</span> Substrate-level phosphorylation: the thioester bond energy drives GDP &rarr; <span class="tag tag-gtp">GTP</span>. This is the only direct high-energy phosphate from the cycle. GTP is functionally equivalent to ATP.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#3AADA8">6</div>
+      <div class="step-body">
+        <strong>Succinate &rarr; Fumarate + FADH&#8322;.</strong>
+        <span class="tag tag-sdh">Succinate DH</span> This enzyme is also Complex II of the ETC &mdash; embedded in the inner membrane. Uses FAD (not NAD&plus;) because the energy change is too small for NAD&plus; reduction. <span class="tag tag-fadh2">FADH&#8322;</span> feeds electrons directly into the ETC, bypassing Complex I.
+      </div>
+    </div>
+
+    <h3>Part 4 &mdash; Regeneration</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#8B7BB0">7</div>
+      <div class="step-body">
+        <strong>Fumarate &rarr; Malate.</strong>
+        <span class="tag tag-fum">Fumarase</span> hydrates the double bond &mdash; a simple addition of water. No cofactors needed. Prepares the substrate for the final oxidation.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#9B59B6">8</div>
+      <div class="step-body">
+        <strong>Malate &rarr; OAA + NADH.</strong>
+        <span class="tag tag-mdh">Malate DH</span> The third <span class="tag tag-nadh">NADH</span> of the cycle. Thermodynamically unfavorable (&Delta;G&rsquo;&deg; &gt; 0), but pulled forward by rapid OAA consumption by citrate synthase and constant NADH removal by the ETC. The cycle is now back to OAA, ready for another turn.
+      </div>
+    </div>
+
+    <h3>By the Numbers</h3>
+
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">3</div><div class="lbl">NADH per turn</div></div>
+      <div class="num-card"><div class="val">1</div><div class="lbl">FADH&#8322; per turn</div></div>
+      <div class="num-card"><div class="val">1</div><div class="lbl">GTP per turn</div></div>
+      <div class="num-card"><div class="val">2</div><div class="lbl">CO&#8322; per turn</div></div>
+    </div>
+
+    <div class="analogy" style="margin-top:16px">
+      <strong>The key insight:</strong> The Krebs cycle doesn&rsquo;t produce ATP directly (just 1 GTP via substrate-level phosphorylation). Its real job is to strip high-energy electrons from carbon fuels and load them onto carriers &mdash; 3 NADH and 1 FADH&#8322; per turn &mdash; that feed the electron transport chain downstream. The cycle is the fuel processor; the ETC is the power plant.
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { lerp, toRad, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const COLORS = {
+  pageBg:      '#1a1a2e',
+  matrixBg:    '#F5E6D0',
+  cyclePath:   '#8A7A60',
+  activeArc:   '#9B59B6',
+  nodeStroke:  '#4A3A2A',
+  nodeFill:    '#2A1E14',
+  nodeText:    '#F0E8D8',
+  acetylCoA:   '#E8A040',
+  nadh:        '#4A90D9',
+  fadh2:       '#3AADA8',
+  co2:         '#A0A0A0',
+  gtp:         '#D4A843',
+  coA:         '#C08050',
+  enzyme:      '#907060',
+  label:       '#705040',
+  labelLight:  '#f0f0f0',
+  regulatory:  '#D94A4A',
+};
+
+// 8 intermediates arranged clockwise
+const INTERMEDIATES = [
+  { name: 'Citrate',      short: 'CIT', carbons: '6C', angle: 0 },
+  { name: 'Isocitrate',   short: 'ISO', carbons: '6C', angle: 45 },
+  { name: '\u03B1-KG',    short: '\u03B1KG', carbons: '5C', angle: 90 },
+  { name: 'Succinyl-CoA', short: 'SUC-CoA', carbons: '4C', angle: 135 },
+  { name: 'Succinate',    short: 'SUCC', carbons: '4C', angle: 180 },
+  { name: 'Fumarate',     short: 'FUM', carbons: '4C', angle: 225 },
+  { name: 'Malate',       short: 'MAL', carbons: '4C', angle: 270 },
+  { name: 'OAA',          short: 'OAA', carbons: '4C', angle: 315 },
+];
+
+const ENZYMES = [
+  'Citrate Synthase',
+  'Aconitase',
+  'Isocitrate DH',
+  '\u03B1-KG DH',
+  'Succinyl-CoA Syn.',
+  'Succinate DH',
+  'Fumarase',
+  'Malate DH',
+];
+
+// Products spawned when completing each step (step i -> step i+1)
+// step index matches the reaction: 0=CS, 1=Aco, 2=IDH, 3=aKGDH, 4=SCS, 5=SDH, 6=Fum, 7=MDH
+const STEP_PRODUCTS = [
+  ['coA'],           // 0: CS — releases CoA
+  [],                // 1: Aconitase — no products
+  ['nadh', 'co2'],   // 2: IDH — NADH + CO2
+  ['nadh', 'co2'],   // 3: aKGDH — NADH + CO2
+  ['gtp'],           // 4: SCS — GTP
+  ['fadh2'],         // 5: SDH — FADH2
+  [],                // 6: Fumarase — no products
+  ['nadh'],          // 7: MDH — NADH
+];
+
+const STEP_CONFIGS = [
+  null,
+  // 1: Citrate Synthase
+  { supply: 0.5, speed: 0.4, highlightStep: 0 },
+  // 2: Aconitase
+  { supply: 0.5, speed: 0.4, highlightStep: 1 },
+  // 3: Isocitrate DH (regulatory)
+  { supply: 0.5, speed: 0.4, highlightStep: 2 },
+  // 4: α-KG DH (regulatory)
+  { supply: 0.5, speed: 0.4, highlightStep: 3 },
+  // 5: Succinyl-CoA Synthetase
+  { supply: 0.5, speed: 0.4, highlightStep: 4 },
+  // 6: Succinate DH / Complex II
+  { supply: 0.5, speed: 0.4, highlightStep: 5 },
+  // 7: Fumarase
+  { supply: 0.5, speed: 0.4, highlightStep: 6 },
+  // 8: Malate DH
+  { supply: 0.5, speed: 0.4, highlightStep: 7 },
+];
+
+const STEP_ACCENT = [
+  null, '#E8A040', '#7BA0C0', '#4A90D9', '#4A90D9',
+  '#D4A843', '#3AADA8', '#8B7BB0', '#9B59B6',
+];
+
+const GLOSSARY = {
+  acetylCoA: {
+    title: 'Acetyl-CoA',
+    body: 'A 2-carbon acetyl group attached to Coenzyme A. The universal fuel input to the Krebs cycle, produced from <strong>pyruvate</strong> (via pyruvate dehydrogenase), fatty acid &beta;-oxidation, and amino acid catabolism. Each glucose yields 2 acetyl-CoA, so the cycle turns twice per glucose.',
+  },
+  citrate: {
+    title: 'Citrate (6C)',
+    body: 'A 6-carbon tricarboxylic acid formed by condensation of acetyl-CoA (2C) with oxaloacetate (4C). The cycle&rsquo;s namesake compound. Also an allosteric inhibitor of phosphofructokinase (glycolysis) &mdash; high citrate signals that fuel is abundant.',
+  },
+  isocitrate: {
+    title: 'Isocitrate (6C)',
+    body: 'An isomer of citrate produced by <strong>aconitase</strong>. The hydroxyl group is repositioned to enable the oxidative decarboxylation that follows. Still 6 carbons.',
+  },
+  alphaKG: {
+    title: '\u03B1-Ketoglutarate (5C)',
+    body: 'A 5-carbon &alpha;-keto acid. Produced by isocitrate dehydrogenase after the first CO\u2082 is lost. Also an important amino acid metabolism hub &mdash; transamination connects it to glutamate.',
+  },
+  succinylCoA: {
+    title: 'Succinyl-CoA (4C)',
+    body: 'A 4-carbon intermediate attached to CoA via a high-energy thioester bond. The energy in this bond drives substrate-level phosphorylation (GDP \u2192 GTP) in the next step.',
+  },
+  succinate: {
+    title: 'Succinate (4C)',
+    body: 'A 4-carbon dicarboxylic acid. Oxidized by <strong>succinate dehydrogenase</strong> (Complex II of the ETC) using FAD rather than NAD\u207A. The only Krebs intermediate whose enzyme is membrane-bound.',
+  },
+  fumarate: {
+    title: 'Fumarate (4C)',
+    body: 'A 4-carbon unsaturated dicarboxylic acid with a <em>trans</em> double bond. Hydrated by fumarase to form malate. Also produced by the urea cycle and purine synthesis.',
+  },
+  malate: {
+    title: 'Malate (4C)',
+    body: 'A 4-carbon hydroxy acid. Oxidized by malate DH to regenerate OAA, producing the third NADH of the cycle. The malate-aspartate shuttle uses malate to transport NADH equivalents into the mitochondrial matrix.',
+  },
+  oxaloacetate: {
+    title: 'Oxaloacetate (OAA, 4C)',
+    body: 'The 4-carbon acceptor that combines with acetyl-CoA to restart the cycle. Present at very low concentrations &mdash; its rapid consumption by citrate synthase pulls the unfavorable malate DH reaction forward. Also a gluconeogenesis precursor.',
+  },
+  citrateSynthase: {
+    title: 'Citrate Synthase',
+    body: 'Catalyzes the condensation of acetyl-CoA + OAA \u2192 citrate + CoA. <strong>Irreversible</strong> commitment step. Inhibited allosterically by ATP, NADH, and citrate. No oxidation or reduction &mdash; purely a condensation reaction.',
+  },
+  aconitase: {
+    title: 'Aconitase',
+    body: 'An iron-sulfur (Fe-S) enzyme that isomerizes citrate to isocitrate via a dehydration/rehydration mechanism through <em>cis</em>-aconitate. Sensitive to oxidative stress &mdash; reactive oxygen species can inactivate its Fe-S cluster.',
+  },
+  isocitrateDH: {
+    title: 'Isocitrate Dehydrogenase (IDH)',
+    body: 'Catalyzes the first oxidative decarboxylation: isocitrate \u2192 \u03B1-KG + CO\u2082 + NADH. <strong>Key regulatory enzyme.</strong> Activated by ADP and Ca\u00B2\u207A (signals of low energy); inhibited by ATP and NADH (signals of high energy). Rate-limiting under most conditions.',
+  },
+  alphaKGDH: {
+    title: '\u03B1-Ketoglutarate Dehydrogenase',
+    body: 'A multienzyme complex structurally similar to pyruvate DH. Catalyzes \u03B1-KG \u2192 succinyl-CoA + CO\u2082 + NADH. <strong>Second regulatory point.</strong> Inhibited by NADH and succinyl-CoA; activated by Ca\u00B2\u207A. Uses TPP, lipoate, and FAD as cofactors.',
+  },
+  succinylCoASynthetase: {
+    title: 'Succinyl-CoA Synthetase',
+    body: 'Catalyzes substrate-level phosphorylation: succinyl-CoA \u2192 succinate + CoA + GTP. The thioester bond energy is captured as GTP (equivalent to ATP). This is the <strong>only direct high-energy phosphate</strong> produced by the Krebs cycle.',
+  },
+  succinateDH: {
+    title: 'Succinate Dehydrogenase (Complex II)',
+    body: 'Unique: the only Krebs enzyme embedded in the inner mitochondrial membrane. Also <strong>Complex II of the ETC</strong>. Oxidizes succinate to fumarate using <strong>FAD</strong> (not NAD\u207A). FADH\u2082 passes electrons directly into the ubiquinone pool, bypassing Complex I.',
+  },
+  fumarase: {
+    title: 'Fumarase',
+    body: 'Catalyzes the stereospecific hydration of fumarate\u2019s <em>trans</em> double bond to form L-malate. A simple reaction requiring no cofactors. One of the most catalytically efficient enzymes, operating near the diffusion limit.',
+  },
+  malateDH: {
+    title: 'Malate Dehydrogenase',
+    body: 'Oxidizes malate to OAA, producing the cycle\u2019s third NADH. Thermodynamically <strong>unfavorable</strong> (\u0394G\u2019\u00B0 = +29.7 kJ/mol), but driven forward by (1) rapid OAA consumption by citrate synthase and (2) NADH removal by the ETC. Le Chatelier\u2019s principle in action.',
+  },
+  nad: {
+    title: 'NAD\u207A / NADH',
+    body: '<strong>Nicotinamide adenine dinucleotide.</strong> The primary electron carrier of the Krebs cycle. Three steps reduce NAD\u207A \u2192 NADH (steps 3, 4, 8). Each NADH donates electrons to Complex I of the ETC, resulting in ~2.5 ATP. The NAD\u207A/NADH ratio is a master regulator of cycle flux.',
+  },
+  fad: {
+    title: 'FAD / FADH\u2082',
+    body: '<strong>Flavin adenine dinucleotide.</strong> Used by succinate DH (step 6) because the succinate \u2192 fumarate oxidation releases too little energy for NAD\u207A reduction. FADH\u2082 feeds electrons into the ETC at Complex II, yielding ~1.5 ATP per molecule.',
+  },
+  gtp: {
+    title: 'GTP',
+    body: '<strong>Guanosine triphosphate.</strong> Produced by substrate-level phosphorylation at step 5. Functionally equivalent to ATP (nucleoside diphosphate kinase can interconvert them). The only direct high-energy phosphate from the cycle.',
+  },
+  co2: {
+    title: 'CO\u2082',
+    body: 'Carbon dioxide released at steps 3 and 4. These are the <strong>two carbons</strong> that entered as acetyl-CoA &mdash; the cycle fully oxidizes them. CO\u2082 diffuses out of the mitochondria, into the blood, and is exhaled by the lungs. This is where "burning calories" literally becomes breathing out carbon.',
+  },
+  coA: {
+    title: 'Coenzyme A (CoA)',
+    body: 'A carrier molecule with a reactive thiol (-SH) group. Delivers the acetyl group to the cycle (as acetyl-CoA) and is released at step 1 for recycling. Also involved at step 4 (forming succinyl-CoA) and step 5 (released again). Derived from pantothenic acid (vitamin B5).',
+  },
+  matrix: {
+    title: 'Mitochondrial Matrix',
+    body: 'The innermost compartment of the mitochondrion. Contains all Krebs cycle enzymes <strong>except succinate DH</strong> (which is membrane-bound). Also houses pyruvate DH, fatty acid \u03B2-oxidation enzymes, and the mitochondrial DNA. Slightly alkaline (pH ~7.8) due to proton pumping by the ETC.',
+  },
+};
+
+// Layout object computed on resize
+let L = {};
+
+// ============================================================
+// 2. STATE MANAGEMENT
+// ============================================================
+class SimState {
+  constructor() {
+    this.acetylSupply = 0.5;
+    this.cyclePhase = 0;       // 0–7.999 continuous
+    this.turnCount = 0;
+    this.turnTimes = [];
+    this.nadhProduced = 0;
+    this.fadh2Produced = 0;
+    this.gtpProduced = 0;
+    this.co2Released = 0;
+    this.running = true;
+
+    // Tutorial state
+    this.tutorialStep = null;
+    this.savedSupply = 0.5;
+    this.stepTransition = 1;
+    this.tutorialTime = 0;
+  }
+
+  get effectiveSupply() {
+    if (this.tutorialStep !== null) {
+      const cfg = STEP_CONFIGS[this.tutorialStep];
+      return cfg ? cfg.supply : 0;
+    }
+    return this.acetylSupply;
+  }
+
+  get effectiveSpeed() {
+    if (this.tutorialStep !== null) {
+      const cfg = STEP_CONFIGS[this.tutorialStep];
+      return cfg ? cfg.speed : 0;
+    }
+    return this.acetylSupply;
+  }
+
+  update(dt) {
+    if (!this.running) return;
+
+    const supply = this.effectiveSupply;
+    const speed = this.effectiveSpeed;
+
+    if (this.tutorialStep !== null) {
+      this.tutorialTime += dt;
+      if (this.stepTransition < 1) {
+        this.stepTransition = Math.min(1, this.stepTransition + dt / 0.3);
+      }
+    }
+
+    if (supply < 0.03) return;
+
+    const prevPhase = this.cyclePhase;
+    // Speed: at full supply, ~0.8 steps/s => full turn in ~10s
+    this.cyclePhase += speed * 0.8 * dt;
+
+    // Detect step crossings for product spawns
+    const prevStep = Math.floor(prevPhase) % 8;
+    const newStep = Math.floor(this.cyclePhase) % 8;
+
+    if (this.cyclePhase >= 8) {
+      // Completed one or more full turns
+      const turns = Math.floor(this.cyclePhase / 8);
+      this.turnCount += turns;
+      const now = performance.now();
+      for (let i = 0; i < turns; i++) this.turnTimes.push(now);
+      this.cyclePhase = this.cyclePhase % 8;
+    }
+
+    // Check each step crossing
+    if (prevStep !== newStep || this.cyclePhase < prevPhase) {
+      // We crossed at least one step boundary
+      let s = (prevStep + 1) % 8;
+      const limit = 8; // safety
+      for (let i = 0; i < limit; i++) {
+        this.onStepComplete(s);
+        if (s === newStep) break;
+        s = (s + 1) % 8;
+      }
+    }
+
+    // Prune old turn times for rate calc
+    const now = performance.now();
+    while (this.turnTimes.length && this.turnTimes[0] < now - 5000) {
+      this.turnTimes.shift();
+    }
+  }
+
+  onStepComplete(step) {
+    const products = STEP_PRODUCTS[step];
+    for (const p of products) {
+      if (p === 'nadh') {
+        this.nadhProduced++;
+        spawnProduct('nadh', step);
+      } else if (p === 'fadh2') {
+        this.fadh2Produced++;
+        spawnProduct('fadh2', step);
+      } else if (p === 'gtp') {
+        this.gtpProduced++;
+        spawnProduct('gtp', step);
+      } else if (p === 'co2') {
+        this.co2Released++;
+        spawnProduct('co2', step);
+      } else if (p === 'coA') {
+        spawnProduct('coA', step);
+      }
+    }
+  }
+
+  get turnRate() {
+    if (this.turnTimes.length < 2) return 0;
+    const span = (this.turnTimes[this.turnTimes.length - 1] - this.turnTimes[0]) / 1000;
+    return span > 0 ? ((this.turnTimes.length - 1) / span) : 0;
+  }
+}
+
+const sim = new SimState();
+
+// Tutorial helpers
+function tCfg() {
+  return sim.tutorialStep !== null ? STEP_CONFIGS[sim.tutorialStep] : null;
+}
+
+function isHighlightedStep(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return false;
+  return cfg.highlightStep === stepIdx;
+}
+
+function isDimmedStep(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return false;
+  return cfg.highlightStep !== stepIdx;
+}
+
+function stepOpacity(stepIdx) {
+  const cfg = tCfg();
+  if (!cfg) return 1;
+  const target = cfg.highlightStep === stepIdx ? 1 : 0.25;
+  return lerp(0.25, target, sim.stepTransition);
+}
+
+function clearAllParticles() {
+  for (const key of Object.keys(POOL)) {
+    for (const p of POOL[key]) p.active = false;
+  }
+}
+
+// ============================================================
+// 3. PARTICLE SYSTEM
+// ============================================================
+const POOL = {
+  acetylCoA: [],
+  nadh: [],
+  fadh2: [],
+  co2: [],
+  gtp: [],
+  coA: [],
+};
+
+function initParticles() {
+  for (let i = 0; i < 6; i++) POOL.acetylCoA.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0, progress:0 });
+  for (let i = 0; i < 12; i++) POOL.nadh.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 6; i++) POOL.fadh2.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.co2.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 6; i++) POOL.gtp.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 6; i++) POOL.coA.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+}
+
+function spawnProduct(type, step) {
+  const pool = POOL[type];
+  if (!pool) return;
+  const p = getInactive(pool);
+  if (!p) return;
+
+  // Get position of the node at this step
+  const node = L.nodes ? L.nodes[step] : null;
+  if (!node) return;
+
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+  p.x = node.x;
+  p.y = node.y;
+
+  // Fly outward from the cycle center
+  const dx = node.x - L.cx;
+  const dy = node.y - L.cy;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const speed = 40 + Math.random() * 30;
+  p.vx = (dx / dist) * speed + (Math.random() - 0.5) * 20;
+  p.vy = (dy / dist) * speed + (Math.random() - 0.5) * 20;
+  // CO2 drifts upward
+  if (type === 'co2') {
+    p.vy -= 30;
+  }
+}
+
+let acetylSpawnTimer = 0;
+
+function updateParticles(dt) {
+  const s = L.s || 1;
+  const supply = sim.effectiveSupply;
+
+  if (supply < 0.03) return;
+
+  // --- Acetyl-CoA arriving ---
+  acetylSpawnTimer += dt;
+  const aInterval = Math.max(0.5, 2.0 - supply * 1.5);
+  if (acetylSpawnTimer >= aInterval) {
+    acetylSpawnTimer = 0;
+    const p = getInactive(POOL.acetylCoA);
+    if (p) {
+      p.active = true;
+      p.life = 0;
+      p.opacity = 1;
+      p.progress = 0;
+      // Start from upper-left
+      p.x = L.cx - L.radius * 1.6;
+      p.y = L.cy - L.radius * 1.2;
+    }
+  }
+
+  // Animate acetyl-CoA curving into OAA->Citrate junction
+  for (const p of POOL.acetylCoA) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.progress += dt * 0.7;
+
+    // Bezier curve from upper-left to the OAA->Citrate junction (top of cycle)
+    const oaaNode = L.nodes ? L.nodes[7] : null; // OAA
+    const citNode = L.nodes ? L.nodes[0] : null; // Citrate
+    if (oaaNode && citNode) {
+      const targetX = (oaaNode.x + citNode.x) / 2;
+      const targetY = (oaaNode.y + citNode.y) / 2 - 10 * s;
+      const startX = L.cx - L.radius * 1.6;
+      const startY = L.cy - L.radius * 1.2;
+      const cpX = L.cx - L.radius * 0.8;
+      const cpY = L.cy - L.radius * 1.5;
+      const t = Math.min(1, p.progress);
+      p.x = (1-t)*(1-t)*startX + 2*(1-t)*t*cpX + t*t*targetX;
+      p.y = (1-t)*(1-t)*startY + 2*(1-t)*t*cpY + t*t*targetY;
+
+      if (t > 0.8) {
+        p.opacity = Math.max(0, 1 - (t - 0.8) / 0.2);
+      }
+    }
+    if (p.progress >= 1 || p.opacity <= 0) p.active = false;
+  }
+
+  // --- All product particles: fly outward and fade ---
+  const productPools = ['nadh', 'fadh2', 'co2', 'gtp', 'coA'];
+  for (const poolName of productPools) {
+    for (const p of POOL[poolName]) {
+      if (!p.active) continue;
+      p.life += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+      const maxLife = poolName === 'co2' ? 2.5 : 3.0;
+      p.opacity = Math.max(0, 1 - p.life / maxLife);
+      if (p.opacity <= 0) p.active = false;
+    }
+  }
+}
+
+// ============================================================
+// 4. RENDERING
+// ============================================================
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+function computeLayout() {
+  const w = cm.cssWidth;
+  const h = cm.cssHeight;
+  const s = Math.min(w / 800, h / 600);
+
+  const cx = w * 0.52;
+  const cy = h * 0.48;
+  const radius = Math.min(w, h) * 0.3;
+
+  // Pre-compute 8 node positions
+  const nodes = INTERMEDIATES.map((inter, i) => {
+    const a = toRad(inter.angle - 90); // -90 so 0° is at top
+    return {
+      x: cx + Math.cos(a) * radius,
+      y: cy + Math.sin(a) * radius,
+      name: inter.name,
+      short: inter.short,
+      carbons: inter.carbons,
+      angle: inter.angle,
+    };
+  });
+
+  // Node dimensions
+  const nodeW = Math.max(52, 64 * s);
+  const nodeH = Math.max(28, 34 * s);
+
+  L = {
+    w, h, s, cx, cy, radius,
+    nodes,
+    nodeW, nodeH,
+    fontSm: Math.max(9, 10 * s) + 'px',
+    fontMd: Math.max(11, 12 * s) + 'px',
+    fontLg: Math.max(13, 15 * s) + 'px',
+    fontXs: Math.max(7, 8 * s) + 'px',
+  };
+}
+
+// --- Draw functions ---
+
+function drawBackground() {
+  const { w, h, s } = L;
+
+  // Warm matrix fill (entire cycle is in the matrix)
+  ctx.fillStyle = COLORS.matrixBg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Label
+  ctx.font = `bold ${L.fontMd} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#907050';
+  ctx.fillText('MITOCHONDRIAL MATRIX', 14 * s, 22 * s);
+}
+
+function drawCycleRing() {
+  const { cx, cy, radius, s, nodes } = L;
+
+  // Dashed circular path
+  ctx.strokeStyle = COLORS.cyclePath;
+  ctx.lineWidth = 2.5 * s;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Active arc segment
+  const supply = sim.effectiveSupply;
+  if (supply >= 0.03) {
+    const phase = sim.cyclePhase;
+    const stepAngle = (Math.PI * 2) / 8;
+    const currentStep = Math.floor(phase) % 8;
+    const stepFrac = phase - Math.floor(phase);
+
+    const startAngle = toRad(INTERMEDIATES[currentStep].angle - 90);
+    const endAngle = startAngle + stepAngle * stepFrac;
+
+    ctx.strokeStyle = COLORS.activeArc;
+    ctx.lineWidth = 4 * s;
+    ctx.shadowColor = COLORS.activeArc;
+    ctx.shadowBlur = 10 * s;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startAngle, endAngle);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Direction arrows (small triangles along the path)
+  ctx.fillStyle = COLORS.cyclePath;
+  for (let i = 0; i < 8; i++) {
+    const midAngle = toRad(INTERMEDIATES[i].angle + 22.5 - 90);
+    const ax = cx + Math.cos(midAngle) * radius;
+    const ay = cy + Math.sin(midAngle) * radius;
+    const tangent = midAngle + Math.PI / 2;
+    const size = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(ax + Math.cos(tangent) * size, ay + Math.sin(tangent) * size);
+    ctx.lineTo(ax + Math.cos(midAngle) * size * 0.6, ay + Math.sin(midAngle) * size * 0.6);
+    ctx.lineTo(ax - Math.cos(midAngle) * size * 0.6, ay - Math.sin(midAngle) * size * 0.6);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawNodes() {
+  const { nodes, nodeW, nodeH, s, cx, cy } = L;
+
+  for (let i = 0; i < 8; i++) {
+    const node = nodes[i];
+    const alpha = stepOpacity(i);
+    ctx.globalAlpha = alpha;
+
+    // Highlight glow for tutorial
+    if (isHighlightedStep(i)) {
+      const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+      const accent = STEP_ACCENT[sim.tutorialStep] || '#FFD700';
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 12 + 10 * pulse;
+      ctx.globalAlpha = (0.4 + 0.35 * pulse) * alpha;
+      roundRect(ctx, node.x - nodeW / 2 - 4, node.y - nodeH / 2 - 4, nodeW + 8, nodeH + 8, 10 * s);
+      ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = alpha;
+    }
+
+    // Node body
+    const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, nodeW * 0.7);
+    grad.addColorStop(0, '#3A2E20');
+    grad.addColorStop(1, '#1E1610');
+    roundRect(ctx, node.x - nodeW / 2, node.y - nodeH / 2, nodeW, nodeH, 8 * s);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.nodeStroke;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Name
+    ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.nodeText;
+    ctx.fillText(node.short, node.x, node.y + 1);
+
+    // Carbon count below node
+    ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = '#A09080';
+    ctx.fillText(node.carbons, node.x, node.y + nodeH / 2 + 11 * s);
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawEnzymeLabels() {
+  const { nodes, s, cx, cy, radius } = L;
+
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i < 8; i++) {
+    const alpha = stepOpacity(i);
+    ctx.globalAlpha = alpha;
+
+    const midAngle = toRad(INTERMEDIATES[i].angle + 22.5 - 90);
+    const labelR = radius * 0.75;
+    const lx = cx + Math.cos(midAngle) * labelR;
+    const ly = cy + Math.sin(midAngle) * labelR;
+
+    // Regulatory badge
+    const isReg = (i === 2 || i === 3);
+    if (isReg) {
+      ctx.fillStyle = COLORS.regulatory;
+      ctx.beginPath();
+      ctx.arc(lx, ly - 8 * s, 4 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+      ctx.fillStyle = '#fff';
+      ctx.fillText('\u2605', lx, ly - 7 * s);
+      ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+    }
+
+    ctx.fillStyle = COLORS.enzyme;
+    ctx.fillText(ENZYMES[i], lx, ly + 2 * s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawAcetylCoAEntry() {
+  const { nodes, s, cx, cy, radius } = L;
+  const supply = sim.effectiveSupply;
+  if (supply < 0.03) return;
+
+  const oaa = nodes[7];
+  const cit = nodes[0];
+  const targetX = (oaa.x + cit.x) / 2;
+  const targetY = (oaa.y + cit.y) / 2 - 15 * s;
+  const startX = cx - radius * 1.5;
+  const startY = cy - radius * 1.1;
+
+  ctx.strokeStyle = COLORS.acetylCoA;
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([5, 5]);
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.quadraticCurveTo(cx - radius * 0.8, cy - radius * 1.4, targetX, targetY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // Arrow head
+  ctx.fillStyle = COLORS.acetylCoA;
+  const angle = Math.atan2(targetY - (cy - radius * 1.4), targetX - (cx - radius * 0.8));
+  ctx.beginPath();
+  ctx.moveTo(targetX, targetY);
+  ctx.lineTo(targetX - Math.cos(angle - 0.4) * 8 * s, targetY - Math.sin(angle - 0.4) * 8 * s);
+  ctx.lineTo(targetX - Math.cos(angle + 0.4) * 8 * s, targetY - Math.sin(angle + 0.4) * 8 * s);
+  ctx.closePath();
+  ctx.fill();
+
+  // Label
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.acetylCoA;
+  ctx.fillText('Acetyl-CoA', startX + 30 * s, startY - 5 * s);
+}
+
+function drawParticles() {
+  const s = L.s;
+
+  // Acetyl-CoA incoming
+  for (const p of POOL.acetylCoA) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.acetylCoA;
+    ctx.shadowColor = COLORS.acetylCoA;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('AcCoA', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // NADH
+  for (const p of POOL.nadh) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.nadh;
+    ctx.shadowColor = COLORS.nadh;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('NADH', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // FADH2
+  for (const p of POOL.fadh2) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.fadh2;
+    ctx.shadowColor = COLORS.fadh2;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('FADH\u2082', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // CO2
+  for (const p of POOL.co2) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.co2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('CO\u2082', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // GTP
+  for (const p of POOL.gtp) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.gtp;
+    ctx.shadowColor = COLORS.gtp;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('GTP', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // CoA
+  for (const p of POOL.coA) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.coA;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('CoA', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawLegend() {
+  const { s, w, h } = L;
+  const lx = 14 * s;
+  const ly = h - 80 * s;
+  const lineH = 16 * s;
+
+  const items = [
+    { color: COLORS.acetylCoA, label: 'Acetyl-CoA (input)' },
+    { color: COLORS.nadh, label: 'NADH' },
+    { color: COLORS.fadh2, label: 'FADH\u2082' },
+    { color: COLORS.gtp, label: 'GTP' },
+    { color: COLORS.co2, label: 'CO\u2082' },
+  ];
+
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  if (ly > 40) {
+    items.forEach((item, i) => {
+      const y = ly + i * lineH;
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(lx + 5 * s, y - 4 * s, 5 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#705040';
+      ctx.fillText(item.label, lx + 14 * s, y);
+    });
+  }
+}
+
+// ============================================================
+// 5. UI & INFO PANEL
+// ============================================================
+const slider = document.getElementById('supply-slider');
+const nadhCountEl = document.getElementById('nadh-count');
+const fadh2CountEl = document.getElementById('fadh2-count');
+const gtpCountEl = document.getElementById('gtp-count');
+const turnRateEl = document.getElementById('turn-rate');
+const infoPanel = document.getElementById('info-panel');
+
+slider.addEventListener('input', () => {
+  sim.acetylSupply = slider.value / 100;
+});
+
+function extractStepDescriptions() {
+  const bodies = document.querySelectorAll('#process-panel .step .step-body');
+  return Array.from(bodies).map(el => el.innerHTML);
+}
+
+function updateUI() {
+  nadhCountEl.textContent = sim.nadhProduced;
+  fadh2CountEl.textContent = sim.fadh2Produced;
+  gtpCountEl.textContent = sim.gtpProduced;
+  turnRateEl.textContent = sim.turnRate.toFixed(1);
+
+  const g = sim.acetylSupply;
+  if (g < 0.03) {
+    infoPanel.textContent = 'No acetyl-CoA \u2014 cycle stalled. No NADH or FADH\u2082 for the ETC.';
+  } else if (g < 0.25) {
+    infoPanel.textContent = 'Low supply \u2014 cycle turns slowly. IDH and \u03B1-KG DH barely active.';
+  } else if (g < 0.60) {
+    infoPanel.textContent = 'Steady \u2014 each turn strips 2 carbons as CO\u2082, generates 3 NADH + 1 FADH\u2082 + 1 GTP.';
+  } else if (g < 0.85) {
+    infoPanel.textContent = 'Strong supply \u2014 high NADH/FADH\u2082 output feeding the ETC downstream.';
+  } else {
+    infoPanel.textContent = 'Maximum throughput! Per glucose: 2 turns \u2192 6 NADH + 2 FADH\u2082 + 2 GTP + 4 CO\u2082.';
+  }
+}
+
+// ============================================================
+// 6. GLOSSARY TOOLTIPS
+// ============================================================
+function getHitRegions() {
+  const s = L.s || 1;
+  const regions = [];
+  const { nodes, nodeW, nodeH } = L;
+
+  if (!nodes) return regions;
+
+  // Map node indices to glossary keys
+  const nodeGlossary = [
+    'citrate', 'isocitrate', 'alphaKG', 'succinylCoA',
+    'succinate', 'fumarate', 'malate', 'oxaloacetate',
+  ];
+
+  for (let i = 0; i < 8; i++) {
+    const node = nodes[i];
+    const glossaryId = nodeGlossary[i];
+    regions.push({
+      id: glossaryId,
+      cursor: true,
+      test(mx, my) {
+        return Math.abs(mx - node.x) < nodeW / 2 + 8 * s
+          && Math.abs(my - node.y) < nodeH / 2 + 8 * s;
+      },
+    });
+  }
+
+  // Center of cycle -> matrix
+  regions.push({
+    id: 'matrix',
+    cursor: false,
+    test(mx, my) {
+      const dx = mx - L.cx;
+      const dy = my - L.cy;
+      return Math.sqrt(dx * dx + dy * dy) < L.radius * 0.55;
+    },
+  });
+
+  return regions;
+}
+
+const tooltipMgr = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ============================================================
+// 7. TUTORIAL
+// ============================================================
+const stepDescriptions = extractStepDescriptions();
+
+const tutorialMgr = new TutorialManager({
+  stepCount: 8,
+  accents: STEP_ACCENT,
+  descriptions: stepDescriptions,
+  onEnter() {
+    tooltipMgr.hide();
+    const panel = document.getElementById('process-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    }
+    const tPanel = document.getElementById('training-panel');
+    if (tPanel.classList.contains('open')) {
+      tPanel.classList.remove('open');
+      document.getElementById('training-btn').classList.remove('active');
+    }
+    sim.savedSupply = sim.acetylSupply;
+    sim.tutorialStep = 1;
+    sim.tutorialTime = 0;
+    sim.stepTransition = 0;
+    sim.nadhProduced = 0;
+    sim.fadh2Produced = 0;
+    sim.gtpProduced = 0;
+    sim.co2Released = 0;
+    sim.turnCount = 0;
+    sim.turnTimes = [];
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onExit() {
+    sim.tutorialStep = null;
+    sim.acetylSupply = sim.savedSupply;
+    slider.value = sim.acetylSupply * 100;
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onStepChange(n) {
+    sim.tutorialStep = n;
+    sim.stepTransition = 0;
+    clearAllParticles();
+  },
+});
+
+document.getElementById('how-btn').addEventListener('click', () => tutorialMgr.enter());
+
+document.getElementById('training-btn').addEventListener('click', () => {
+  const panel = document.getElementById('training-panel');
+  const btn = document.getElementById('training-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+// ============================================================
+// 8. MAIN LOOP & INIT
+// ============================================================
+function resize() {
+  cm.resize();
+  computeLayout();
+}
+
+function init() {
+  initNav('krebs');
+  initParticles();
+  resize();
+  window.addEventListener('resize', () => { tooltipMgr.hide(); resize(); });
+  sim.acetylSupply = slider.value / 100;
+  updateUI();
+
+  createAnimationLoop(
+    (dt) => {
+      sim.update(dt);
+      updateParticles(dt);
+    },
+    (dt, timestamp) => {
+      const w = cm.cssWidth;
+      const h = cm.cssHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawCycleRing();
+      drawAcetylCoAEntry();
+      drawNodes();
+      drawEnzymeLabels();
+      drawParticles();
+      drawLegend();
+
+      if (Math.floor(timestamp / 100) !== Math.floor((timestamp - dt * 1000) / 100)) {
+        updateUI();
+      }
+    }
+  );
+}
+
+init();
+</script>
+</body>
+</html>

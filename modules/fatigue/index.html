@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fatigue Mechanisms &mdash; Why Muscles Fail</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #D94A4A;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  .fiber-toggle {
+    display: flex;
+    gap: 0;
+  }
+  .fiber-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  .fiber-btn:first-child { border-radius: 4px 0 0 4px; }
+  .fiber-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+  .fiber-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  .fiber-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #how-btn, #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover, #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active, #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-h   { background: #D94A4A; }
+  .tag-pi  { background: #4CAF50; }
+  .tag-ca  { background: #00BCD4; }
+  .tag-k   { background: #E8A040; }
+  .tag-atp { background: #FFD700; color: #1a1a2e; }
+  .tag-myth { background: #9B59B6; }
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .misconception {
+    background: #1a0d0d;
+    border-left: 3px solid #D94A4A;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #c09090;
+  }
+  .misconception strong { color: #e0a0a0; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .numbers-grid .num-item {
+    background: #0d1a30;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: #8098b8;
+  }
+  .numbers-grid .num-item strong {
+    color: #FFD700;
+    font-weight: 600;
+  }
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: #16213e;
+    border: 1px solid #1a4a80;
+    border-radius: 6px;
+    padding: 10px 14px;
+    max-width: 280px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #c0c8d4;
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  #tooltip .tt-title {
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 4px;
+    font-size: 0.82rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fatigue Mechanisms &mdash; Why Muscles Fail</h1>
+</header>
+
+<div id="canvas-wrap">
+  <canvas id="canvas"></canvas>
+  <div id="tooltip"></div>
+</div>
+
+<div id="controls">
+  <div id="nav-slot"></div>
+
+  <div class="slider-group">
+    <label>Exercise Intensity:</label>
+    <input type="range" id="intensity-slider" min="0" max="100" value="0">
+  </div>
+
+  <div class="fiber-toggle">
+    <button class="fiber-btn active" id="fiber-type1">Type I</button>
+    <button class="fiber-btn" id="fiber-type2x">Type IIx</button>
+  </div>
+
+  <div class="stats">
+    <span>pH: <span id="ph-display" class="stat-val">7.00</span></span>
+    <span>[Pi]: <span id="pi-display" class="stat-val">2.0</span> mM</span>
+    <span>Force: <span id="force-display" class="stat-val">100</span>%</span>
+    <span>[K&#8314;]<sub>ext</sub>: <span id="k-display" class="stat-val">4.0</span> mM</span>
+    <span>Time: <span id="time-display" class="stat-val">0:00</span></span>
+  </div>
+
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+
+  <div id="info-panel">Resting state &mdash; all systems nominal. Drag intensity to see fatigue mechanisms activate.</div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck Analysis &amp; Training Adaptations</h2>
+
+    <div class="analogy">
+      <strong>Factory analogy:</strong> Imagine a factory running at full speed. The machines produce waste heat and byproducts faster than the ventilation and cleanup crews can handle. The factory doesn't break &mdash; it slows down to survive. Training upgrades the ventilation, hires more cleanup crew, and installs better machines.
+    </div>
+
+    <h3>Why Type IIx Fatigues Faster</h3>
+    <div class="step">
+      <div class="step-body">
+        Type IIx fibers have <strong>2&ndash;3&times; the metabolic waste production rate</strong> of Type I, with fewer mitochondria to process it aerobically. They rely heavily on glycolysis, producing more H&#8314; per ATP, and their smaller buffer capacity means pH drops faster. Less SERCA density means Ca&#178;&#8314; handling degrades sooner.
+      </div>
+    </div>
+
+    <h3>5 Training Adaptations</h3>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">1</div>
+      <div class="step-body">
+        <strong>Mitochondrial biogenesis (+40&ndash;100%)</strong> <span class="tag tag-atp">ATP</span><br>
+        More mitochondria = more aerobic ATP = less glycolytic H&#8314; production at any given intensity.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">2</div>
+      <div class="step-body">
+        <strong>Buffering capacity (carnosine +20&ndash;80%)</strong> <span class="tag tag-h">H&#8314;</span><br>
+        Muscle carnosine and bicarbonate buffering increase, delaying the pH drop at high intensities.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">3</div>
+      <div class="step-body">
+        <strong>Na&#8314;/K&#8314;-ATPase upregulation (~15&ndash;20%)</strong> <span class="tag tag-k">K&#8314;</span><br>
+        More pump proteins in the sarcolemma = better K&#8314; clearance = preserved membrane excitability.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">4</div>
+      <div class="step-body">
+        <strong>SERCA improvements</strong> <span class="tag tag-ca">Ca&#178;&#8314;</span><br>
+        Faster Ca&#178;&#8314; reuptake into the SR means faster relaxation and better Ca&#178;&#8314; cycling.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background: #D94A4A;">5</div>
+      <div class="step-body">
+        <strong>Fiber type shift IIx &rarr; IIa</strong> <span class="tag tag-myth">Adapt</span><br>
+        Endurance training converts fast-glycolytic IIx fibers into fast-oxidative IIa &mdash; keeping speed while gaining fatigue resistance.
+      </div>
+    </div>
+
+    <h3>Key Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-item"><strong>PCr t&frac12;:</strong> ~30 seconds</div>
+      <div class="num-item"><strong>pH recovery:</strong> 5&ndash;10 minutes</div>
+      <div class="num-item"><strong>K&#8314; recovery:</strong> 2&ndash;5 minutes</div>
+      <div class="num-item"><strong>Resting pH:</strong> 7.0</div>
+      <div class="num-item"><strong>Fatigue pH:</strong> 6.5&ndash;6.8</div>
+      <div class="num-item"><strong>Resting Pi:</strong> ~2 mM</div>
+      <div class="num-item"><strong>Fatigue Pi:</strong> 20&ndash;30 mM</div>
+      <div class="num-item"><strong>Resting K&#8314;<sub>ext</sub>:</strong> 4 mM</div>
+      <div class="num-item"><strong>Fatigue K&#8314;<sub>ext</sub>:</strong> 8&ndash;12 mM</div>
+    </div>
+
+    <h3>The Lactate Myth &mdash; Final Nail</h3>
+    <div class="misconception">
+      <strong>Lactate does NOT cause fatigue.</strong> Six reasons:<br>
+      1. Lactate production <em>consumes</em> H&#8314; (buffering, not acidifying).<br>
+      2. Lactate is actively shuttled as fuel to oxidative fibers, heart, and brain.<br>
+      3. Fatigue persists long after lactate clears (minutes vs hours).<br>
+      4. Direct lactate injection into resting muscle doesn't impair contraction.<br>
+      5. The real culprits (Pi, H&#8314;, K&#8314;) correlate far better with force loss.<br>
+      6. The "lactic acid" molecule doesn't exist at physiological pH &mdash; it dissociates instantly to lactate&#8315; + H&#8314;.
+    </div>
+
+    <div class="analogy">
+      <strong>Key insight:</strong> Every fatigue mechanism ultimately traces back to <strong>ATP demand/supply mismatch</strong>. When demand exceeds aerobic capacity, glycolysis ramps up (producing H&#8314;), PCr depletes (releasing Pi), and ion pumps can't keep up (K&#8314; accumulates). Training doesn't eliminate fatigue &mdash; it raises the intensity threshold at which the mismatch begins.
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initNav } from '../../shared/nav.js';
+import { createCanvasManager, createAnimationLoop, lerp, roundRect } from '../../shared/core.js';
+
+// ── Glossary tooltips ──────────────────────────────────────────
+const GLOSSARY = {
+  'H\u207A accumulation': 'Hydrogen ions (protons) released during ATP hydrolysis and glycolysis. They lower intracellular pH, impairing enzyme function, Ca\u00B2\u207A sensitivity, and cross-bridge cycling.',
+  'muscle pH': 'The acidity level inside the muscle fiber. Resting ~7.0, drops to 6.5\u20136.8 during intense exercise. Affects nearly every enzyme and ion channel in the cell.',
+  'inorganic phosphate': 'Pi is released when PCr is broken down and when ATP is hydrolyzed. Now considered the PRIMARY fatigue metabolite \u2014 directly inhibits cross-bridge force and Ca\u00B2\u207A release from SR.',
+  'PCr system': 'Phosphocreatine provides the fastest ATP regeneration (~2\u20137 seconds). As PCr depletes, free Pi rises dramatically, contributing to fatigue.',
+  'SERCA': 'Sarco/endoplasmic reticulum Ca\u00B2\u207A-ATPase. ATP-dependent pump that moves Ca\u00B2\u207A back into the SR after contraction. Slows when ATP is scarce or pH drops.',
+  'RyR': 'Ryanodine receptor \u2014 the Ca\u00B2\u207A release channel on the SR membrane. Pi can precipitate CaPi inside the SR, reducing releasable Ca\u00B2\u207A stores.',
+  'sarcoplasmic reticulum': 'The SR is the muscle fiber\'s Ca\u00B2\u207A warehouse. Stores and releases Ca\u00B2\u207A to trigger contraction. Both storage and release are impaired during fatigue.',
+  'troponin sensitivity': 'Troponin C must bind Ca\u00B2\u207A to allow cross-bridge cycling. H\u207A competes for the Ca\u00B2\u207A binding site, reducing sensitivity \u2014 more Ca\u00B2\u207A needed for the same force.',
+  'Na\u207A/K\u207A-ATPase': 'Membrane pump that maintains the resting potential by exporting 3 Na\u207A and importing 2 K\u207A per ATP. When it can\'t keep up, K\u207A accumulates extracellularly.',
+  'K\u207A accumulation': 'During rapid firing, K\u207A leaves the cell faster than Na\u207A/K\u207A pumps can reclaim it. Extracellular K\u207A rises from 4 mM to 8\u201312 mM, depolarizing the membrane.',
+  'PFK-1': 'Phosphofructokinase-1 \u2014 the rate-limiting enzyme of glycolysis. Extremely pH-sensitive: activity drops sharply below pH 7.0, creating a vicious cycle.',
+  'cross-bridge force': 'Force generated by myosin heads pulling on actin. Directly reduced by Pi (inhibits power stroke) and indirectly by low Ca\u00B2\u207A and H\u207A (reduced sensitivity).',
+  'ATP hydrolysis': 'ATP \u2192 ADP + Pi + H\u207A + energy. Every contraction cycle, every ion pump, every metabolic process consumes ATP. The H\u207A and Pi released are themselves fatigue agents.',
+  'central fatigue': 'Fatigue originating in the CNS, not the muscle. The brain reduces motor drive to protect the body. This module focuses on peripheral (muscle) fatigue mechanisms.',
+  'Type I fiber': 'Slow-twitch, oxidative. High mitochondrial density, good buffering, fatigue-resistant. Dominant in endurance activities. Lower peak force but sustainable.',
+  'Type IIx fiber': 'Fast-twitch, glycolytic. Few mitochondria, poor buffering, fatigues rapidly. High peak force and power but unsustainable. Produces 2\u20133\u00D7 more metabolic waste.',
+  'recovery timeline': 'After intense exercise: PCr replenishes in ~30s, Pi clears in 1\u20132 min, K\u207A normalizes in 2\u20135 min, pH recovers in 5\u201310 min, Ca\u00B2\u207A handling may take minutes to hours.',
+  'vicious cycle': 'Low pH inhibits PFK-1 \u2192 less glycolytic ATP \u2192 ion pumps slow \u2192 more K\u207A leak + less Ca\u00B2\u207A cycling \u2192 force drops further. Each mechanism worsens the others.'
+};
+
+// ── Tooltip management ─────────────────────────────────────────
+const tooltipEl = document.getElementById('tooltip');
+let tooltipVisible = false;
+
+function showTooltip(title, text, x, y) {
+  tooltipEl.innerHTML = `<div class="tt-title">${title}</div>${text}`;
+  tooltipEl.style.display = 'block';
+  const rect = tooltipEl.getBoundingClientRect();
+  const wrap = document.getElementById('canvas-wrap').getBoundingClientRect();
+  let tx = x + 12;
+  let ty = y - 10;
+  if (tx + rect.width > wrap.width) tx = x - rect.width - 12;
+  if (ty + rect.height > wrap.height) ty = wrap.height - rect.height - 4;
+  if (ty < 0) ty = 4;
+  tooltipEl.style.left = tx + 'px';
+  tooltipEl.style.top = ty + 'px';
+  tooltipVisible = true;
+}
+
+function hideTooltip() {
+  tooltipEl.style.display = 'none';
+  tooltipVisible = false;
+}
+
+// ── Tutorial system ────────────────────────────────────────────
+const TUTORIAL_STEPS = [
+  {
+    title: 'The Real Causes of Fatigue',
+    text: 'Forget "lactic acid causes fatigue" \u2014 that\'s a myth. The real culprits are H\u207A (acidosis), Pi (phosphate), K\u207A (membrane depolarization), and Ca\u00B2\u207A dysfunction. These accumulate when ATP demand outpaces aerobic supply.',
+    intensity: 20, fiber: 'type1'
+  },
+  {
+    title: 'H\u207A \u2014 The pH Problem',
+    text: 'ATP hydrolysis and glycolysis release H\u207A. At moderate-to-high intensities, H\u207A production overwhelms the cell\'s buffering systems (bicarbonate, carnosine, phosphate buffer). Watch the pH gauge drop as intensity rises.',
+    intensity: 70, fiber: 'type1'
+  },
+  {
+    title: 'Pi \u2014 The Silent Inhibitor',
+    text: 'As PCr is broken down to regenerate ATP, free inorganic phosphate (Pi) rises dramatically. Pi directly inhibits the cross-bridge power stroke AND precipitates with Ca\u00B2\u207A inside the SR. Many researchers now consider Pi the PRIMARY fatigue metabolite.',
+    intensity: 75, fiber: 'type1'
+  },
+  {
+    title: 'Ca\u00B2\u207A Handling Fails',
+    text: 'SERCA pumps slow (need ATP + pH-sensitive). RyR channels release less Ca\u00B2\u207A (Pi precipitates CaPi in SR). Troponin sensitivity drops (H\u207A competes for Ca\u00B2\u207A binding sites). Triple hit to excitation-contraction coupling.',
+    intensity: 80, fiber: 'type1'
+  },
+  {
+    title: 'Na\u207A/K\u207A Pump Slowdown',
+    text: 'During rapid firing, K\u207A floods out through voltage-gated channels. The Na\u207A/K\u207A-ATPase can\'t keep up (needs ATP). Extracellular K\u207A rises, depolarizing the resting membrane potential \u2014 action potentials fail to propagate.',
+    intensity: 85, fiber: 'type1'
+  },
+  {
+    title: 'PFK-1 Shuts Down',
+    text: 'PFK-1 is exquisitely pH-sensitive. Below pH ~7.0, its activity drops sharply (sigmoid response). Less PFK-1 = less glycolysis = less ATP = pumps fail faster. A vicious cycle that accelerates fatigue.',
+    intensity: 90, fiber: 'type2x'
+  },
+  {
+    title: 'The Fatigue Cascade',
+    text: 'All mechanisms compound MULTIPLICATIVELY. Pi alone might reduce force 20%. H\u207A another 20%. K\u207A another 15%. Ca\u00B2\u207A another 20%. Combined: 0.8 \u00D7 0.8 \u00D7 0.85 \u00D7 0.8 = ~43% force remaining. Switch to Type IIx to see how fast-twitch fibers crumble even faster.',
+    intensity: 95, fiber: 'type2x'
+  },
+  {
+    title: 'Recovery',
+    text: 'Drop to 0% and watch the differential recovery rates. Pi/PCr recovers fastest (~30s). K\u207A normalizes in 2\u20135 minutes. pH takes 5\u201310 minutes. Ca\u00B2\u207A handling may take minutes to hours to fully restore. This is why you feel weak long after catching your breath.',
+    intensity: 0, fiber: 'type1'
+  }
+];
+
+let tutorialActive = false;
+let tutorialStep = -1;
+
+// ── Fiber type modifiers ───────────────────────────────────────
+const FIBER_TYPES = {
+  type1:  { glycolytic: 0.5, oxidative: 1.0, buffer: 1.0, serca: 0.8, naK: 1.0, label: 'Type I (Slow Oxidative)' },
+  type2x: { glycolytic: 1.0, oxidative: 0.4, buffer: 0.6, serca: 1.2, naK: 0.8, label: 'Type IIx (Fast Glycolytic)' }
+};
+let currentFiber = 'type1';
+
+// ── State variables ────────────────────────────────────────────
+let intensity = 0;
+let pH = 7.0;
+let piConc = 2.0;
+let caRelease = 1.0;
+let caCyt = 0.05;
+let kExtracellular = 4.0;
+let atpLocal = 1.0;
+let forceOutput = 1.0;
+let pfkActivity = 1.0;
+let sercaRate = 1.0;
+let naKPumpRate = 1.0;
+let glycolyticFlux = 1.0;
+let elapsedTime = 0;
+let lastIntensity = 0;
+let timeAtIntensity = 0;
+
+// ── Particle system ────────────────────────────────────────────
+const PARTICLE_COLORS = {
+  H:   '#D94A4A',
+  Pi:  '#90D090',
+  Ca:  '#00BCD4',
+  K:   '#E8A040',
+  ATP: '#FFD700'
+};
+
+function createParticles(count, species) {
+  const pool = [];
+  for (let i = 0; i < count; i++) {
+    pool.push({ x: 0, y: 0, vx: 0, vy: 0, active: false, species, alpha: 1, size: 3 });
+  }
+  return pool;
+}
+
+const particles = {
+  H:   createParticles(40, 'H'),
+  Pi:  createParticles(30, 'Pi'),
+  Ca:  createParticles(30, 'Ca'),
+  K:   createParticles(20, 'K'),
+  ATP: createParticles(20, 'ATP')
+};
+
+// ── Zone layout (computed on resize) ───────────────────────────
+let zones = {};
+
+function computeZones(W, H) {
+  const pad = 8;
+  zones = {
+    sarcolemma: { x: pad, y: pad, w: W - 2 * pad, h: H * 0.10 },
+    ttubule:    { x: pad, y: pad + H * 0.10, w: W * 0.12, h: H * 0.52 },
+    sr:         { x: W * 0.38, y: pad + H * 0.10, w: W * 0.40, h: H * 0.28 },
+    myofibril:  { x: W * 0.14, y: pad + H * 0.10 + H * 0.04, w: W * 0.38, h: H * 0.24 },
+    cytoplasm:  { x: pad, y: H * 0.62, w: W * 0.42, h: H * 0.38 - pad },
+    mito:       { x: W * 0.50, y: H * 0.62, w: W * 0.48 - pad, h: H * 0.32 },
+    statsOverlay: { x: W * 0.78, y: pad + 4, w: W * 0.20, h: H * 0.22 }
+  };
+}
+
+// ── Hit zones for tooltips ─────────────────────────────────────
+const ZONE_TOOLTIPS = {
+  sarcolemma: { title: 'Na\u207A/K\u207A-ATPase', glossary: 'Na\u207A/K\u207A-ATPase' },
+  ttubule:    { title: 'T-tubule', glossary: 'K\u207A accumulation' },
+  sr:         { title: 'Sarcoplasmic Reticulum', glossary: 'sarcoplasmic reticulum' },
+  myofibril:  { title: 'Myofibril / Cross-bridges', glossary: 'cross-bridge force' },
+  cytoplasm:  { title: 'Cytoplasm / PFK-1', glossary: 'PFK-1' },
+  mito:       { title: 'Mitochondrion', glossary: 'ATP hydrolysis' }
+};
+
+// ── Canvas setup ───────────────────────────────────────────────
+const cm = createCanvasManager('canvas');
+const ctx = cm.ctx;
+
+function handleResize() {
+  cm.resize();
+  computeZones(cm.cssWidth, cm.cssHeight);
+}
+window.addEventListener('resize', handleResize);
+handleResize();
+
+// ── DOM elements ───────────────────────────────────────────────
+const intensitySlider = document.getElementById('intensity-slider');
+const phDisplay = document.getElementById('ph-display');
+const piDisplay = document.getElementById('pi-display');
+const forceDisplay = document.getElementById('force-display');
+const kDisplay = document.getElementById('k-display');
+const timeDisplay = document.getElementById('time-display');
+const infoPanel = document.getElementById('info-panel');
+const howBtn = document.getElementById('how-btn');
+const trainingBtn = document.getElementById('training-btn');
+const trainingPanel = document.getElementById('training-panel');
+const fiberBtn1 = document.getElementById('fiber-type1');
+const fiberBtn2x = document.getElementById('fiber-type2x');
+
+intensitySlider.addEventListener('input', () => {
+  const newI = parseInt(intensitySlider.value);
+  if (newI !== lastIntensity) {
+    lastIntensity = newI;
+    timeAtIntensity = 0;
+  }
+  intensity = newI / 100;
+});
+
+fiberBtn1.addEventListener('click', () => {
+  currentFiber = 'type1';
+  fiberBtn1.classList.add('active');
+  fiberBtn2x.classList.remove('active');
+});
+fiberBtn2x.addEventListener('click', () => {
+  currentFiber = 'type2x';
+  fiberBtn2x.classList.add('active');
+  fiberBtn1.classList.remove('active');
+});
+
+howBtn.addEventListener('click', () => {
+  if (tutorialActive) {
+    tutorialActive = false;
+    tutorialStep = -1;
+    howBtn.classList.remove('active');
+    infoPanel.textContent = 'Tutorial ended. Explore freely.';
+    return;
+  }
+  tutorialActive = true;
+  tutorialStep = 0;
+  howBtn.classList.add('active');
+  applyTutorialStep();
+});
+
+trainingBtn.addEventListener('click', () => {
+  const isOpen = trainingPanel.classList.toggle('open');
+  trainingBtn.classList.toggle('active', isOpen);
+});
+
+// ── Canvas click → tooltip ─────────────────────────────────────
+cm.canvas.addEventListener('click', (e) => {
+  if (tutorialActive) {
+    tutorialStep++;
+    if (tutorialStep >= TUTORIAL_STEPS.length) {
+      tutorialActive = false;
+      tutorialStep = -1;
+      howBtn.classList.remove('active');
+      infoPanel.textContent = 'Tutorial complete! Explore the mechanisms freely.';
+      return;
+    }
+    applyTutorialStep();
+    return;
+  }
+
+  const rect = cm.canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if (tooltipVisible) { hideTooltip(); return; }
+
+  for (const [zoneId, zone] of Object.entries(zones)) {
+    if (zoneId === 'statsOverlay') continue;
+    const tt = ZONE_TOOLTIPS[zoneId];
+    if (!tt) continue;
+    if (mx >= zone.x && mx <= zone.x + zone.w && my >= zone.y && my <= zone.y + zone.h) {
+      const glossaryText = GLOSSARY[tt.glossary] || '';
+      showTooltip(tt.title, glossaryText, mx, my);
+      return;
+    }
+  }
+});
+
+function applyTutorialStep() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  intensitySlider.value = step.intensity;
+  intensity = step.intensity / 100;
+  if (step.fiber === 'type2x') {
+    currentFiber = 'type2x';
+    fiberBtn2x.classList.add('active');
+    fiberBtn1.classList.remove('active');
+  } else {
+    currentFiber = 'type1';
+    fiberBtn1.classList.add('active');
+    fiberBtn2x.classList.remove('active');
+  }
+  infoPanel.innerHTML = `<strong>Step ${tutorialStep + 1}/${TUTORIAL_STEPS.length}: ${step.title}</strong> &mdash; ${step.text} <span style="color:#506070;">(click canvas to continue)</span>`;
+}
+
+// ── Simulation update ──────────────────────────────────────────
+function update(dt) {
+  const fiber = FIBER_TYPES[currentFiber];
+  const I = intensity;
+
+  // Time tracking
+  elapsedTime += dt;
+  timeAtIntensity += dt;
+
+  // ATP turnover scales quadratically with intensity
+  const atpTurnover = I * I * 2.5;
+
+  // Glycolytic flux depends on PFK activity and fiber type
+  glycolyticFlux = lerp(glycolyticFlux, pfkActivity * fiber.glycolytic * I, dt * 3);
+
+  // H+ production from glycolysis, cleared by oxidative capacity and buffers
+  const hProd = glycolyticFlux * atpTurnover * 0.4;
+  const hClear = fiber.oxidative * fiber.buffer * 0.8;
+  const netH = hProd - hClear;
+  const pHTarget = Math.max(6.5, Math.min(7.45, 7.40 - Math.max(0, netH) * 0.12));
+  pH = lerp(pH, pHTarget, dt * 1.2);
+
+  // Pi production from PCr breakdown and ATP hydrolysis
+  const piProd = atpTurnover * 0.6 * (1 + fiber.glycolytic * 0.3);
+  const piClear = fiber.oxidative * 0.5 * (1 + atpLocal * 0.3);
+  const piTarget = Math.max(1.0, Math.min(35, 2.0 + Math.max(0, piProd - piClear) * 8));
+  piConc = lerp(piConc, piTarget, dt * 1.5);
+
+  // PFK-1 activity (sigmoid, sharp threshold ~pH 7.0)
+  pfkActivity = 1 / (1 + Math.exp(-15 * (pH - 6.95)));
+
+  // ATP local availability
+  const atpProd = (fiber.oxidative * 0.7 + glycolyticFlux * 0.3) * (1 + (1 - I) * 0.5);
+  const atpTarget = Math.max(0.1, Math.min(1.0, atpProd / Math.max(0.1, atpTurnover + 0.5)));
+  atpLocal = lerp(atpLocal, atpTarget, dt * 2);
+
+  // SERCA rate
+  const pHPenalty = Math.max(0, Math.min(1, (pH - 6.8) / 0.6));
+  sercaRate = fiber.serca * atpLocal * pHPenalty;
+  sercaRate = Math.max(0.05, Math.min(1, sercaRate));
+
+  // Ca2+ release (inhibited by Pi via Michaelis-Menten)
+  const piInhibition = 1 / (1 + piConc / 15);
+  caRelease = piInhibition * 0.8 + 0.2;
+
+  // Ca2+ cytoplasmic (rises when SERCA can't keep up)
+  const caTarget = I > 0.05 ? caRelease * (1 - sercaRate * 0.6) : 0.05;
+  caCyt = lerp(caCyt, Math.max(0.05, caTarget), dt * 2);
+
+  // Na+/K+ pump rate
+  naKPumpRate = fiber.naK * atpLocal * 0.9 + 0.1;
+  naKPumpRate = Math.max(0.1, Math.min(1, naKPumpRate));
+
+  // K+ extracellular
+  const kTarget = Math.max(3.5, Math.min(12, 4.0 + (1 - naKPumpRate) * I * 8));
+  kExtracellular = lerp(kExtracellular, kTarget, dt * 1.8);
+
+  // Force output — multiplicative compounding of 4 degradation factors
+  const piEffect = 1 / (1 + piConc / 20);
+  const caSensitivity = Math.max(0.3, (pH - 6.5) / 0.5);  // drops with pH
+  const caEffect = Math.min(1, caRelease * caSensitivity);
+  const kEffect = Math.max(0.3, 1 - (kExtracellular - 4) / 10);
+  const atpEffect = Math.sqrt(atpLocal);
+  const forceTarget = piEffect * caEffect * kEffect * atpEffect;
+  forceOutput = lerp(forceOutput, Math.max(0.05, Math.min(1, forceTarget)), dt * 2.5);
+
+  // Update displays
+  phDisplay.textContent = pH.toFixed(2);
+  piDisplay.textContent = piConc.toFixed(1);
+  forceDisplay.textContent = Math.round(forceOutput * 100);
+  kDisplay.textContent = kExtracellular.toFixed(1);
+  const mins = Math.floor(elapsedTime / 60);
+  const secs = Math.floor(elapsedTime % 60);
+  timeDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+  // Update info panel (if not in tutorial)
+  if (!tutorialActive) {
+    updateInfoPanel();
+  }
+
+  // Update particles
+  updateParticles(dt);
+}
+
+function updateInfoPanel() {
+  if (intensity < 0.05) {
+    infoPanel.textContent = 'Resting state \u2014 all systems nominal. Drag intensity to see fatigue mechanisms activate.';
+  } else if (forceOutput > 0.85) {
+    infoPanel.textContent = `Low intensity \u2014 aerobic ATP production matches demand. pH stable, minimal metabolite accumulation. ${FIBER_TYPES[currentFiber].label}.`;
+  } else if (forceOutput > 0.6) {
+    infoPanel.textContent = `Moderate fatigue \u2014 Pi rising (${piConc.toFixed(1)} mM), pH dropping (${pH.toFixed(2)}). Cross-bridge force declining. SERCA slowing.`;
+  } else if (forceOutput > 0.35) {
+    infoPanel.textContent = `Significant fatigue \u2014 multiple systems degraded. PFK-1 activity: ${Math.round(pfkActivity * 100)}%. K\u207Aext: ${kExtracellular.toFixed(1)} mM. Force at ${Math.round(forceOutput * 100)}%.`;
+  } else {
+    infoPanel.textContent = `Severe fatigue \u2014 the vicious cycle is active. PFK inhibited, ion pumps failing, Ca\u00B2\u207A cycling impaired. Force critically low at ${Math.round(forceOutput * 100)}%.`;
+  }
+}
+
+// ── Particle update ────────────────────────────────────────────
+function updateParticles(dt) {
+  const W = cm.cssWidth;
+  const H = cm.cssHeight;
+  if (W < 10 || H < 10) return;
+
+  // H+ particles — from myofibril toward cytoplasm
+  updateSpeciesPool(particles.H, dt, intensity * 0.8, zones.myofibril, zones.cytoplasm, 0.6);
+
+  // Pi particles — from cytoplasm toward myofibril/SR
+  updateSpeciesPool(particles.Pi, dt, Math.max(0, (piConc - 2) / 33) * 0.7, zones.cytoplasm, zones.myofibril, 0.5);
+
+  // Ca2+ particles — from SR toward myofibril
+  const caFraction = caRelease * intensity;
+  updateSpeciesPool(particles.Ca, dt, caFraction * 0.6, zones.sr, zones.myofibril, 0.4);
+
+  // K+ particles — from sarcolemma outward (above)
+  const kFraction = Math.max(0, (kExtracellular - 4) / 8);
+  updateSpeciesPool(particles.K, dt, kFraction * 0.7, zones.sarcolemma, { x: zones.sarcolemma.x, y: -20, w: zones.sarcolemma.w, h: 10 }, 0.3);
+
+  // ATP particles — from mito toward myofibril/pumps
+  updateSpeciesPool(particles.ATP, dt, atpLocal * intensity * 0.5, zones.mito, zones.myofibril, 0.4);
+}
+
+function updateSpeciesPool(pool, dt, activeFraction, srcZone, tgtZone, speed) {
+  const targetActive = Math.round(pool.length * Math.min(1, activeFraction));
+
+  // Activate particles
+  let activeCount = 0;
+  for (const p of pool) {
+    if (p.active) activeCount++;
+  }
+
+  if (activeCount < targetActive) {
+    for (const p of pool) {
+      if (!p.active && activeCount < targetActive) {
+        p.active = true;
+        p.x = srcZone.x + Math.random() * srcZone.w;
+        p.y = srcZone.y + Math.random() * srcZone.h;
+        p.vx = (Math.random() - 0.5) * speed * 60;
+        p.vy = (Math.random() - 0.5) * speed * 60;
+        p.alpha = 1;
+        p.size = 2.5 + Math.random() * 1.5;
+        activeCount++;
+      }
+    }
+  }
+
+  // Update positions and deactivate
+  const tgtCx = tgtZone.x + tgtZone.w / 2;
+  const tgtCy = tgtZone.y + tgtZone.h / 2;
+  for (const p of pool) {
+    if (!p.active) continue;
+
+    // Drift toward target with randomness
+    const dx = tgtCx - p.x;
+    const dy = tgtCy - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 2) {
+      p.vx += (dx / dist) * speed * 30 * dt;
+      p.vy += (dy / dist) * speed * 30 * dt;
+    }
+    p.vx += (Math.random() - 0.5) * 40 * dt;
+    p.vy += (Math.random() - 0.5) * 40 * dt;
+
+    // Damping
+    p.vx *= 0.97;
+    p.vy *= 0.97;
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    // Deactivate if reached target or out of bounds
+    if (dist < 15 && Math.random() < dt * 2) {
+      // Reset to source
+      p.x = srcZone.x + Math.random() * srcZone.w;
+      p.y = srcZone.y + Math.random() * srcZone.h;
+      p.vx = (Math.random() - 0.5) * speed * 60;
+      p.vy = (Math.random() - 0.5) * speed * 60;
+    }
+
+    // Deactivate excess
+    if (activeCount > targetActive && Math.random() < dt * 3) {
+      p.active = false;
+      activeCount--;
+    }
+  }
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  const W = cm.cssWidth;
+  const H = cm.cssHeight;
+  if (W < 10 || H < 10) return;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  drawSarcolemma(W, H);
+  drawTTubule(W, H);
+  drawSR(W, H);
+  drawMyofibril(W, H);
+  drawCytoplasm(W, H);
+  drawMitochondrion(W, H);
+  drawStatsOverlay(W, H);
+  drawParticles();
+}
+
+function drawSarcolemma(W, H) {
+  const z = zones.sarcolemma;
+  // Membrane background
+  ctx.fillStyle = '#1a2a3e';
+  roundRect(ctx, z.x, z.y, z.w, z.h, 6);
+  ctx.fill();
+  ctx.strokeStyle = '#2a4a6a';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = '#a0b0c0';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('SARCOLEMMA', z.x + 8, z.y + 14);
+
+  // Na+/K+ pump icons (chevrons)
+  const pumpCount = 5;
+  const pumpSpacing = z.w / (pumpCount + 1);
+  const pumpSpeed = naKPumpRate;
+  const time = performance.now() / 1000;
+
+  for (let i = 0; i < pumpCount; i++) {
+    const px = z.x + pumpSpacing * (i + 1);
+    const py = z.y + z.h / 2 + 4;
+    const phase = (time * pumpSpeed * 3 + i * 1.2) % (Math.PI * 2);
+    const offset = Math.sin(phase) * 4 * pumpSpeed;
+
+    // Pump body
+    ctx.fillStyle = pumpSpeed > 0.5 ? '#2a6a4a' : '#4a2a2a';
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Chevron arrow (animated)
+    ctx.strokeStyle = pumpSpeed > 0.5 ? '#60d080' : '#d06060';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px - 4, py + 3 + offset);
+    ctx.lineTo(px, py - 3 + offset);
+    ctx.lineTo(px + 4, py + 3 + offset);
+    ctx.stroke();
+  }
+
+  // K+ leak indication (particles above membrane when K+ ext is high)
+  if (kExtracellular > 5) {
+    const kLeakAlpha = Math.min(1, (kExtracellular - 5) / 5);
+    ctx.fillStyle = `rgba(232, 160, 64, ${kLeakAlpha * 0.4})`;
+    ctx.font = `9px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`K\u207A leak \u2191`, z.x + z.w - 60, z.y + 14);
+  }
+}
+
+function drawTTubule(W, H) {
+  const z = zones.ttubule;
+  // Vertical strip
+  ctx.fillStyle = '#162030';
+  roundRect(ctx, z.x, z.y, z.w, z.h, 4);
+  ctx.fill();
+  ctx.strokeStyle = '#2a3a5a';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Label
+  ctx.save();
+  ctx.translate(z.x + z.w / 2, z.y + z.h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#708090';
+  ctx.font = `bold 10px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('T-TUBULE', 0, 4);
+  ctx.restore();
+
+  // Action potential propagation indicator
+  const apStrength = Math.max(0.2, naKPumpRate * (1 - (kExtracellular - 4) / 12));
+  const time = performance.now() / 1000;
+  const pulse = (time * 2 * apStrength) % 1;
+
+  ctx.strokeStyle = `rgba(100, 180, 255, ${apStrength * 0.6})`;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 4]);
+  const pulseY = z.y + pulse * z.h;
+  ctx.beginPath();
+  ctx.moveTo(z.x + z.w / 2, pulseY - 10);
+  ctx.lineTo(z.x + z.w / 2, pulseY + 10);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawSR(W, H) {
+  const z = zones.sr;
+  ctx.fillStyle = '#0d1a28';
+  roundRect(ctx, z.x, z.y, z.w, z.h, 8);
+  ctx.fill();
+  ctx.strokeStyle = '#00BCD4';
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 0.4 + sercaRate * 0.6;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Label
+  ctx.fillStyle = '#00BCD4';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('SARCOPLASMIC RETICULUM', z.x + 8, z.y + 16);
+
+  // SERCA pump icons
+  const sercaCount = 3;
+  const sercaSpacing = z.w / (sercaCount + 1);
+  const sercaBright = sercaRate;
+  for (let i = 0; i < sercaCount; i++) {
+    const sx = z.x + sercaSpacing * (i + 1);
+    const sy = z.y + z.h - 16;
+    ctx.fillStyle = `rgba(0, 188, 212, ${0.2 + sercaBright * 0.6})`;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + sercaBright * 0.5})`;
+    ctx.font = `bold 8px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('S', sx, sy + 3);
+  }
+
+  // RyR channel indicators
+  const ryrCount = 3;
+  const ryrAlpha = caRelease;
+  for (let i = 0; i < ryrCount; i++) {
+    const rx = z.x + z.w * (0.25 + i * 0.25);
+    const ry = z.y + z.h;
+    ctx.fillStyle = `rgba(0, 188, 212, ${0.2 + ryrAlpha * 0.5})`;
+    roundRect(ctx, rx - 6, ry - 4, 12, 8, 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + ryrAlpha * 0.4})`;
+    ctx.font = `7px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('RyR', rx, ry + 2);
+  }
+
+  // Ca2+ stored inside (dots)
+  const storedCa = Math.round((1 - intensity * 0.6) * 8);
+  ctx.fillStyle = 'rgba(0, 188, 212, 0.4)';
+  for (let i = 0; i < storedCa; i++) {
+    const cx = z.x + 20 + (i % 4) * 18;
+    const cy = z.y + 30 + Math.floor(i / 4) * 14;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawMyofibril(W, H) {
+  const z = zones.myofibril;
+  ctx.fillStyle = '#1a1428';
+  roundRect(ctx, z.x, z.y, z.w, z.h, 6);
+  ctx.fill();
+  ctx.strokeStyle = '#3a2a5a';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = '#a090c0';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('MYOFIBRIL', z.x + 8, z.y + 16);
+
+  // Cross-bridge heads
+  const headCount = 6;
+  const headSpacing = z.w / (headCount + 1);
+  const time = performance.now() / 1000;
+
+  for (let i = 0; i < headCount; i++) {
+    const hx = z.x + headSpacing * (i + 1);
+    const hy = z.y + z.h * 0.5;
+    const cycleSpeed = forceOutput * 2;
+    const phase = (time * cycleSpeed + i * 0.8) % (Math.PI * 2);
+    const swing = Math.sin(phase) * 8 * forceOutput;
+
+    // Myosin head
+    const headAlpha = 0.3 + forceOutput * 0.7;
+    ctx.fillStyle = `rgba(160, 120, 200, ${headAlpha})`;
+    ctx.beginPath();
+    ctx.ellipse(hx + swing, hy, 6, 4, swing * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Attachment line
+    ctx.strokeStyle = `rgba(120, 90, 160, ${headAlpha * 0.6})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + 10);
+    ctx.lineTo(hx + swing, hy);
+    ctx.stroke();
+  }
+
+  // Troponin Ca2+ indicators
+  const tnCount = 4;
+  const caSensitivity = Math.max(0.3, (pH - 6.5) / 0.5);
+  const tnBright = caRelease * caSensitivity;
+  for (let i = 0; i < tnCount; i++) {
+    const tx = z.x + z.w * (0.15 + i * 0.22);
+    const ty = z.y + z.h - 14;
+    ctx.fillStyle = `rgba(0, 188, 212, ${0.15 + tnBright * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.2 + tnBright * 0.4})`;
+    ctx.font = `6px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('TnC', tx, ty + 2);
+  }
+
+  // Force output bar
+  const barX = z.x + z.w - 30;
+  const barY = z.y + 28;
+  const barH = z.h - 40;
+  const barW = 14;
+
+  // Background
+  ctx.fillStyle = '#0d0a14';
+  roundRect(ctx, barX, barY, barW, barH, 3);
+  ctx.fill();
+
+  // Filled portion
+  const fillH = barH * forceOutput;
+  const forceColor = forceOutput > 0.6 ? '#60d080' : forceOutput > 0.3 ? '#E8A040' : '#D94A4A';
+  ctx.fillStyle = forceColor;
+  roundRect(ctx, barX, barY + barH - fillH, barW, fillH, 3);
+  ctx.fill();
+
+  // Force label
+  ctx.fillStyle = '#c0c0c0';
+  ctx.font = `bold 8px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('F%', barX + barW / 2, barY - 4);
+}
+
+function drawCytoplasm(W, H) {
+  const z = zones.cytoplasm;
+  ctx.fillStyle = '#121820';
+  roundRect(ctx, z.x, z.y, z.w, z.h, 8);
+  ctx.fill();
+  ctx.strokeStyle = '#2a3a4a';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = '#708090';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('CYTOPLASM', z.x + 8, z.y + 16);
+
+  // PFK-1 enzyme box
+  const pfkX = z.x + z.w * 0.15;
+  const pfkY = z.y + z.h * 0.35;
+  const pfkW = z.w * 0.7;
+  const pfkH = z.h * 0.35;
+
+  const pfkBright = pfkActivity;
+  ctx.fillStyle = `rgba(30, 50, 80, ${0.3 + pfkBright * 0.5})`;
+  roundRect(ctx, pfkX, pfkY, pfkW, pfkH, 6);
+  ctx.fill();
+  ctx.strokeStyle = pfkBright > 0.5 ? `rgba(100, 180, 255, ${0.3 + pfkBright * 0.5})` : `rgba(100, 60, 60, 0.5)`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // PFK label
+  ctx.fillStyle = pfkBright > 0.5 ? `rgba(200, 220, 255, ${0.4 + pfkBright * 0.6})` : '#805050';
+  ctx.font = `bold 13px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(pfkBright > 0.3 ? 'PFK-1' : 'PFK-1 (Inhibited)', pfkX + pfkW / 2, pfkY + pfkH / 2 + 2);
+
+  // Activity bar under PFK
+  const actBarY = pfkY + pfkH + 6;
+  const actBarW = pfkW * 0.8;
+  const actBarX = pfkX + (pfkW - actBarW) / 2;
+  ctx.fillStyle = '#0a0f18';
+  roundRect(ctx, actBarX, actBarY, actBarW, 6, 2);
+  ctx.fill();
+  ctx.fillStyle = pfkBright > 0.5 ? '#4090d0' : '#804040';
+  roundRect(ctx, actBarX, actBarY, actBarW * pfkBright, 6, 2);
+  ctx.fill();
+
+  // H+ label in cytoplasm
+  if (intensity > 0.1) {
+    const hAlpha = Math.min(1, (7.0 - pH) / 0.5);
+    ctx.fillStyle = `rgba(217, 74, 74, ${hAlpha * 0.7})`;
+    ctx.font = `bold 10px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`H\u207A accumulating`, z.x + 8, z.y + z.h - 10);
+  }
+}
+
+function drawMitochondrion(W, H) {
+  const z = zones.mito;
+
+  // Elliptical shape
+  ctx.save();
+  ctx.beginPath();
+  const cx = z.x + z.w / 2;
+  const cy = z.y + z.h / 2;
+  ctx.ellipse(cx, cy, z.w / 2 - 4, z.h / 2 - 4, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#0d1a12';
+  ctx.fill();
+  ctx.strokeStyle = '#2a5a3a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Inner membrane folds (cristae)
+  ctx.strokeStyle = '#1a3a2a';
+  ctx.lineWidth = 1;
+  const foldCount = 4;
+  for (let i = 0; i < foldCount; i++) {
+    const fx = z.x + z.w * (0.25 + i * 0.15);
+    ctx.beginPath();
+    ctx.moveTo(fx, cy - z.h * 0.2);
+    ctx.quadraticCurveTo(fx + 8, cy, fx, cy + z.h * 0.2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Label
+  ctx.fillStyle = '#60a070';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('MITOCHONDRION', cx, z.y + 18);
+
+  // ATP production rate indicator
+  const atpRate = atpLocal * (1 - intensity * 0.3);
+  const barW = z.w * 0.5;
+  const barX = cx - barW / 2;
+  const barY = cy + z.h * 0.15;
+
+  ctx.fillStyle = '#0a1a0f';
+  roundRect(ctx, barX, barY, barW, 8, 3);
+  ctx.fill();
+  ctx.fillStyle = `rgba(255, 215, 0, ${0.3 + atpRate * 0.7})`;
+  roundRect(ctx, barX, barY, barW * Math.max(0.05, atpRate), 8, 3);
+  ctx.fill();
+
+  // ATP flow label
+  ctx.fillStyle = `rgba(255, 215, 0, ${0.3 + atpLocal * 0.5})`;
+  ctx.font = `bold 9px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText('ATP output', cx, barY + 20);
+}
+
+function drawStatsOverlay(W, H) {
+  const z = zones.statsOverlay;
+  ctx.fillStyle = 'rgba(13, 17, 23, 0.85)';
+  roundRect(ctx, z.x, z.y, z.w, z.h, 6);
+  ctx.fill();
+  ctx.strokeStyle = '#1a2a3a';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const lineH = 18;
+  let y = z.y + 16;
+  ctx.font = `11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  // pH gauge
+  const phColor = pH > 7.1 ? '#60d080' : pH > 6.9 ? '#E8A040' : '#D94A4A';
+  ctx.fillStyle = '#708090';
+  ctx.fillText('pH:', z.x + 8, y);
+  ctx.fillStyle = phColor;
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText(pH.toFixed(2), z.x + 32, y);
+
+  // pH mini bar
+  const phBarX = z.x + 70;
+  const phFrac = (pH - 6.5) / (7.45 - 6.5);
+  ctx.fillStyle = '#0a0f18';
+  roundRect(ctx, phBarX, y - 8, z.w - 78, 6, 2);
+  ctx.fill();
+  ctx.fillStyle = phColor;
+  roundRect(ctx, phBarX, y - 8, (z.w - 78) * Math.max(0, phFrac), 6, 2);
+  ctx.fill();
+
+  y += lineH;
+  ctx.font = `11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#708090';
+  ctx.fillText('[Pi]:', z.x + 8, y);
+  ctx.fillStyle = '#90D090';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText(piConc.toFixed(1), z.x + 38, y);
+
+  y += lineH;
+  ctx.font = `11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#708090';
+  ctx.fillText('Force:', z.x + 8, y);
+  const fColor = forceOutput > 0.6 ? '#60d080' : forceOutput > 0.3 ? '#E8A040' : '#D94A4A';
+  ctx.fillStyle = fColor;
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText(Math.round(forceOutput * 100) + '%', z.x + 48, y);
+
+  y += lineH;
+  ctx.font = `11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#708090';
+  ctx.fillText('[K\u207A]:', z.x + 8, y);
+  ctx.fillStyle = '#E8A040';
+  ctx.font = `bold 11px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillText(kExtracellular.toFixed(1), z.x + 38, y);
+}
+
+function drawParticles() {
+  for (const [species, pool] of Object.entries(particles)) {
+    const color = PARTICLE_COLORS[species];
+    for (const p of pool) {
+      if (!p.active) continue;
+      ctx.globalAlpha = p.alpha * 0.85;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Label for larger particles
+      if (p.size > 3) {
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = `bold 7px 'Segoe UI', system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        const label = species === 'H' ? 'H\u207A' : species === 'Ca' ? 'Ca' : species === 'K' ? 'K\u207A' : species;
+        ctx.fillText(label, p.x, p.y + 2.5);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── Init ───────────────────────────────────────────────────────
+initNav('fatigue');
+createAnimationLoop(update, render);
+</script>
+</body>
+</html>

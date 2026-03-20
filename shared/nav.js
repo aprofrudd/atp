@@ -15,6 +15,7 @@ const MODULES = [
   { id: 'beta-oxidation', name: '\u03B2-Oxidation', path: '../beta-oxidation/', connector: null },
   { id: 'metabolism-101', name: 'Metabolism 101', path: '../metabolism-101/',  connector: null },
   { id: 'lactate-shuttle', name: 'Lactate Shuttle', path: '../lactate-shuttle/', connector: null },
+  { id: 'fatigue', name: 'Fatigue', path: '../fatigue/', connector: null },
 ];
 
 export function initNav(currentModuleId) {

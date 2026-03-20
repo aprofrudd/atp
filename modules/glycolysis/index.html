@@ -1793,7 +1793,7 @@ function updateUI() {
   if (g < 0.03) {
     infoPanel.textContent = 'No glucose \u2014 glycolysis stalled. No ATP, no pyruvate for mitochondria.';
   } else if (g < 0.25) {
-    infoPanel.textContent = 'Low flux \u2014 mitochondria handle all NADH. Pyruvate enters Krebs directly. Minimal lactate.';
+    infoPanel.textContent = 'Low flux \u2014 mitochondria handle all NADH. Pyruvate \u2192 PDH \u2192 acetyl-CoA \u2192 Krebs. Minimal lactate.';
   } else if (g < 0.55) {
     infoPanel.textContent = 'Moderate \u2014 2 net ATP per glucose. NAD\u207A recycling adequate. Most pyruvate \u2192 Krebs.';
   } else if (g < 0.80) {

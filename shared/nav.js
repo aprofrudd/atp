@@ -10,7 +10,7 @@ const MODULES = [
   { id: 'transport',     name: 'ATP Transport',  path: '../transport/',         connector: 'ATP' },
   { id: 'atp-synthase',  name: 'ATP Synthase',   path: '../atp-synthase/',     connector: 'H\u207A gradient' },
   { id: 'etc',           name: 'ETC',            path: '../etc/',              connector: 'NADH, FADH\u2082' },
-  { id: 'krebs',         name: 'Krebs Cycle',    path: '../krebs/',            connector: 'Pyruvate, NADH' },
+  { id: 'krebs',         name: 'Krebs Cycle',    path: '../krebs/',            connector: 'Acetyl-CoA' },
   { id: 'glycolysis',    name: 'Glycolysis',     path: '../glycolysis/',       connector: null },
   { id: 'beta-oxidation', name: '\u03B2-Oxidation', path: '../beta-oxidation/', connector: null },
   { id: 'metabolism-101', name: 'Metabolism 101', path: '../metabolism-101/',  connector: null },

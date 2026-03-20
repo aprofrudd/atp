@@ -365,7 +365,7 @@
     <h3>The Bottleneck</h3>
     <div class="step">
       <div class="step-num" style="background:#D94A4A">!</div>
-      <div class="step-body"><strong>Local ATP supply at the myofibrils.</strong> Each cross-bridge cycle consumes one ATP. During intense contraction, demand at the myosin heads outstrips local ATP regeneration. When ATP runs out, myosin heads lock in rigor — the muscle seizes, not because the motor is broken, but because it has no fuel.</div>
+      <div class="step-body"><strong>Local ATP supply at the myofibrils.</strong> Each cross-bridge cycle consumes one ATP. During intense activity, demand at the myosin heads outstrips local ATP regeneration. When ATP runs out, myosin heads lock in rigor — the muscle seizes, not because the motor is broken, but because it has no fuel.</div>
     </div>
     <h3>How Endurance Training Adapts</h3>
     <div class="step">
@@ -544,8 +544,8 @@ let L = {};
 class SarcoState {
   constructor() {
     this.atpLevel = 0.5;         // 0-1 from slider
-    this.contraction = 0;        // 0-1, how much the sarcomere has shortened
-    this.targetContraction = 0;
+    this.shortening = 0;        // 0-1, how much the sarcomere has shortened
+    this.targetShortening = 0;
     this.cycleCount = 0;
     this.cycleTimes = [];
     this.running = true;
@@ -573,8 +573,8 @@ class SarcoState {
   }
 
   get sarcomereLengthPct() {
-    // At rest = 100%, max contraction = ~65%
-    return Math.round(100 - this.contraction * 35);
+    // At rest = 100%, max shortening = ~65%
+    return Math.round(100 - this.shortening * 35);
   }
 
   get force() {
@@ -660,9 +660,9 @@ class SarcoState {
 
     // Contraction: target based on fraction of heads doing work
     const activeHeads = allHeads.filter(h => h.state !== STATE.RIGOR).length;
-    this.targetContraction = (activeHeads / allHeads.length) * atp;
-    this.contraction += (this.targetContraction - this.contraction) * 2 * dt;
-    this.contraction = Math.max(0, Math.min(1, this.contraction));
+    this.targetShortening = (activeHeads / allHeads.length) * atp;
+    this.shortening += (this.targetShortening - this.shortening) * 2 * dt;
+    this.shortening = Math.max(0, Math.min(1, this.shortening));
 
     // Prune cycle timestamps
     const now = performance.now();
@@ -847,8 +847,8 @@ function computeLayout() {
 
   // Sarcomere dimensions
   const restWidth = 500 * s; // full sarcomere width at rest
-  const contractionOffset = sim.contraction * 120 * s;
-  const sarcWidth = restWidth - contractionOffset;
+  const shorteningOffset = sim.shortening * 120 * s;
+  const sarcWidth = restWidth - shorteningOffset;
 
   const leftZ = cx - sarcWidth / 2;
   const rightZ = cx + sarcWidth / 2;
@@ -1278,11 +1278,11 @@ function drawSingleHead(baseX, baseY, actinY, angleDeg, state, attached, isTop, 
 function drawForceArrows() {
   const { s, cy, leftZLine, rightZLine, sarcWidth } = L;
 
-  if (sim.contraction < 0.02) return;
+  if (sim.shortening < 0.02) return;
 
-  const arrowLen = 20 * s * sim.contraction;
+  const arrowLen = 20 * s * sim.shortening;
   const arrowY = cy;
-  const alpha = Math.min(1, sim.contraction * 3);
+  const alpha = Math.min(1, sim.shortening * 3);
 
   ctx.save();
   ctx.globalAlpha = alpha * 0.6;
@@ -1659,7 +1659,7 @@ function init() {
       updateParticles(dt);
     },
     (dt, timestamp) => {
-      computeLayout(); // recompute each frame because contraction changes layout
+      computeLayout(); // recompute each frame because shortening changes layout
       const w = cm.cssWidth;
       const h = cm.cssHeight;
       ctx.clearRect(0, 0, w, h);

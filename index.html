@@ -170,6 +170,103 @@
     color: #405060;
   }
 
+  /* Pathway yield section */
+  .pathway-yield {
+    width: 100%;
+    max-width: 1100px;
+    padding: 10px 20px 30px;
+    text-align: center;
+  }
+  .pathway-yield h2 {
+    font-size: 1.05rem;
+    color: #a0b0c0;
+    margin-bottom: 16px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .yield-chain {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .yield-stage {
+    width: 180px;
+    background: #16213e;
+    border: 2px solid #0f3460;
+    border-radius: 8px;
+    padding: 14px 10px 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+  }
+  .yield-stage:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(255, 215, 0, 0.1);
+  }
+  .yield-stage .stage-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    margin-bottom: 6px;
+  }
+  .yield-stage .stage-products {
+    font-size: 0.7rem;
+    color: #7088a0;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    min-height: 2.2em;
+  }
+  .yield-stage .stage-atp {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #FFD700;
+  }
+  .yield-stage .stage-atp-note {
+    font-size: 0.65rem;
+    color: #506070;
+    margin-top: 2px;
+  }
+  .yield-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+  .yield-arrow .arrow {
+    font-size: 1.2rem;
+    color: #3a5a7a;
+    line-height: 1;
+  }
+  .yield-arrow .mol-label {
+    font-size: 0.6rem;
+    color: #405060;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .yield-total {
+    display: inline-block;
+    background: #16213e;
+    border: 2px solid #FFD700;
+    border-radius: 8px;
+    padding: 12px 32px;
+    margin-top: 4px;
+  }
+  .yield-total .total-label {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    font-weight: 600;
+  }
+  .yield-total .total-val {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-left: 8px;
+  }
+
   @media (max-width: 700px) {
     .pathway {
       flex-direction: column;
@@ -190,6 +287,18 @@
     .module-card .icon { font-size: 1.6rem; margin-bottom: 0; }
     .module-card .text-wrap { text-align: left; }
     header h1 { font-size: 1.4rem; }
+    .yield-chain {
+      flex-direction: column;
+      gap: 0;
+    }
+    .yield-stage {
+      width: 90%;
+      max-width: 280px;
+    }
+    .yield-arrow {
+      transform: rotate(90deg);
+      margin: 6px 0;
+    }
   }
 </style>
 </head>
@@ -271,12 +380,13 @@
     <span class="molecule">Acetyl-CoA</span>
   </div>
 
-  <!-- PDH — link reaction -->
-  <div class="module-card" style="width: 110px; min-height: auto; padding: 12px 10px; border-color: #2a6040; background: #12261e; cursor: default;">
-    <div class="icon" style="font-size: 1.6rem;">&#9883;</div>
-    <div class="name" style="font-size: 0.8rem;">PDH Complex</div>
-    <div class="desc">Pyruvate &rarr; Acetyl-CoA + CO&#8322; + NADH</div>
-  </div>
+  <!-- PDH Complex -->
+  <a href="modules/pdh/" class="module-card available" style="border-color: #2A9D5C;">
+    <span class="badge" style="background: #2A9D5C;">New</span>
+    <div class="icon">&#9883;</div>
+    <div class="name">PDH Complex</div>
+    <div class="desc">Pyruvate &rarr; Acetyl-CoA + CO&#8322; + NADH &mdash; the irreversible one-way gate</div>
+  </a>
 
   <div class="connector">
     <span class="arrow">&larr;</span>
@@ -291,6 +401,61 @@
     <div class="desc">Glucose to pyruvate &amp; lactate &mdash; 2 ATP + 2 NADH + NAD&#8314; recycling</div>
   </a>
 
+</div>
+
+<div class="pathway-yield">
+  <h2>ATP Yield: One Glucose &rarr; ~30-32 ATP</h2>
+  <div class="yield-chain">
+
+    <a href="modules/glycolysis/" class="yield-stage" style="border-color: #E8A040;">
+      <div class="stage-name">Glycolysis</div>
+      <div class="stage-products">Glucose &rarr; 2 Pyruvate + 2 NADH</div>
+      <div class="stage-atp">2 ATP</div>
+      <div class="stage-atp-note">(substrate-level)</div>
+    </a>
+
+    <div class="yield-arrow">
+      <span class="arrow">&rarr;</span>
+      <span class="mol-label">2 Pyruvate</span>
+    </div>
+
+    <a href="modules/pdh/" class="yield-stage" style="border-color: #2A9D5C;">
+      <div class="stage-name">PDH Complex &times;2</div>
+      <div class="stage-products">2 Pyruvate &rarr; 2 Acetyl-CoA + 2 NADH</div>
+      <div class="stage-atp">~5 ATP</div>
+      <div class="stage-atp-note">(via 2 NADH &rarr; ETC)</div>
+    </a>
+
+    <div class="yield-arrow">
+      <span class="arrow">&rarr;</span>
+      <span class="mol-label">2 Acetyl-CoA</span>
+    </div>
+
+    <a href="modules/krebs/" class="yield-stage" style="border-color: #9B59B6;">
+      <div class="stage-name">Krebs Cycle &times;2</div>
+      <div class="stage-products">6 NADH + 2 FADH&#8322; + 2 GTP</div>
+      <div class="stage-atp">~2 ATP</div>
+      <div class="stage-atp-note">(2 GTP, substrate-level)</div>
+    </a>
+
+    <div class="yield-arrow">
+      <span class="arrow">&rarr;</span>
+      <span class="mol-label">10 NADH, 2 FADH&#8322;</span>
+    </div>
+
+    <a href="modules/etc/" class="yield-stage" style="border-color: #5A9E5A;">
+      <div class="stage-name">ETC + ATP Synthase</div>
+      <div class="stage-products">10 NADH &rarr; ~25 ATP, 2 FADH&#8322; &rarr; ~3 ATP</div>
+      <div class="stage-atp">~23-25 ATP</div>
+      <div class="stage-atp-note">(oxidative phosphorylation)</div>
+    </a>
+
+  </div>
+
+  <div class="yield-total">
+    <span class="total-label">Total per glucose:</span>
+    <span class="total-val">~30-32 ATP</span>
+  </div>
 </div>
 
 <div class="overview-section" style="width: 100%; max-width: 1100px; padding: 0 20px 10px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">

@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDH Complex &mdash; Pyruvate to Acetyl-CoA</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 200px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 260px;
+    accent-color: #2A9D5C;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  #process-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #process-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #process-panel::-webkit-scrollbar { width: 6px; }
+  #process-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-mpc  { background: #7BA0C0; }
+  .tag-e1   { background: #C07040; }
+  .tag-e2   { background: #E8A040; }
+  .tag-e3   { background: #4A90D9; }
+  .tag-nadh { background: #4A90D9; }
+  .tag-co2  { background: #A0A0A0; }
+  .tag-acoa { background: #E8A040; }
+  .tag-kin  { background: #D94A4A; }
+  .tag-phos { background: #2A9D5C; }
+  .tag-irr  { background: #8B5A2B; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-body .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; vertical-align: 1px; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>PDH Complex &mdash; Pyruvate to Acetyl-CoA</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="supply-slider">Pyruvate Supply:</label>
+    <input type="range" id="supply-slider" min="0" max="100" value="50">
+  </div>
+  <div class="slider-group">
+    <label for="reg-slider">Regulation:</label>
+    <input type="range" id="reg-slider" min="0" max="100" value="70">
+    <span style="font-size:0.72rem;color:#7088a0;white-space:nowrap"><span id="reg-label">Phosphatase</span></span>
+  </div>
+  <div class="stats">
+    <span>Acetyl-CoA: <span class="stat-val" id="acoa-count">0</span></span>
+    <span>NADH: <span class="stat-val" id="nadh-count">0</span></span>
+    <span>CO&#8322;: <span class="stat-val" id="co2-count">0</span></span>
+    <span>Rate/s: <span class="stat-val" id="rate-val">0.0</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Adjust pyruvate supply and regulation to drive the PDH complex.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+    <div class="analogy"><strong>Analogy:</strong> PDH is a one-way toll booth between the city (cytoplasm) and the power plant (mitochondria). When the power plant is already running hot (high ATP, NADH, acetyl-CoA), the booth closes via kinase phosphorylation. When demand rises (Ca&sup2;&plus; from muscle contraction, insulin signaling), phosphatase reopens the gate.</div>
+    <h3>The Bottleneck</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>PDH is the gatekeeper of carbohydrate oxidation.</strong> The Randle cycle: when fatty acid &beta;-oxidation produces abundant acetyl-CoA and NADH, PDH kinase phosphorylates E1, shutting down pyruvate entry. Carbs and fats compete at this exact point. During prolonged exercise, rising fat oxidation progressively inhibits PDH, forcing greater reliance on fat &mdash; the crossover concept.</div>
+    </div>
+    <h3>How Endurance Training Adapts</h3>
+    <div class="step">
+      <div class="step-num" style="background:#2A9D5C">1</div>
+      <div class="step-body"><strong>PDH phosphatase upregulation.</strong> Trained muscle expresses more PDH phosphatase, keeping E1 dephosphorylated (active) at a given workload. This lowers the threshold for carbohydrate oxidation and improves fuel flexibility.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#2A9D5C">2</div>
+      <div class="step-body"><strong>Mitochondrial biogenesis doubles PDH capacity.</strong> With ~2&times; mitochondrial density, trained muscle has roughly double the total PDH complex available. Each mitochondrion runs its own PDH, so more mitochondria = more parallel gates.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#2A9D5C">3</div>
+      <div class="step-body"><strong>Substrate sensitivity shifts.</strong> Training lowers the acetyl-CoA/CoA ratio at any given workload (because the expanded Krebs cycle and ETC consume acetyl-CoA faster). Lower ratio = less kinase activation = PDH stays open longer.</div>
+    </div>
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">5</div><div class="lbl">B-vitamin cofactors (B1, B2, B3, B5, lipoic acid)</div></div>
+      <div class="num-card"><div class="val">~2&times;</div><div class="lbl">PDH capacity with training</div></div>
+      <div class="num-card"><div class="val">30-50%</div><div class="lbl">Less lactate at same workload</div></div>
+      <div class="num-card"><div class="val">Irreversible</div><div class="lbl">Why fats can&rsquo;t make glucose</div></div>
+    </div>
+    <div class="analogy"><strong>Key insight:</strong> PDH is where the Randle cycle plays out. Training doesn&rsquo;t change the chemistry &mdash; it changes the regulation, keeping the gate open wider and running more gates in parallel. The result: faster pyruvate clearance, less lactate accumulation, and better fuel flexibility.</div>
+  </div>
+</div>
+
+<div id="process-panel">
+  <div class="process-inner">
+    <h2>How the PDH Complex Works &mdash; Step by Step</h2>
+
+    <div class="analogy">
+      <strong>PDH is a one-way toll booth between the city (cytoplasm) and the power plant (mitochondria).</strong> Pyruvate pays the toll (loses a carbon as CO&sub2;), picks up a VIP pass (CoA), and enters as acetyl-CoA. Once through, there&rsquo;s no going back &mdash; this is why fats (which produce acetyl-CoA directly) can never be converted back to glucose.
+    </div>
+
+    <h3>Part 1 &mdash; Pyruvate Entry</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#7BA0C0">1</div>
+      <div class="step-body">
+        <strong>Pyruvate crosses via MPC transporter.</strong>
+        <span class="tag tag-mpc">MPC</span> The mitochondrial pyruvate carrier (MPC) is a specific transporter in the inner mitochondrial membrane. Pyruvate produced by glycolysis in the cytoplasm must cross both mitochondrial membranes to reach the matrix where PDH resides. The outer membrane is permeable (porins), but the inner membrane requires MPC.
+      </div>
+    </div>
+
+    <h3>Part 2 &mdash; The Three-Enzyme Reaction</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#C07040">2</div>
+      <div class="step-body">
+        <strong>E1 (pyruvate decarboxylase) &mdash; removes CO&#8322;.</strong>
+        <span class="tag tag-e1">E1</span> <span class="tag tag-co2">CO&#8322;</span> Using thiamine pyrophosphate (TPP, from vitamin B1) as a cofactor, E1 cleaves the carboxyl group from pyruvate, releasing CO&sub2;. The remaining 2-carbon hydroxyethyl group stays bound to TPP on E1. This is the irreversible, committed step.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">3</div>
+      <div class="step-body">
+        <strong>E2 (dihydrolipoyl acetyltransferase) &mdash; transfers acetyl to CoA.</strong>
+        <span class="tag tag-e2">E2</span> <span class="tag tag-acoa">Acetyl-CoA</span> E2 has a long, flexible lipoic acid arm (lipoamide) that swings between E1 and E2. It picks up the hydroxyethyl group from E1, oxidizes it to an acetyl group, and transfers it to Coenzyme A (from vitamin B5). The product is acetyl-CoA.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">4</div>
+      <div class="step-body">
+        <strong>E3 (dihydrolipoyl dehydrogenase) &mdash; regenerates cofactors, produces NADH.</strong>
+        <span class="tag tag-e3">E3</span> <span class="tag tag-nadh">NADH</span> E3 re-oxidizes the lipoamide arm on E2 (so it can swing again). Electrons flow: lipoamide &rarr; FAD (bound to E3) &rarr; NAD&plus; &rarr; NADH. This NADH carries electrons to Complex I of the ETC, ultimately producing ~2.5 ATP.
+      </div>
+    </div>
+
+    <h3>Part 3 &mdash; Products and Regulation</h3>
+
+    <div class="step">
+      <div class="step-num" style="background:#E8A040">5</div>
+      <div class="step-body">
+        <strong>Acetyl-CoA: the universal fuel.</strong>
+        <span class="tag tag-acoa">Acetyl-CoA</span> <span class="tag tag-irr">Irreversible</span> Acetyl-CoA feeds directly into the Krebs cycle, where its 2 carbons are fully oxidized to CO&sub2;. Because PDH is irreversible, animals cannot convert acetyl-CoA (or fat) back to pyruvate or glucose. This is why &ldquo;fats can&rsquo;t make glucose&rdquo; &mdash; the toll booth only works one way.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">6</div>
+      <div class="step-body">
+        <strong>PDH kinase &mdash; phosphorylates E1 to inhibit.</strong>
+        <span class="tag tag-kin">PDH Kinase</span> When the cell has plenty of energy (high ATP/ADP, NADH/NAD&plus;, acetyl-CoA/CoA ratios), PDH kinase phosphorylates a serine on E1, locking it inactive. This is the Randle cycle in action: fat-derived acetyl-CoA activates kinase, blocking carbohydrate entry.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background:#2A9D5C">7</div>
+      <div class="step-body">
+        <strong>PDH phosphatase &mdash; dephosphorylates E1 to activate.</strong>
+        <span class="tag tag-phos">PDH Phosphatase</span> Ca&sup2;&plus; (released during muscle contraction) and insulin both activate PDH phosphatase, which removes the phosphate from E1. This is the &ldquo;burn more fuel!&rdquo; signal: muscle contraction and fed-state signaling both demand more acetyl-CoA.
+      </div>
+    </div>
+
+    <h3>By the Numbers</h3>
+
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">1</div><div class="lbl">Acetyl-CoA per pyruvate</div></div>
+      <div class="num-card"><div class="val">1</div><div class="lbl">NADH per pyruvate</div></div>
+      <div class="num-card"><div class="val">1</div><div class="lbl">CO&#8322; per pyruvate</div></div>
+      <div class="num-card"><div class="val">5</div><div class="lbl">B-vitamin cofactors</div></div>
+    </div>
+
+    <div class="analogy" style="margin-top:16px">
+      <strong>The key insight:</strong> PDH doesn&rsquo;t produce ATP directly. Its job is to convert pyruvate into acetyl-CoA (the universal 2-carbon fuel for the Krebs cycle) and produce 1 NADH for the ETC. But its irreversibility makes it a metabolic one-way street: once carbon passes through PDH, it can never go back to glucose. This single reaction explains why you can&rsquo;t &ldquo;burn fat to make sugar.&rdquo;
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { lerp, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const COLORS = {
+  pageBg:     '#1a1a2e',
+  cytoplasm:  '#2A2040',
+  membrane:   '#1A3030',
+  matrix:     '#1A2E1A',
+  matrixFill: '#0E1E14',
+  e1:         '#C07040',
+  e2:         '#E8A040',
+  e3:         '#4A90D9',
+  pyruvate:   '#C08050',
+  co2:        '#A0A0A0',
+  acetylCoA:  '#E8A040',
+  nadh:       '#4A90D9',
+  coA:        '#C08050',
+  nad:        '#6A9AC0',
+  accent:     '#2A9D5C',
+  kinase:     '#D94A4A',
+  phosphatase:'#2A9D5C',
+  label:      '#608070',
+  labelLight: '#c0d0c0',
+  zoneStroke: '#2A5040',
+  phosphoBadge: '#D94A4A',
+};
+
+const STEP_CONFIGS = [
+  null,
+  // 1: MPC transporter
+  { supply: 0.6, reg: 0.7, highlightZone: 'mpc' },
+  // 2: E1 decarboxylation
+  { supply: 0.6, reg: 0.7, highlightZone: 'e1' },
+  // 3: E2 acetyl transfer
+  { supply: 0.6, reg: 0.7, highlightZone: 'e2' },
+  // 4: E3 cofactor regeneration
+  { supply: 0.6, reg: 0.7, highlightZone: 'e3' },
+  // 5: Acetyl-CoA as product
+  { supply: 0.8, reg: 0.7, highlightZone: 'products' },
+  // 6: Kinase inhibition
+  { supply: 0.3, reg: 0.1, highlightZone: 'reg' },
+  // 7: Phosphatase activation
+  { supply: 0.7, reg: 0.9, highlightZone: 'reg' },
+];
+
+const STEP_ACCENT = [
+  null, '#7BA0C0', '#C07040', '#E8A040', '#4A90D9',
+  '#E8A040', '#D94A4A', '#2A9D5C',
+];
+
+const GLOSSARY = {
+  pyruvate: {
+    title: 'Pyruvate',
+    body: 'A 3-carbon molecule produced by glycolysis. Two pyruvates are generated per glucose. In aerobic conditions, pyruvate enters the mitochondria via MPC and is converted to acetyl-CoA by PDH. In anaerobic conditions, it is reduced to lactate by lactate dehydrogenase to regenerate NAD\u207A.',
+  },
+  mpc: {
+    title: 'Mitochondrial Pyruvate Carrier (MPC)',
+    body: 'A specific carrier protein in the inner mitochondrial membrane that transports pyruvate from the intermembrane space into the matrix. The outer membrane is freely permeable via porins, but the inner membrane requires MPC. Encoded by <em>MPC1</em> and <em>MPC2</em> genes.',
+  },
+  e1: {
+    title: 'E1 \u2014 Pyruvate Decarboxylase',
+    body: 'The first enzyme of the PDH complex. Uses <strong>thiamine pyrophosphate (TPP, vitamin B1)</strong> to remove the carboxyl group from pyruvate as CO\u2082. The remaining 2-carbon hydroxyethyl group stays bound to TPP. E1 is the regulatory target \u2014 phosphorylation by PDH kinase inactivates it.',
+  },
+  e2: {
+    title: 'E2 \u2014 Dihydrolipoyl Acetyltransferase',
+    body: 'The structural core of the PDH complex. Has a flexible <strong>lipoic acid</strong> arm (lipoamide) that swings between E1 and E2 active sites. It accepts the hydroxyethyl group from E1, oxidizes it to an acetyl group, and transfers it to <strong>Coenzyme A</strong> (from vitamin B5), producing acetyl-CoA.',
+  },
+  e3: {
+    title: 'E3 \u2014 Dihydrolipoyl Dehydrogenase',
+    body: 'Re-oxidizes the reduced lipoamide arm on E2 so it can function again. Electrons flow: reduced lipoamide \u2192 <strong>FAD</strong> (vitamin B2, bound to E3) \u2192 <strong>NAD\u207A</strong> (vitamin B3) \u2192 <strong>NADH</strong>. Shared with \u03B1-ketoglutarate dehydrogenase and branched-chain \u03B1-keto acid dehydrogenase.',
+  },
+  tpp: {
+    title: 'Thiamine Pyrophosphate (TPP)',
+    body: 'The active form of <strong>vitamin B1 (thiamine)</strong>. Essential cofactor for E1. TPP stabilizes the carbanion intermediate after CO\u2082 removal. Thiamine deficiency (beriberi) impairs PDH activity, causing pyruvate and lactate accumulation.',
+  },
+  lipoicAcid: {
+    title: 'Lipoic Acid (Lipoamide)',
+    body: 'A sulfur-containing cofactor covalently attached to E2 via a flexible arm (~14 \u00C5). It swings between E1 and E2 active sites, carrying the 2-carbon unit. During the reaction, its disulfide bond is reduced, and E3 must re-oxidize it for the next cycle.',
+  },
+  coA: {
+    title: 'Coenzyme A (CoA)',
+    body: 'Derived from <strong>pantothenic acid (vitamin B5)</strong>, ATP, and cysteine. The thiol (-SH) group forms a thioester bond with the acetyl group, creating acetyl-CoA. This high-energy bond makes acetyl-CoA an excellent acyl group donor for the Krebs cycle.',
+  },
+  acetylCoA: {
+    title: 'Acetyl-CoA',
+    body: 'The 2-carbon unit attached to CoA. The <strong>universal fuel input</strong> to the Krebs cycle. Produced from pyruvate (PDH), fatty acid \u03B2-oxidation, and amino acid catabolism. Each glucose yields 2 acetyl-CoA. Because PDH is irreversible, acetyl-CoA from fat cannot be converted back to glucose.',
+  },
+  pdhKinase: {
+    title: 'PDH Kinase',
+    body: '<strong>Phosphorylates E1</strong> on three serine residues, inactivating the complex. Activated by high ratios of ATP/ADP, NADH/NAD\u207A, and acetyl-CoA/CoA \u2014 signals that the cell already has plenty of energy. This is the molecular basis of the <strong>Randle cycle</strong>: fat-derived acetyl-CoA activates kinase, shutting down carbohydrate oxidation.',
+  },
+  pdhPhosphatase: {
+    title: 'PDH Phosphatase',
+    body: '<strong>Dephosphorylates E1</strong>, reactivating the complex. Activated by <strong>Ca\u00B2\u207A</strong> (released during muscle contraction) and <strong>insulin</strong> (fed-state signal). Also stimulated by high pyruvate and Mg\u00B2\u207A. This is the "burn more carbs!" signal.',
+  },
+  irreversibility: {
+    title: 'Irreversibility \u2014 Why Fats Can\u2019t Make Glucose',
+    body: 'The PDH reaction is <strong>thermodynamically irreversible</strong> (\u0394G\u2019\u00B0 = \u221233.4 kJ/mol). Animals lack any enzyme to reverse it. Since fatty acid \u03B2-oxidation produces acetyl-CoA (which enters after PDH), and there is no path from acetyl-CoA back to pyruvate, <strong>fats cannot be converted to glucose</strong> in animals. Plants and bacteria can, via the glyoxylate cycle.',
+  },
+};
+
+let L = {};
+
+// ============================================================
+// 2. STATE MANAGEMENT
+// ============================================================
+class SimState {
+  constructor() {
+    this.pyruvateSupply = 0.5;
+    this.regulationState = 0.7;  // 0=full kinase, 1=full phosphatase
+    this.reactionPhase = 0;      // 0-3 continuous (E1=0-1, E2=1-2, E3=2-3)
+    this.acetylCoAProduced = 0;
+    this.nadhProduced = 0;
+    this.co2Released = 0;
+    this.reactionTimes = [];
+    this.running = true;
+
+    // Tutorial state
+    this.tutorialStep = null;
+    this.savedSupply = 0.5;
+    this.savedReg = 0.7;
+    this.stepTransition = 1;
+    this.tutorialTime = 0;
+  }
+
+  get pdhActivity() {
+    // Regulation: 0 = fully kinase (inhibited), 1 = fully phosphatase (active)
+    const reg = this.effectiveReg;
+    // Sigmoid-ish curve: below 0.3 = strongly inhibited, above 0.7 = fully active
+    if (reg < 0.15) return 0.05;
+    if (reg > 0.85) return 1.0;
+    return 0.05 + 0.95 * (reg - 0.15) / 0.7;
+  }
+
+  get effectiveSupply() {
+    if (this.tutorialStep !== null) {
+      const cfg = STEP_CONFIGS[this.tutorialStep];
+      return cfg ? cfg.supply : 0;
+    }
+    return this.pyruvateSupply;
+  }
+
+  get effectiveReg() {
+    if (this.tutorialStep !== null) {
+      const cfg = STEP_CONFIGS[this.tutorialStep];
+      return cfg ? cfg.reg : 0.5;
+    }
+    return this.regulationState;
+  }
+
+  get effectiveRate() {
+    return this.effectiveSupply * this.pdhActivity;
+  }
+
+  update(dt) {
+    if (!this.running) return;
+
+    if (this.tutorialStep !== null) {
+      this.tutorialTime += dt;
+      if (this.stepTransition < 1) {
+        this.stepTransition = Math.min(1, this.stepTransition + dt / 0.3);
+      }
+    }
+
+    const rate = this.effectiveRate;
+    if (rate < 0.02) return;
+
+    const prevPhase = this.reactionPhase;
+    // Speed: at full rate, ~0.6 phases/s => full reaction in ~5s
+    this.reactionPhase += rate * 0.6 * dt;
+
+    // Detect phase crossings
+    const prev1 = prevPhase < 1;
+    const now1 = this.reactionPhase >= 1;
+    const prev2 = prevPhase < 2;
+    const now2 = this.reactionPhase >= 2;
+    const prev3 = prevPhase < 3;
+    const now3 = this.reactionPhase >= 3;
+
+    if (prev1 && now1) {
+      this.co2Released++;
+      spawnProduct('co2');
+    }
+    if (prev2 && now2) {
+      this.acetylCoAProduced++;
+      spawnProduct('acetylCoA');
+    }
+    if (prev3 && now3) {
+      this.nadhProduced++;
+      spawnProduct('nadh');
+      const now = performance.now();
+      this.reactionTimes.push(now);
+      this.reactionPhase -= 3;
+    }
+
+    // Prune old reaction times for rate calc
+    const now = performance.now();
+    while (this.reactionTimes.length && this.reactionTimes[0] < now - 5000) {
+      this.reactionTimes.shift();
+    }
+  }
+
+  get ratePerSecond() {
+    if (this.reactionTimes.length < 2) return 0;
+    const span = (this.reactionTimes[this.reactionTimes.length - 1] - this.reactionTimes[0]) / 1000;
+    return span > 0 ? ((this.reactionTimes.length - 1) / span) : 0;
+  }
+}
+
+const sim = new SimState();
+
+function tCfg() {
+  return sim.tutorialStep !== null ? STEP_CONFIGS[sim.tutorialStep] : null;
+}
+
+function zoneHighlighted(zone) {
+  const cfg = tCfg();
+  if (!cfg) return false;
+  return cfg.highlightZone === zone;
+}
+
+function zoneDimmed(zone) {
+  const cfg = tCfg();
+  if (!cfg) return false;
+  return cfg.highlightZone !== zone;
+}
+
+function zoneOpacity(zone) {
+  const cfg = tCfg();
+  if (!cfg) return 1;
+  const target = cfg.highlightZone === zone ? 1 : 0.25;
+  return lerp(0.25, target, sim.stepTransition);
+}
+
+function clearAllParticles() {
+  for (const key of Object.keys(POOL)) {
+    for (const p of POOL[key]) p.active = false;
+  }
+}
+
+// ============================================================
+// 3. PARTICLE SYSTEM
+// ============================================================
+const POOL = {
+  pyruvate: [],
+  co2: [],
+  acetylCoA: [],
+  nadh: [],
+  coA: [],
+  nad: [],
+};
+
+function initParticles() {
+  for (let i = 0; i < 8; i++) POOL.pyruvate.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0, progress:0 });
+  for (let i = 0; i < 8; i++) POOL.co2.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.acetylCoA.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 8; i++) POOL.nadh.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0 });
+  for (let i = 0; i < 6; i++) POOL.coA.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0, progress:0 });
+  for (let i = 0; i < 6; i++) POOL.nad.push({ x:0,y:0,vx:0,vy:0, active:false, opacity:1, life:0, progress:0 });
+}
+
+function spawnProduct(type) {
+  const pool = POOL[type];
+  if (!pool) return;
+  const p = getInactive(pool);
+  if (!p) return;
+
+  p.active = true;
+  p.life = 0;
+  p.opacity = 1;
+
+  if (type === 'co2' && L.e1x !== undefined) {
+    p.x = L.e1x;
+    p.y = L.e1y - 10;
+    p.vx = (Math.random() - 0.5) * 20;
+    p.vy = -50 - Math.random() * 30;
+  } else if (type === 'acetylCoA' && L.e2x !== undefined) {
+    p.x = L.e2x + L.enzymeW * 0.5;
+    p.y = L.e2y;
+    p.vx = 40 + Math.random() * 20;
+    p.vy = (Math.random() - 0.5) * 15;
+  } else if (type === 'nadh' && L.e3x !== undefined) {
+    p.x = L.e3x + L.enzymeW * 0.5;
+    p.y = L.e3y;
+    p.vx = 40 + Math.random() * 20;
+    p.vy = (Math.random() - 0.5) * 15;
+  }
+}
+
+let pyruvateSpawnTimer = 0;
+let coASpawnTimer = 0;
+let nadSpawnTimer = 0;
+
+function updateParticles(dt) {
+  const supply = sim.effectiveSupply;
+  const rate = sim.effectiveRate;
+
+  // --- Pyruvate arriving from left ---
+  if (supply >= 0.03) {
+    pyruvateSpawnTimer += dt;
+    const interval = Math.max(0.4, 2.0 - supply * 1.6);
+    if (pyruvateSpawnTimer >= interval) {
+      pyruvateSpawnTimer = 0;
+      const p = getInactive(POOL.pyruvate);
+      if (p) {
+        p.active = true;
+        p.life = 0;
+        p.opacity = 1;
+        p.progress = 0;
+        p.x = L.cytoLeft || 0;
+        p.y = (L.pipeY || 0) + (Math.random() - 0.5) * 20;
+      }
+    }
+  }
+
+  // --- CoA arriving at E2 from right ---
+  if (rate >= 0.02) {
+    coASpawnTimer += dt;
+    const interval = Math.max(0.8, 3.0 - rate * 2.2);
+    if (coASpawnTimer >= interval) {
+      coASpawnTimer = 0;
+      const p = getInactive(POOL.coA);
+      if (p) {
+        p.active = true;
+        p.life = 0;
+        p.opacity = 1;
+        p.progress = 0;
+        p.x = L.w || 400;
+        p.y = (L.e2y || 0) - 20 + Math.random() * 10;
+      }
+    }
+  }
+
+  // --- NAD+ arriving at E3 from right ---
+  if (rate >= 0.02) {
+    nadSpawnTimer += dt;
+    const interval = Math.max(0.8, 3.0 - rate * 2.2);
+    if (nadSpawnTimer >= interval) {
+      nadSpawnTimer = 0;
+      const p = getInactive(POOL.nad);
+      if (p) {
+        p.active = true;
+        p.life = 0;
+        p.opacity = 1;
+        p.progress = 0;
+        p.x = L.w || 400;
+        p.y = (L.e3y || 0) + 20 + Math.random() * 10;
+      }
+    }
+  }
+
+  // --- Animate pyruvate: travel from left across MPC to E1 ---
+  for (const p of POOL.pyruvate) {
+    if (!p.active) continue;
+    p.life += dt;
+    const speed = 0.3 + supply * 0.3;
+    p.progress += dt * speed;
+
+    const startX = L.cytoLeft || 0;
+    const endX = L.e1x || 200;
+    const t = Math.min(1, p.progress);
+
+    // Slight curve through MPC
+    const mpcX = L.mpcX || 100;
+    const midY = L.pipeY || 200;
+    if (t < 0.5) {
+      const t2 = t / 0.5;
+      p.x = lerp(startX, mpcX, t2);
+      p.y = lerp(p.y, midY, 0.1);
+    } else {
+      const t2 = (t - 0.5) / 0.5;
+      p.x = lerp(mpcX, endX, t2);
+      p.y = lerp(p.y, L.e1y || midY, 0.1);
+    }
+
+    if (t > 0.85) {
+      p.opacity = Math.max(0, 1 - (t - 0.85) / 0.15);
+    }
+    if (p.progress >= 1 || p.opacity <= 0) p.active = false;
+  }
+
+  // --- CoA: travel from right to E2 ---
+  for (const p of POOL.coA) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.progress += dt * 0.5;
+    const t = Math.min(1, p.progress);
+    const startX = L.w || 400;
+    const endX = (L.e2x || 250) + (L.enzymeW || 40) * 0.3;
+    p.x = lerp(startX, endX, t);
+    p.y = lerp(p.y, L.e2y || 200, 0.08);
+    if (t > 0.8) p.opacity = Math.max(0, 1 - (t - 0.8) / 0.2);
+    if (p.progress >= 1 || p.opacity <= 0) p.active = false;
+  }
+
+  // --- NAD+: travel from right to E3 ---
+  for (const p of POOL.nad) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.progress += dt * 0.5;
+    const t = Math.min(1, p.progress);
+    const startX = L.w || 400;
+    const endX = (L.e3x || 300) + (L.enzymeW || 40) * 0.3;
+    p.x = lerp(startX, endX, t);
+    p.y = lerp(p.y, L.e3y || 200, 0.08);
+    if (t > 0.8) p.opacity = Math.max(0, 1 - (t - 0.8) / 0.2);
+    if (p.progress >= 1 || p.opacity <= 0) p.active = false;
+  }
+
+  // --- Product particles: fly and fade ---
+  for (const p of POOL.co2) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.97;
+    p.vy *= 0.97;
+    p.opacity = Math.max(0, 1 - p.life / 2.5);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  for (const p of POOL.acetylCoA) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.96;
+    p.vy *= 0.96;
+    p.opacity = Math.max(0, 1 - p.life / 3.0);
+    if (p.opacity <= 0) p.active = false;
+  }
+
+  for (const p of POOL.nadh) {
+    if (!p.active) continue;
+    p.life += dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= 0.96;
+    p.vy *= 0.96;
+    p.opacity = Math.max(0, 1 - p.life / 3.0);
+    if (p.opacity <= 0) p.active = false;
+  }
+}
+
+// ============================================================
+// 4. RENDERING
+// ============================================================
+const cm = createCanvasManager('c');
+const canvas = cm.canvas;
+const ctx = cm.ctx;
+
+function computeLayout() {
+  const w = cm.cssWidth;
+  const h = cm.cssHeight;
+  const s = Math.min(w / 800, h / 500);
+
+  // Zone widths
+  const cytoW = w * 0.12;
+  const mpcW = w * 0.05;
+  const matrixW = w * 0.83;
+
+  const cytoLeft = 0;
+  const mpcX = cytoW;
+  const matrixX = cytoW + mpcW;
+
+  const pipeY = h * 0.45;
+  const enzymeW = Math.min(130, matrixW * 0.22) * s;
+  const enzymeH = Math.min(100, h * 0.30);
+
+  // E1/E2/E3 positions within matrix
+  const matrixInner = matrixW - 30 * s;
+  const spacing = matrixInner / 3;
+  const e1x = matrixX + spacing * 0.5;
+  const e2x = matrixX + spacing * 1.5;
+  const e3x = matrixX + spacing * 2.5;
+
+  const eY = pipeY;
+
+  // Regulation strip
+  const regY = h * 0.82;
+  const regH = h * 0.12;
+
+  L = {
+    w, h, s,
+    cytoW, mpcW, matrixW,
+    cytoLeft, mpcX, matrixX,
+    pipeY, enzymeW, enzymeH,
+    e1x, e1y: eY,
+    e2x, e2y: eY,
+    e3x, e3y: eY,
+    regY, regH,
+    fontSm: Math.max(9, 10 * s) + 'px',
+    fontMd: Math.max(11, 12 * s) + 'px',
+    fontLg: Math.max(13, 15 * s) + 'px',
+    fontXs: Math.max(7, 8 * s) + 'px',
+  };
+}
+
+function drawBackground() {
+  const { w, h, s, cytoW, mpcX, mpcW, matrixX } = L;
+
+  // Cytoplasm
+  ctx.fillStyle = '#1E1830';
+  ctx.fillRect(0, 0, cytoW, h);
+
+  // MPC channel
+  const mpcGrad = ctx.createLinearGradient(mpcX, 0, mpcX + mpcW, 0);
+  mpcGrad.addColorStop(0, '#1A2828');
+  mpcGrad.addColorStop(0.5, '#1A3535');
+  mpcGrad.addColorStop(1, '#142420');
+  ctx.fillStyle = mpcGrad;
+  ctx.fillRect(mpcX, 0, mpcW, h);
+
+  // MPC channel borders (inner membrane representation)
+  ctx.strokeStyle = '#2A5A4A';
+  ctx.lineWidth = 2.5 * s;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(mpcX, 0);
+  ctx.lineTo(mpcX, h);
+  ctx.moveTo(mpcX + mpcW, 0);
+  ctx.lineTo(mpcX + mpcW, h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Mitochondrial matrix
+  ctx.fillStyle = '#0E1E14';
+  ctx.fillRect(matrixX, 0, w - matrixX, h);
+
+  // Zone labels
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#605070';
+  ctx.fillText('CYTO-', cytoW / 2, 18 * s);
+  ctx.fillText('PLASM', cytoW / 2, 30 * s);
+
+  ctx.fillStyle = '#406050';
+  ctx.save();
+  ctx.translate(mpcX + mpcW / 2, h * 0.5);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('MPC', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = '#406040';
+  ctx.textAlign = 'left';
+  ctx.fillText('MITOCHONDRIAL MATRIX', matrixX + 10 * s, 18 * s);
+}
+
+function drawEnzymeZones() {
+  const { s, enzymeW, enzymeH, e1x, e1y, e2x, e2y, e3x, e3y, pipeY } = L;
+  const halfW = enzymeW / 2;
+  const halfH = enzymeH / 2;
+  const regulation = sim.effectiveReg;
+  const isPhosphorylated = regulation < 0.3;
+
+  // Draw connecting pipeline between enzymes
+  ctx.strokeStyle = '#2A4A3A';
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(e1x + halfW, pipeY);
+  ctx.lineTo(e2x - halfW, pipeY);
+  ctx.moveTo(e2x + halfW, pipeY);
+  ctx.lineTo(e3x - halfW, pipeY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Flow arrows between enzymes
+  ctx.fillStyle = '#3A6A5A';
+  const arrowSize = 6 * s;
+  // Arrow E1 -> E2
+  const ax1 = (e1x + halfW + e2x - halfW) / 2;
+  ctx.beginPath();
+  ctx.moveTo(ax1 + arrowSize, pipeY);
+  ctx.lineTo(ax1 - arrowSize * 0.5, pipeY - arrowSize * 0.6);
+  ctx.lineTo(ax1 - arrowSize * 0.5, pipeY + arrowSize * 0.6);
+  ctx.closePath();
+  ctx.fill();
+  // Arrow E2 -> E3
+  const ax2 = (e2x + halfW + e3x - halfW) / 2;
+  ctx.beginPath();
+  ctx.moveTo(ax2 + arrowSize, pipeY);
+  ctx.lineTo(ax2 - arrowSize * 0.5, pipeY - arrowSize * 0.6);
+  ctx.lineTo(ax2 - arrowSize * 0.5, pipeY + arrowSize * 0.6);
+  ctx.closePath();
+  ctx.fill();
+
+  // --- E1 ---
+  const e1op = zoneOpacity('e1');
+  ctx.globalAlpha = e1op;
+  drawEnzymeBox(e1x, e1y, halfW, halfH, COLORS.e1, 'E1', 'Pyruvate', 'Decarboxylase', s, isPhosphorylated);
+
+  // Highlight glow
+  if (zoneHighlighted('e1')) {
+    drawZoneGlow(e1x, e1y, halfW, halfH, COLORS.e1, s);
+  }
+  ctx.globalAlpha = 1;
+
+  // --- E2 ---
+  const e2op = zoneOpacity('e2');
+  ctx.globalAlpha = e2op;
+  drawEnzymeBox(e2x, e2y, halfW, halfH, COLORS.e2, 'E2', 'Acetyl-', 'transferase', s, false);
+  if (zoneHighlighted('e2')) {
+    drawZoneGlow(e2x, e2y, halfW, halfH, COLORS.e2, s);
+  }
+  ctx.globalAlpha = 1;
+
+  // --- E3 ---
+  const e3op = zoneOpacity('e3');
+  ctx.globalAlpha = e3op;
+  drawEnzymeBox(e3x, e3y, halfW, halfH, COLORS.e3, 'E3', 'Dehydro-', 'genase', s, false);
+  if (zoneHighlighted('e3')) {
+    drawZoneGlow(e3x, e3y, halfW, halfH, COLORS.e3, s);
+  }
+  ctx.globalAlpha = 1;
+
+  // Cofactor labels
+  ctx.globalAlpha = zoneOpacity('e1');
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#908060';
+  ctx.fillText('TPP (B1)', e1x, e1y + halfH + 16 * s);
+  ctx.globalAlpha = zoneOpacity('e2');
+  ctx.fillStyle = '#908060';
+  ctx.fillText('Lipoic acid', e2x, e2y + halfH + 16 * s);
+  ctx.fillText('CoA (B5)', e2x, e2y + halfH + 28 * s);
+  ctx.globalAlpha = zoneOpacity('e3');
+  ctx.fillStyle = '#908060';
+  ctx.fillText('FAD (B2)', e3x, e3y + halfH + 16 * s);
+  ctx.fillText('NAD\u207A (B3)', e3x, e3y + halfH + 28 * s);
+  ctx.globalAlpha = 1;
+
+  // Product labels above enzymes
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.globalAlpha = zoneOpacity('e1');
+  ctx.fillStyle = COLORS.co2;
+  ctx.fillText('\u2191 CO\u2082', e1x, e1y - halfH - 14 * s);
+  ctx.globalAlpha = zoneOpacity('e2');
+  ctx.fillStyle = COLORS.acetylCoA;
+  ctx.fillText('Acetyl-CoA \u2192', e2x + halfW + 20 * s, e2y - 5 * s);
+  ctx.globalAlpha = zoneOpacity('e3');
+  ctx.fillStyle = COLORS.nadh;
+  ctx.fillText('NADH \u2192', e3x + halfW + 20 * s, e3y - 5 * s);
+  ctx.globalAlpha = 1;
+
+  // Input labels
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.globalAlpha = zoneOpacity('e2');
+  ctx.fillStyle = COLORS.coA;
+  ctx.textAlign = 'right';
+  ctx.fillText('CoA \u2192', e2x + halfW + 18 * s, e2y + 12 * s);
+  ctx.globalAlpha = zoneOpacity('e3');
+  ctx.fillStyle = COLORS.nad;
+  ctx.textAlign = 'right';
+  ctx.fillText('NAD\u207A \u2192', e3x + halfW + 18 * s, e3y + 12 * s);
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = 1;
+}
+
+function drawEnzymeBox(cx, cy, halfW, halfH, color, name, line1, line2, s, showPhospho) {
+  // Body
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, halfW * 1.2);
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.25)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0.08)`);
+
+  roundRect(ctx, cx - halfW, cy - halfH, halfW * 2, halfH * 2, 10 * s);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Name
+  ctx.font = `bold ${L.fontLg} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.fillText(name, cx, cy - 8 * s);
+
+  // Subtitle
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#90a090';
+  ctx.fillText(line1, cx, cy + 8 * s);
+  ctx.fillText(line2, cx, cy + 20 * s);
+
+  // Phospho-badge on E1
+  if (showPhospho) {
+    const bx = cx + halfW - 6 * s;
+    const by = cy - halfH + 6 * s;
+    ctx.fillStyle = COLORS.phosphoBadge;
+    ctx.beginPath();
+    ctx.arc(bx, by, 10 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(8, 9 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('P', bx, by);
+    ctx.textBaseline = 'alphabetic';
+  }
+}
+
+function drawZoneGlow(cx, cy, halfW, halfH, color, s) {
+  const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 12 + 10 * pulse;
+  ctx.globalAlpha = 0.4 + 0.35 * pulse;
+  roundRect(ctx, cx - halfW - 6, cy - halfH - 6, halfW * 2 + 12, halfH * 2 + 12, 14 * s);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMPCHighlight() {
+  if (!zoneHighlighted('mpc')) return;
+  const { mpcX, mpcW, h, s } = L;
+  const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+  ctx.save();
+  ctx.strokeStyle = '#7BA0C0';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = '#7BA0C0';
+  ctx.shadowBlur = 12 + 10 * pulse;
+  ctx.globalAlpha = 0.4 + 0.35 * pulse;
+  ctx.strokeRect(mpcX - 2, 0, mpcW + 4, h);
+  ctx.restore();
+}
+
+function drawRegulationStrip() {
+  const { w, s, regY, regH, matrixX } = L;
+  const reg = sim.effectiveReg;
+  const isPhosphorylated = reg < 0.3;
+  const op = zoneOpacity('reg');
+
+  ctx.globalAlpha = op;
+
+  // Background strip
+  ctx.fillStyle = '#0A1410';
+  roundRect(ctx, matrixX + 10 * s, regY, w - matrixX - 20 * s, regH, 6 * s);
+  ctx.fill();
+  ctx.strokeStyle = '#1A3A2A';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Regulation bar
+  const barX = matrixX + 20 * s;
+  const barW = w - matrixX - 40 * s;
+  const barY = regY + regH * 0.35;
+  const barH = 8 * s;
+
+  // Gradient bar: red (kinase) to green (phosphatase)
+  const barGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+  barGrad.addColorStop(0, COLORS.kinase);
+  barGrad.addColorStop(0.5, '#666050');
+  barGrad.addColorStop(1, COLORS.phosphatase);
+  ctx.fillStyle = barGrad;
+  roundRect(ctx, barX, barY, barW, barH, 3 * s);
+  ctx.fill();
+
+  // Indicator dot
+  const dotX = barX + reg * barW;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(dotX, barY + barH / 2, 6 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Labels
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = COLORS.kinase;
+  ctx.fillText('PDH Kinase (inhibit)', barX, regY + 14 * s);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = COLORS.phosphatase;
+  ctx.fillText('PDH Phosphatase (activate)', barX + barW, regY + 14 * s);
+
+  // Status text
+  ctx.textAlign = 'center';
+  ctx.font = `${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  if (isPhosphorylated) {
+    ctx.fillStyle = COLORS.kinase;
+    ctx.fillText('E1 PHOSPHORYLATED \u2014 INHIBITED', barX + barW / 2, regY + regH - 6 * s);
+  } else if (reg > 0.7) {
+    ctx.fillStyle = COLORS.phosphatase;
+    ctx.fillText('E1 ACTIVE \u2014 Full Speed', barX + barW / 2, regY + regH - 6 * s);
+  } else {
+    ctx.fillStyle = '#708070';
+    ctx.fillText('E1 partially active', barX + barW / 2, regY + regH - 6 * s);
+  }
+
+  // Highlight for tutorial
+  if (zoneHighlighted('reg')) {
+    const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+    ctx.save();
+    ctx.strokeStyle = reg < 0.3 ? COLORS.kinase : COLORS.phosphatase;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 10 + 8 * pulse;
+    ctx.globalAlpha = 0.4 + 0.35 * pulse;
+    roundRect(ctx, matrixX + 8 * s, regY - 2, w - matrixX - 16 * s, regH + 4, 8 * s);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+function drawPyruvateEntry() {
+  const { s, cytoW, pipeY } = L;
+  const supply = sim.effectiveSupply;
+  if (supply < 0.03) return;
+
+  ctx.globalAlpha = zoneOpacity('mpc');
+
+  // Arrow from cytoplasm toward MPC
+  ctx.strokeStyle = COLORS.pyruvate;
+  ctx.lineWidth = 2 * s;
+  ctx.setLineDash([5, 4]);
+  ctx.globalAlpha *= 0.5;
+  ctx.beginPath();
+  ctx.moveTo(10 * s, pipeY);
+  ctx.lineTo(cytoW - 4 * s, pipeY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = zoneOpacity('mpc');
+
+  // Pyruvate label in cytoplasm
+  ctx.font = `bold ${L.fontSm} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORS.pyruvate;
+  ctx.fillText('Pyruvate', cytoW / 2, pipeY - 16 * s);
+
+  ctx.globalAlpha = 1;
+}
+
+function drawParticles() {
+  const s = L.s;
+
+  // Pyruvate incoming
+  for (const p of POOL.pyruvate) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.pyruvate;
+    ctx.shadowColor = COLORS.pyruvate;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Pyr', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // CO2
+  for (const p of POOL.co2) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.co2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('CO\u2082', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // Acetyl-CoA
+  for (const p of POOL.acetylCoA) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.acetylCoA;
+    ctx.shadowColor = COLORS.acetylCoA;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('AcCoA', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // NADH
+  for (const p of POOL.nadh) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.nadh;
+    ctx.shadowColor = COLORS.nadh;
+    ctx.shadowBlur = 6 * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.max(7, 8 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('NADH', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // CoA incoming
+  for (const p of POOL.coA) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.coA;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('CoA', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+
+  // NAD+ incoming
+  for (const p of POOL.nad) {
+    if (!p.active) continue;
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = COLORS.nad;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `bold ${Math.max(6, 7 * s)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('NAD\u207A', p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawProgressIndicator() {
+  const { s, e1x, e2x, e3x, e1y, enzymeW } = L;
+  const rate = sim.effectiveRate;
+  if (rate < 0.02) return;
+
+  const phase = sim.reactionPhase;
+  const halfW = enzymeW / 2;
+
+  // Active glow on current enzyme
+  let activeX, activeColor;
+  if (phase < 1) {
+    activeX = e1x;
+    activeColor = COLORS.e1;
+  } else if (phase < 2) {
+    activeX = e2x;
+    activeColor = COLORS.e2;
+  } else {
+    activeX = e3x;
+    activeColor = COLORS.e3;
+  }
+
+  const pulse = 0.3 + 0.3 * Math.sin(performance.now() * 0.006);
+  ctx.save();
+  ctx.shadowColor = activeColor;
+  ctx.shadowBlur = 15 * s * pulse;
+  ctx.strokeStyle = activeColor;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = pulse;
+  roundRect(ctx, activeX - halfW - 2, e1y - L.enzymeH / 2 - 2, enzymeW + 4, L.enzymeH + 4, 12 * s);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawLegend() {
+  const { s, w, h } = L;
+  const lx = L.matrixX + 10 * s;
+  const ly = h - 70 * s;
+  const lineH = 14 * s;
+
+  if (ly < L.regY) return;
+
+  const items = [
+    { color: COLORS.pyruvate, label: 'Pyruvate (input)' },
+    { color: COLORS.co2, label: 'CO\u2082 (waste)' },
+    { color: COLORS.acetylCoA, label: 'Acetyl-CoA (to Krebs)' },
+    { color: COLORS.nadh, label: 'NADH (to ETC)' },
+  ];
+
+  ctx.font = `bold ${L.fontXs} 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+
+  items.forEach((item, i) => {
+    const y = ly + i * lineH;
+    ctx.fillStyle = item.color;
+    ctx.beginPath();
+    ctx.arc(lx + 5 * s, y - 3 * s, 4 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#506050';
+    ctx.fillText(item.label, lx + 13 * s, y);
+  });
+}
+
+function drawProductsHighlight() {
+  if (!zoneHighlighted('products')) return;
+  const { s, e2x, e3x, e1y, enzymeW, enzymeH, w } = L;
+  const pulse = 0.5 + 0.5 * Math.sin(sim.tutorialTime * 5 * Math.PI);
+
+  // Highlight the product exit area (right side of E2 and E3)
+  ctx.save();
+  ctx.strokeStyle = COLORS.acetylCoA;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = COLORS.acetylCoA;
+  ctx.shadowBlur = 10 + 8 * pulse;
+  ctx.globalAlpha = 0.3 + 0.25 * pulse;
+  const rx = e2x + enzymeW / 2 + 10 * s;
+  const ry = e1y - enzymeH / 2 - 20 * s;
+  const rw = Math.min(120 * s, w - rx - 10 * s);
+  const rh = enzymeH + 40 * s;
+  roundRect(ctx, rx, ry, rw, rh, 8 * s);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ============================================================
+// 5. UI & INFO PANEL
+// ============================================================
+const supplySlider = document.getElementById('supply-slider');
+const regSlider = document.getElementById('reg-slider');
+const acoaCountEl = document.getElementById('acoa-count');
+const nadhCountEl = document.getElementById('nadh-count');
+const co2CountEl = document.getElementById('co2-count');
+const rateValEl = document.getElementById('rate-val');
+const infoPanel = document.getElementById('info-panel');
+const regLabelEl = document.getElementById('reg-label');
+
+supplySlider.addEventListener('input', () => {
+  sim.pyruvateSupply = supplySlider.value / 100;
+});
+
+regSlider.addEventListener('input', () => {
+  sim.regulationState = regSlider.value / 100;
+});
+
+function extractStepDescriptions() {
+  const bodies = document.querySelectorAll('#process-panel .step .step-body');
+  return Array.from(bodies).map(el => el.innerHTML);
+}
+
+function updateUI() {
+  acoaCountEl.textContent = sim.acetylCoAProduced;
+  nadhCountEl.textContent = sim.nadhProduced;
+  co2CountEl.textContent = sim.co2Released;
+  rateValEl.textContent = sim.ratePerSecond.toFixed(1);
+
+  const reg = sim.effectiveReg;
+  if (reg < 0.3) {
+    regLabelEl.textContent = 'Kinase';
+    regLabelEl.style.color = COLORS.kinase;
+  } else if (reg > 0.7) {
+    regLabelEl.textContent = 'Phosphatase';
+    regLabelEl.style.color = COLORS.phosphatase;
+  } else {
+    regLabelEl.textContent = 'Balanced';
+    regLabelEl.style.color = '#708070';
+  }
+
+  const supply = sim.effectiveSupply;
+  if (supply < 0.03) {
+    infoPanel.textContent = 'No pyruvate \u2014 PDH idle. No acetyl-CoA for Krebs.';
+  } else if (reg < 0.2) {
+    infoPanel.textContent = 'PDH phosphorylated \u2014 ATP/NADH/acetyl-CoA high. Cell doesn\u2019t need more fuel.';
+  } else if (reg > 0.8) {
+    infoPanel.textContent = 'PDH dephosphorylated \u2014 Ca\u00B2\u207A/insulin signal: burn more fuel!';
+  } else if (supply > 0.7 && reg > 0.5) {
+    infoPanel.textContent = 'Full speed \u2014 each pyruvate yields 1 acetyl-CoA + 1 CO\u2082 + 1 NADH.';
+  } else if (supply < 0.3) {
+    infoPanel.textContent = 'Low pyruvate supply \u2014 PDH activity limited by substrate availability.';
+  } else {
+    infoPanel.textContent = 'Steady throughput \u2014 pyruvate converted to acetyl-CoA via E1 \u2192 E2 \u2192 E3.';
+  }
+}
+
+// ============================================================
+// 6. GLOSSARY TOOLTIPS
+// ============================================================
+function getHitRegions() {
+  const s = L.s || 1;
+  const regions = [];
+  const halfW = L.enzymeW / 2;
+  const halfH = L.enzymeH / 2;
+
+  // E1
+  regions.push({
+    id: 'e1', cursor: true,
+    test(mx, my) {
+      return Math.abs(mx - L.e1x) < halfW + 8 * s && Math.abs(my - L.e1y) < halfH + 8 * s;
+    },
+  });
+  // E2
+  regions.push({
+    id: 'e2', cursor: true,
+    test(mx, my) {
+      return Math.abs(mx - L.e2x) < halfW + 8 * s && Math.abs(my - L.e2y) < halfH + 8 * s;
+    },
+  });
+  // E3
+  regions.push({
+    id: 'e3', cursor: true,
+    test(mx, my) {
+      return Math.abs(mx - L.e3x) < halfW + 8 * s && Math.abs(my - L.e3y) < halfH + 8 * s;
+    },
+  });
+  // MPC area
+  regions.push({
+    id: 'mpc', cursor: true,
+    test(mx, my) {
+      return mx >= L.mpcX - 10 && mx <= L.mpcX + L.mpcW + 10;
+    },
+  });
+  // Cytoplasm pyruvate label
+  regions.push({
+    id: 'pyruvate', cursor: true,
+    test(mx, my) {
+      return mx < L.cytoW + 5 && Math.abs(my - L.pipeY) < 30 * s;
+    },
+  });
+  // Regulation strip
+  regions.push({
+    id: sim.effectiveReg < 0.3 ? 'pdhKinase' : 'pdhPhosphatase', cursor: true,
+    test(mx, my) {
+      return my > L.regY - 5 && my < L.regY + L.regH + 5 && mx > L.matrixX;
+    },
+  });
+
+  return regions;
+}
+
+const tooltipMgr = new TooltipManager(canvas, GLOSSARY, getHitRegions);
+
+// ============================================================
+// 7. TUTORIAL
+// ============================================================
+const stepDescriptions = extractStepDescriptions();
+
+const tutorialMgr = new TutorialManager({
+  stepCount: 7,
+  accents: STEP_ACCENT,
+  descriptions: stepDescriptions,
+  onEnter() {
+    tooltipMgr.hide();
+    const panel = document.getElementById('process-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    }
+    const tPanel = document.getElementById('training-panel');
+    if (tPanel.classList.contains('open')) {
+      tPanel.classList.remove('open');
+      document.getElementById('training-btn').classList.remove('active');
+    }
+    sim.savedSupply = sim.pyruvateSupply;
+    sim.savedReg = sim.regulationState;
+    sim.tutorialStep = 1;
+    sim.tutorialTime = 0;
+    sim.stepTransition = 0;
+    sim.acetylCoAProduced = 0;
+    sim.nadhProduced = 0;
+    sim.co2Released = 0;
+    sim.reactionTimes = [];
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onExit() {
+    sim.tutorialStep = null;
+    sim.pyruvateSupply = sim.savedSupply;
+    sim.regulationState = sim.savedReg;
+    supplySlider.value = sim.pyruvateSupply * 100;
+    regSlider.value = sim.regulationState * 100;
+    clearAllParticles();
+    setTimeout(() => { cm.resize(); computeLayout(); }, 50);
+  },
+  onStepChange(n) {
+    sim.tutorialStep = n;
+    sim.stepTransition = 0;
+    clearAllParticles();
+  },
+});
+
+document.getElementById('how-btn').addEventListener('click', () => tutorialMgr.enter());
+
+document.getElementById('training-btn').addEventListener('click', () => {
+  const panel = document.getElementById('training-panel');
+  const btn = document.getElementById('training-btn');
+  if (tutorialMgr.isActive) tutorialMgr.exit();
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
+
+// ============================================================
+// 8. MAIN LOOP & INIT
+// ============================================================
+function resize() {
+  cm.resize();
+  computeLayout();
+}
+
+function init() {
+  initNav('pdh');
+  initParticles();
+  resize();
+  window.addEventListener('resize', () => { tooltipMgr.hide(); resize(); });
+  sim.pyruvateSupply = supplySlider.value / 100;
+  sim.regulationState = regSlider.value / 100;
+  updateUI();
+
+  createAnimationLoop(
+    (dt) => {
+      sim.update(dt);
+      updateParticles(dt);
+    },
+    (dt, timestamp) => {
+      const w = cm.cssWidth;
+      const h = cm.cssHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawMPCHighlight();
+      drawPyruvateEntry();
+      drawEnzymeZones();
+      drawProgressIndicator();
+      drawProductsHighlight();
+      drawRegulationStrip();
+      drawParticles();
+      drawLegend();
+
+      if (Math.floor(timestamp / 100) !== Math.floor((timestamp - dt * 1000) / 100)) {
+        updateUI();
+      }
+    }
+  );
+}
+
+init();
+</script>
+</body>
+</html>

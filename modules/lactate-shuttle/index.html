@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lactate Shuttle &mdash; Fuel, Not Waste</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    text-align: center;
+    padding: 10px 16px 6px;
+    background: #16213e;
+    border-bottom: 2px solid #0f3460;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 0.5px;
+  }
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 20px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .slider-group label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #a0b0c0;
+  }
+  input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    accent-color: #E8A040;
+    height: 6px;
+    cursor: pointer;
+  }
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .stat-val {
+    color: #FFD700;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #info-panel {
+    font-size: 0.8rem;
+    color: #90a0b0;
+    width: 100%;
+    line-height: 1.4;
+    min-height: 2.4em;
+  }
+  #how-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #how-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #how-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+
+  #training-btn {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  #training-btn:hover { background: #1a4a80; color: #e0e0e0; }
+  #training-btn.active { background: #1a4a80; color: #FFD700; border-color: #FFD700; }
+  #training-panel {
+    background: #111828;
+    border-top: 2px solid #0f3460;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  #training-panel.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #training-panel::-webkit-scrollbar { width: 6px; }
+  #training-panel::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+
+  .process-inner {
+    padding: 16px 20px 20px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .process-inner h2 {
+    font-size: 1rem;
+    color: #e0e0e0;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+  }
+  .process-inner h3 {
+    font-size: 0.85rem;
+    color: #a0b0c0;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .step-body {
+    flex: 1;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  .step-body strong { color: #e0e0e0; }
+  .step-body .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .tag-ldh   { background: #3AADA8; }
+  .tag-mct   { background: #9B59B6; }
+  .tag-fuel  { background: #E8A040; }
+  .tag-myth  { background: #D94A4A; }
+  .tag-adapt { background: #4A90D9; }
+
+  .analogy {
+    background: #0d1a30;
+    border-left: 3px solid #1a4a80;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #8098b8;
+  }
+  .analogy strong { color: #a0b8d4; }
+  .misconception {
+    background: #1a0d0d;
+    border-left: 3px solid #D94A4A;
+    padding: 10px 14px;
+    margin: 14px 0 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #c0a0a0;
+  }
+  .misconception strong { color: #e0c0c0; }
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .num-card {
+    background: #0d1a30;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .num-card .val { font-size: 1.1rem; font-weight: 700; color: #FFD700; }
+  .num-card .lbl { font-size: 0.72rem; color: #7088a0; margin-top: 2px; }
+
+  /* Tutorial bar */
+  #tutorial-bar {
+    display: none;
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 12px 20px 14px;
+  }
+  #tutorial-bar.active { display: block; }
+  .tutorial-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .tutorial-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #2a3a5a;
+    background: #0d1a30;
+    color: #607080;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .step-dot:hover { border-color: #4a6a9a; color: #c0c8d4; }
+  .step-dot.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .tutorial-nav button {
+    background: #0f3460;
+    color: #a0b0c0;
+    border: 1px solid #1a4a80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tutorial-nav button:hover:not(:disabled) { background: #1a4a80; color: #e0e0e0; }
+  .tutorial-nav button:disabled { opacity: 0.4; cursor: default; }
+  #exit-tutorial { background: transparent; border-color: #D94A4A; color: #D94A4A; }
+  #exit-tutorial:hover { background: #D94A4A; color: #fff; }
+  #step-description {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  #step-description strong { color: #e0e0e0; }
+  #step-description .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    vertical-align: 1px;
+  }
+
+  /* Glossary tooltip */
+  #tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(17, 24, 40, 0.97);
+    border: 1px solid #3a5a8a;
+    border-radius: 8px;
+    padding: 12px 16px 14px;
+    max-width: 340px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tooltip-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 6px;
+    padding-right: 20px;
+  }
+  #tooltip .tooltip-body {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c0c8d4;
+  }
+  #tooltip .tooltip-body strong { color: #e0e0e0; }
+  #tooltip .tooltip-body em { color: #a0b8d4; font-style: italic; }
+  #tooltip .tooltip-body .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; vertical-align: 1px; }
+  #tooltip .tooltip-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #607080;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  #tooltip .tooltip-close:hover { color: #e0e0e0; }
+  #tooltip .tooltip-hint {
+    font-size: 0.7rem;
+    color: #506070;
+    margin-top: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div id="nav-slot"></div>
+<header>
+  <h1>Lactate Shuttle &mdash; Fuel, Not Waste</h1>
+</header>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="slider-group">
+    <label for="intensity-slider">Exercise Intensity:</label>
+    <input type="range" id="intensity-slider" min="0" max="100" value="30">
+  </div>
+  <div class="slider-group">
+    <label for="training-slider">Training Level:</label>
+    <input type="range" id="training-slider" min="0" max="100" value="30">
+  </div>
+  <div class="stats">
+    <span>Blood [La&minus;]: <span class="stat-val" id="lactate-val">1.0</span> mM</span>
+    <span>Production: <span class="stat-val" id="prod-val">0.0</span></span>
+    <span>Clearance: <span class="stat-val" id="clear-val">0.0</span></span>
+    <span>Net: <span class="stat-val" id="net-val">0.0</span></span>
+  </div>
+  <button id="how-btn">How It Works</button>
+  <button id="training-btn">Bottleneck &amp; Training</button>
+  <div id="info-panel">Adjust the exercise intensity slider to drive lactate production.</div>
+</div>
+
+<div id="tutorial-bar">
+  <div class="tutorial-top">
+    <div class="tutorial-steps"></div>
+    <div class="tutorial-nav">
+      <button id="prev-step">&#8592; Prev</button>
+      <button id="next-step">Next &#8594;</button>
+      <button id="exit-tutorial">Exit Tutorial</button>
+    </div>
+  </div>
+  <div id="step-description"></div>
+</div>
+
+<div id="training-panel">
+  <div class="process-inner">
+    <h2>Bottleneck &amp; Endurance Training Adaptation</h2>
+
+    <div class="analogy"><strong>Taxi analogy:</strong> Think of MCT4 transporters as taxis picking up lactate passengers from busy glycolytic cells. MCT1 transporters are the destinations &mdash; hotels in oxidative tissues (heart, slow-twitch muscle, brain) where lactate checks in to be burned as fuel. Training adds more taxis AND more hotels.</div>
+
+    <h3>Bottleneck 1 &mdash; MCT1 Saturation</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>MCT1 has high affinity but limited capacity.</strong> At low intensity, MCT1 easily imports all available lactate. As production rises, MCT1 approaches saturation &mdash; clearance can&rsquo;t keep pace with production. Blood lactate accumulates. This is the primary bottleneck at moderate intensities.</div>
+    </div>
+
+    <h3>Bottleneck 2 &mdash; Mitochondrial Capacity</h3>
+    <div class="step">
+      <div class="step-num" style="background:#D94A4A">!</div>
+      <div class="step-body"><strong>Even if lactate enters the consumer cell, it must be oxidized.</strong> LDH-B converts lactate &rarr; pyruvate, but pyruvate must enter mitochondria for the Krebs cycle. If mitochondrial capacity is limited (untrained), pyruvate backs up. Intracellular lactate rises, reducing the concentration gradient and slowing MCT1 import.</div>
+    </div>
+
+    <h3>How Endurance Training Adapts</h3>
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">1</div>
+      <div class="step-body"><strong>MCT1 upregulation (30&ndash;80%).</strong> <span class="tag tag-adapt">Adaptation</span> More high-affinity importers on oxidative cells = faster lactate clearance from blood. The primary training response for lactate handling.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">2</div>
+      <div class="step-body"><strong>Mitochondrial biogenesis (~2&times;).</strong> <span class="tag tag-adapt">Adaptation</span> More mitochondria = more pyruvate oxidation capacity. The consumer cell can process lactate faster, maintaining the concentration gradient for MCT1 import.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">3</div>
+      <div class="step-body"><strong>MCT4 increase.</strong> <span class="tag tag-adapt">Adaptation</span> More exporters on glycolytic cells = faster lactate removal from the producer cell. Prevents intracellular lactate buildup that would inhibit glycolysis.</div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:#4A90D9">4</div>
+      <div class="step-body"><strong>LDH isoform shift.</strong> <span class="tag tag-adapt">Adaptation</span> Training increases the LDH-B:LDH-A ratio in oxidative fibers, favoring lactate &rarr; pyruvate conversion. The consumer cell becomes a more efficient lactate sink.</div>
+    </div>
+
+    <h3>By the Numbers</h3>
+    <div class="numbers-grid">
+      <div class="num-card"><div class="val">~1 mM</div><div class="lbl">Resting blood lactate</div></div>
+      <div class="num-card"><div class="val">~50%</div><div class="lbl">LT untrained (% VO&#8322;max)</div></div>
+      <div class="num-card"><div class="val">~70%</div><div class="lbl">LT trained (% VO&#8322;max)</div></div>
+      <div class="num-card"><div class="val">30&ndash;80%</div><div class="lbl">MCT1 increase (training)</div></div>
+    </div>
+
+    <div class="misconception"><strong>Misconception correction:</strong> &ldquo;Lactic acid causes fatigue and soreness.&rdquo; Wrong on every count. (1) At physiological pH, it&rsquo;s <em>lactate</em> (conjugate base), not lactic acid. (2) LDH <em>consumes</em> a proton &mdash; lactate formation actually <em>buffers</em> against acidosis. (3) The H&plus; that drops pH comes from <strong>ATP hydrolysis</strong> (ATP &rarr; ADP + P&#7522; + H&plus;), not from lactate production. (4) Blood lactate clears within ~30 minutes post-exercise. (5) DOMS is caused by eccentric mechanical damage, not lactate.</div>
+
+    <div class="analogy"><strong>Key insight (George Brooks):</strong> Lactate is an intercellular fuel shuttle. It&rsquo;s produced in glycolytic cells, exported via MCT4, transported through blood, imported via MCT1 into oxidative tissues, and burned for energy. The heart <em>preferentially</em> uses lactate as fuel. The brain uses it during exercise. It&rsquo;s not waste &mdash; it&rsquo;s the body&rsquo;s most important metabolic currency after glucose.</div>
+  </div>
+</div>
+
+<script type="module">
+import { lerp, roundRect, getInactive, createCanvasManager, createAnimationLoop } from '../../shared/core.js';
+import { TooltipManager } from '../../shared/tooltip.js';
+import { TutorialManager } from '../../shared/tutorial.js';
+import { initNav } from '../../shared/nav.js';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const COLORS = {
+  pageBg:      '#1a1a2e',
+  producerBg:  '#2a1e14',
+  bloodBg:     '#3a1520',
+  consumerBg:  '#0e1e2e',
+  membrane:    '#5a4a3a',
+  glucose:     '#E8A040',
+  pyruvate:    '#D4A843',
+  lactate:     '#3AADA8',
+  nad:         '#4A90D9',
+  mct4:        '#9B59B6',
+  mct1:        '#9B59B6',
+  ldhA:        '#3AADA8',
+  ldhB:        '#3AADA8',
+  mito:        '#2a6040',
+  mitoInner:   '#1a4030',
+  krebs:       '#E8A040',
+  text:        '#e0e0e0',
+  textDim:     '#8098b0',
+  accent:      '#FFD700',
+  bloodParticle: '#e04040',
+};
+
+// ============================================================
+// 2. GLOSSARY
+// ============================================================
+const GLOSSARY = {
+  mct1: {
+    title: 'MCT1 (Monocarboxylate Transporter 1)',
+    body: '<strong>High-affinity, low-capacity</strong> lactate importer. Found on oxidative cells: slow-twitch muscle, heart, brain. Symports lactate\u207B + H\u207A into the cell. Training upregulates MCT1 by <strong>30\u201380%</strong>, dramatically improving lactate clearance.'
+  },
+  mct4: {
+    title: 'MCT4 (Monocarboxylate Transporter 4)',
+    body: '<strong>Low-affinity, high-capacity</strong> lactate exporter. Found on fast-twitch/glycolytic fibers. Co-transports lactate\u207B + H\u207A out of the cell when intracellular lactate is high. Think of it as the <em>relief valve</em> on a busy glycolytic cell.'
+  },
+  ldhA: {
+    title: 'LDH-A (Lactate Dehydrogenase A)',
+    body: 'Predominant in fast-twitch/glycolytic fibers. Favors <strong>pyruvate \u2192 lactate</strong> direction. Regenerates NAD\u207A so glycolysis can continue when mitochondria can\u2019t keep up. The reaction <em>consumes</em> H\u207A \u2014 it buffers against acidosis.'
+  },
+  ldhB: {
+    title: 'LDH-B (Lactate Dehydrogenase B)',
+    body: 'Predominant in oxidative tissues (heart, slow-twitch). Favors <strong>lactate \u2192 pyruvate</strong> direction. Converts imported lactate back to pyruvate for mitochondrial oxidation via the Krebs cycle. Training increases the LDH-B:LDH-A ratio.'
+  },
+  lactate: {
+    title: 'Lactate (NOT "Lactic Acid")',
+    body: 'At physiological pH (~7.4), it exists as the <strong>conjugate base</strong> lactate\u207B, not lactic acid. Lactate is an intercellular fuel shuttle \u2014 produced in glycolytic cells, transported via MCT4/MCT1, and oxidized in the heart, brain, and slow-twitch fibers. George Brooks\u2019 paradigm shift: it\u2019s fuel, not waste.'
+  },
+  lactateThreshold: {
+    title: 'Lactate Threshold (LT)',
+    body: 'The exercise intensity at which blood lactate begins to accumulate exponentially. <strong>NOT</strong> the onset of lactate production (that happens at rest). It marks the point where production rate exceeds clearance capacity. Untrained: ~50% VO\u2082max. Trained: ~70\u201375% VO\u2082max. Training shifts LT rightward via MCT1 upregulation + mitochondrial biogenesis.'
+  },
+  pyruvate: {
+    title: 'Pyruvate',
+    body: 'End product of glycolysis. At the metabolic crossroads: (1) enters mitochondria \u2192 Krebs cycle (aerobic), or (2) is converted to lactate by LDH (when NAD\u207A is needed). Not a dead end \u2014 a distribution hub.'
+  },
+  intracellularShuttle: {
+    title: 'Intracellular Lactate Shuttle',
+    body: 'Brooks\u2019 discovery that lactate also shuttles <em>within</em> the cell \u2014 from cytoplasmic glycolysis to the mitochondrial matrix. Mitochondrial MCT1 imports lactate, and mitochondrial LDH converts it to pyruvate right at the Krebs cycle entry point. Faster than routing pyruvate through the cytoplasm.'
+  },
+  bloodLactate: {
+    title: 'Blood Lactate',
+    body: 'Resting: ~1 mM. Light exercise: 1\u20132 mM. At threshold: ~4 mM (onset of blood lactate accumulation). Maximal effort: 15\u201325 mM. Clearance half-life: ~15 min post-exercise. Used clinically to set training zones and assess aerobic fitness.'
+  },
+  georgeBrooks: {
+    title: 'George Brooks',
+    body: 'UC Berkeley professor who proposed the <strong>Lactate Shuttle hypothesis</strong> (1985). Overturned decades of dogma by showing lactate is a major fuel source, not a waste product. His work demonstrated cell-to-cell and intracellular lactate shuttling, changing how we understand exercise metabolism.'
+  },
+  fatigueMythBuster: {
+    title: '"Lactic Acid Causes Fatigue" \u2014 The Myth',
+    body: 'This persistent myth is <strong>wrong</strong>. (1) It\u2019s lactate, not lactic acid, at body pH. (2) LDH consumes H\u207A during lactate formation \u2014 it <em>buffers</em> acidosis. (3) Fatigue-causing H\u207A comes from ATP hydrolysis, not lactate. (4) DOMS is from mechanical damage, not lactate. (5) The heart <em>prefers</em> lactate as fuel.'
+  },
+  nadRecycling: {
+    title: 'NAD\u207A Recycling',
+    body: 'Glycolysis <strong>requires</strong> NAD\u207A at step 4 (G3P DH). Two recycling paths: (1) ETC via malate-aspartate shuttle (aerobic, slower), (2) LDH in cytoplasm (anaerobic, fast). When mitochondrial recycling can\u2019t keep up, LDH takes over \u2014 producing lactate as a byproduct of NAD\u207A regeneration.'
+  },
+};
+
+// ============================================================
+// 3. SIMULATION STATE
+// ============================================================
+const cm = createCanvasManager('c');
+let W = 0, H = 0;
+
+const state = {
+  intensity: 0.3,
+  training: 0.3,
+  bloodLactate: 1.0,
+  productionRate: 0,
+  clearanceRate: 0,
+  netRate: 0,
+  time: 0,
+};
+
+// Particle pools
+const lactateParticles = [];
+const NUM_PARTICLES = 60;
+for (let i = 0; i < NUM_PARTICLES; i++) {
+  lactateParticles.push({
+    active: false,
+    x: 0, y: 0,
+    vx: 0, vy: 0,
+    phase: 'producer', // producer, blood, consumer
+    alpha: 1,
+    size: 3,
+  });
+}
+
+// Lactate curve history
+const CURVE_HISTORY = 200;
+const lactateHistory = new Array(CURVE_HISTORY).fill(1.0);
+
+// Hit regions for tooltips
+const hitRegions = [];
+
+// Zone geometry (recomputed on resize)
+let zones = { producer: {}, blood: {}, consumer: {} };
+
+// ============================================================
+// 4. LAYOUT
+// ============================================================
+function computeLayout() {
+  W = cm.cssWidth;
+  H = cm.cssHeight;
+  const pw = W * 0.35;
+  const bw = W * 0.30;
+  const cw = W * 0.35;
+
+  zones.producer = { x: 0, y: 0, w: pw, h: H };
+  zones.blood    = { x: pw, y: 0, w: bw, h: H };
+  zones.consumer = { x: pw + bw, y: 0, w: cw, h: H };
+}
+
+// ============================================================
+// 5. SIMULATION
+// ============================================================
+function updateSim(dt) {
+  state.time += dt;
+  const I = state.intensity;
+  const T = state.training;
+
+  // Production: exponential curve
+  const baseRate = 1.0;
+  state.productionRate = baseRate + Math.pow(I, 1.8) * 8;
+
+  // Clearance: Michaelis-Menten
+  const maxClearance = 2.0 + T * 8.0; // training increases Vmax
+  const Km = 3.0 - T * 1.5; // training lowers Km (higher affinity)
+  const KmClamped = Math.max(Km, 0.5);
+  state.clearanceRate = maxClearance * state.bloodLactate / (KmClamped + state.bloodLactate);
+
+  // Net balance
+  state.netRate = state.productionRate - state.clearanceRate;
+
+  // Update blood lactate
+  state.bloodLactate += state.netRate * dt * 0.3;
+  state.bloodLactate = Math.max(0.5, Math.min(25, state.bloodLactate));
+
+  // Update history
+  if (Math.floor(state.time * 30) % 2 === 0) {
+    lactateHistory.push(state.bloodLactate);
+    if (lactateHistory.length > CURVE_HISTORY) lactateHistory.shift();
+  }
+
+  // Spawn particles
+  const spawnRate = state.productionRate * 2;
+  if (Math.random() < spawnRate * dt) {
+    const p = getInactive(lactateParticles);
+    if (p) {
+      const z = zones.producer;
+      p.active = true;
+      p.phase = 'producer';
+      p.x = z.x + z.w * 0.3 + Math.random() * z.w * 0.3;
+      p.y = z.h * 0.3 + Math.random() * z.h * 0.4;
+      p.vx = 30 + Math.random() * 20;
+      p.vy = (Math.random() - 0.5) * 15;
+      p.alpha = 1;
+      p.size = 2.5 + Math.random() * 1.5;
+    }
+  }
+
+  // Update particles
+  for (const p of lactateParticles) {
+    if (!p.active) continue;
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += (Math.random() - 0.5) * 30 * dt;
+
+    const bz = zones.blood;
+    const cz = zones.consumer;
+
+    if (p.phase === 'producer' && p.x > bz.x) {
+      p.phase = 'blood';
+      p.vx = 20 + Math.random() * 30;
+    }
+
+    if (p.phase === 'blood' && p.x > cz.x) {
+      // Clearance probability based on training
+      const clearProb = 0.3 + T * 0.6;
+      if (Math.random() < clearProb) {
+        p.phase = 'consumer';
+        p.vx = 15 + Math.random() * 10;
+      } else {
+        // Bounce back
+        p.vx = -(10 + Math.random() * 15);
+        p.phase = 'blood-bounce';
+      }
+    }
+
+    if (p.phase === 'consumer') {
+      p.alpha -= dt * 0.8;
+      if (p.alpha <= 0) p.active = false;
+    }
+
+    if (p.phase === 'blood-bounce') {
+      p.alpha -= dt * 0.5;
+      if (p.alpha <= 0) p.active = false;
+    }
+
+    // Bounds
+    if (p.y < 10) { p.y = 10; p.vy = Math.abs(p.vy); }
+    if (p.y > H - 10) { p.y = H - 10; p.vy = -Math.abs(p.vy); }
+    if (p.x > W + 20 || p.x < -20) p.active = false;
+  }
+}
+
+// ============================================================
+// 6. INFO PANEL
+// ============================================================
+function updateInfoPanel() {
+  const panel = document.getElementById('info-panel');
+  const la = state.bloodLactate;
+  const I = state.intensity;
+
+  if (I < 0.15) {
+    panel.textContent = 'At rest: lactate production and clearance are balanced at ~1 mM. Oxidative cells easily clear any lactate produced.';
+  } else if (la < 2.5) {
+    panel.textContent = 'Below threshold: MCT1 clearance matches production. Lactate is being efficiently shuttled and oxidized in consumer cells.';
+  } else if (la < 5) {
+    panel.textContent = 'Approaching lactate threshold: production is starting to exceed clearance. MCT1 transporters nearing saturation.';
+  } else if (la < 10) {
+    panel.textContent = 'Above threshold: blood lactate accumulating. MCT1 saturated. H\u207A from ATP hydrolysis driving pH down. LDH-A working hard to recycle NAD\u207A.';
+  } else {
+    panel.textContent = 'High-intensity accumulation: severe lactate buildup. Clearance overwhelmed. This is unsustainable \u2014 fatigue from H\u207A (not lactate!) will force intensity reduction.';
+  }
+}
+
+// ============================================================
+// 7. RENDERING
+// ============================================================
+function render() {
+  const ctx = cm.ctx;
+  ctx.clearRect(0, 0, W, H);
+  if (W === 0 || H === 0) return;
+
+  drawProducerCell(ctx);
+  drawBloodZone(ctx);
+  drawConsumerCell(ctx);
+  drawParticles(ctx);
+  drawStats(ctx);
+
+  // Rebuild hit regions
+  hitRegions.length = 0;
+  buildHitRegions();
+}
+
+function drawProducerCell(ctx) {
+  const z = zones.producer;
+
+  // Background
+  ctx.fillStyle = COLORS.producerBg;
+  ctx.fillRect(z.x, z.y, z.w, z.h);
+
+  // Title
+  ctx.fillStyle = COLORS.text;
+  ctx.font = 'bold 13px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('GLYCOLYTIC (PRODUCER) CELL', z.x + z.w / 2, 22);
+  ctx.font = '11px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = COLORS.textDim;
+  ctx.fillText('Fast-twitch fiber', z.x + z.w / 2, 38);
+
+  // Glucose entry arrow
+  const gx = z.x + 20;
+  const gy = z.h * 0.3;
+  ctx.fillStyle = COLORS.glucose;
+  ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('\u2192 Glucose', gx, gy);
+
+  // Glycolysis box
+  const glyX = z.x + z.w * 0.15;
+  const glyY = z.h * 0.32;
+  const glyW = z.w * 0.4;
+  const glyH = 36;
+  ctx.fillStyle = 'rgba(232, 160, 64, 0.15)';
+  roundRect(ctx, glyX, glyY, glyW, glyH, 6);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.glucose;
+  ctx.lineWidth = 1;
+  roundRect(ctx, glyX, glyY, glyW, glyH, 6);
+  ctx.stroke();
+  ctx.fillStyle = COLORS.glucose;
+  ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Glycolysis', glyX + glyW / 2, glyY + 15);
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Glucose \u2192 Pyruvate', glyX + glyW / 2, glyY + 29);
+
+  // Arrow down to pyruvate
+  const pyX = z.x + z.w * 0.35;
+  const pyY = glyY + glyH + 12;
+  ctx.fillStyle = COLORS.pyruvate;
+  ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('\u2193 Pyruvate', pyX, pyY);
+
+  // LDH-A box
+  const ldhX = z.x + z.w * 0.15;
+  const ldhY = pyY + 10;
+  const ldhW = z.w * 0.45;
+  const ldhH = 40;
+  ctx.fillStyle = 'rgba(58, 173, 168, 0.15)';
+  roundRect(ctx, ldhX, ldhY, ldhW, ldhH, 6);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.ldhA;
+  ctx.lineWidth = 1;
+  roundRect(ctx, ldhX, ldhY, ldhW, ldhH, 6);
+  ctx.stroke();
+  ctx.fillStyle = COLORS.ldhA;
+  ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LDH-A', ldhX + ldhW / 2, ldhY + 15);
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Pyruvate \u2192 Lactate', ldhX + ldhW / 2, ldhY + 28);
+  ctx.fillStyle = COLORS.nad;
+  ctx.fillText('(regenerates NAD\u207A)', ldhX + ldhW / 2, ldhY + 38);
+
+  // Small mitochondrion
+  const mitX = z.x + z.w * 0.55;
+  const mitY = z.h * 0.6;
+  const mitW = z.w * 0.35;
+  const mitH = z.h * 0.2;
+  ctx.fillStyle = 'rgba(42, 96, 64, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(mitX + mitW / 2, mitY + mitH / 2, mitW / 2, mitH / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.mito;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = COLORS.mito;
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Mito (small)', mitX + mitW / 2, mitY + mitH / 2 - 4);
+  ctx.fillStyle = COLORS.textDim;
+  ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Low-intensity', mitX + mitW / 2, mitY + mitH / 2 + 8);
+  ctx.fillText('pyruvate oxidation', mitX + mitW / 2, mitY + mitH / 2 + 19);
+
+  // MCT4 on right membrane
+  const mctX = z.x + z.w - 16;
+  const mctY = z.h * 0.35;
+  const mctH2 = z.h * 0.3;
+  const numMCT4 = 3 + Math.floor(state.training * 3);
+  ctx.strokeStyle = COLORS.mct4;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < numMCT4; i++) {
+    const my = mctY + (mctH2 / (numMCT4 + 1)) * (i + 1);
+    ctx.beginPath();
+    ctx.moveTo(mctX - 6, my - 6);
+    ctx.lineTo(mctX + 6, my);
+    ctx.lineTo(mctX - 6, my + 6);
+    ctx.stroke();
+  }
+  ctx.fillStyle = COLORS.mct4;
+  ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('MCT4', z.x + z.w - 14, mctY - 6);
+  ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Export', z.x + z.w - 14, mctY + mctH2 + 14);
+
+  // Right membrane line
+  ctx.strokeStyle = COLORS.membrane;
+  ctx.lineWidth = 3;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(z.x + z.w, 0);
+  ctx.lineTo(z.x + z.w, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawBloodZone(ctx) {
+  const z = zones.blood;
+
+  // Background with red tint
+  const grad = ctx.createLinearGradient(z.x, 0, z.x + z.w, 0);
+  grad.addColorStop(0, '#2a0a10');
+  grad.addColorStop(0.5, '#3a1520');
+  grad.addColorStop(1, '#2a0a10');
+  ctx.fillStyle = grad;
+  ctx.fillRect(z.x, z.y, z.w, z.h);
+
+  // Title
+  ctx.fillStyle = '#e08080';
+  ctx.font = 'bold 13px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('BLOOD / INTERSTITIAL', z.x + z.w / 2, 22);
+
+  // Blood lactate concentration
+  ctx.fillStyle = COLORS.accent;
+  ctx.font = 'bold 18px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText(state.bloodLactate.toFixed(1) + ' mM', z.x + z.w / 2, 50);
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#c08080';
+  ctx.fillText('[Lactate\u207B]', z.x + z.w / 2, 64);
+
+  // Lactate curve
+  drawLactateCurve(ctx, z);
+
+  // Flow arrows
+  const arrowY = z.h * 0.4;
+  ctx.fillStyle = 'rgba(224, 80, 80, 0.5)';
+  ctx.font = '20px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  const flow = state.productionRate > state.clearanceRate ? '\u2192\u2192\u2192' : '\u2192\u2192';
+  ctx.fillText(flow, z.x + z.w / 2, arrowY);
+
+  // Lactate + H+ label
+  ctx.fillStyle = COLORS.lactate;
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Lactate\u207B + H\u207A', z.x + z.w / 2, arrowY + 16);
+}
+
+function drawLactateCurve(ctx, z) {
+  const graphX = z.x + 16;
+  const graphY = z.h * 0.55;
+  const graphW = z.w - 32;
+  const graphH = z.h * 0.32;
+
+  // Graph background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  roundRect(ctx, graphX, graphY, graphW, graphH, 4);
+  ctx.fill();
+
+  // Axes
+  ctx.strokeStyle = '#4a2a30';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(graphX, graphY);
+  ctx.lineTo(graphX, graphY + graphH);
+  ctx.lineTo(graphX + graphW, graphY + graphH);
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#806060';
+  ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('25', graphX + 2, graphY + 10);
+  ctx.fillText('0', graphX + 2, graphY + graphH - 2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Blood [La\u207B] over time', graphX + graphW / 2, graphY + graphH + 12);
+
+  // Threshold line
+  const threshold = 4.0;
+  const threshY = graphY + graphH - (threshold / 25) * graphH;
+  ctx.strokeStyle = '#805050';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(graphX, threshY);
+  ctx.lineTo(graphX + graphW, threshY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#a06060';
+  ctx.font = '8px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('LT ~4mM', graphX + graphW - 2, threshY - 3);
+
+  // Draw curve
+  ctx.strokeStyle = COLORS.lactate;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < lactateHistory.length; i++) {
+    const x = graphX + (i / (CURVE_HISTORY - 1)) * graphW;
+    const val = Math.min(lactateHistory[i], 25);
+    const y = graphY + graphH - (val / 25) * graphH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+function drawConsumerCell(ctx) {
+  const z = zones.consumer;
+
+  // Background
+  ctx.fillStyle = COLORS.consumerBg;
+  ctx.fillRect(z.x, z.y, z.w, z.h);
+
+  // Left membrane
+  ctx.strokeStyle = COLORS.membrane;
+  ctx.lineWidth = 3;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(z.x, 0);
+  ctx.lineTo(z.x, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Title
+  ctx.fillStyle = COLORS.text;
+  ctx.font = 'bold 13px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('OXIDATIVE (CONSUMER) CELL', z.x + z.w / 2, 22);
+  ctx.font = '11px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = COLORS.textDim;
+  ctx.fillText('Slow-twitch / Heart / Brain', z.x + z.w / 2, 38);
+
+  // MCT1 on left membrane
+  const mctX = z.x + 12;
+  const mctY = z.h * 0.25;
+  const mctH2 = z.h * 0.35;
+  const numMCT1 = 3 + Math.floor(state.training * 5);
+  ctx.strokeStyle = COLORS.mct1;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < numMCT1; i++) {
+    const my = mctY + (mctH2 / (numMCT1 + 1)) * (i + 1);
+    ctx.beginPath();
+    ctx.moveTo(mctX + 6, my - 6);
+    ctx.lineTo(mctX - 6, my);
+    ctx.lineTo(mctX + 6, my + 6);
+    ctx.stroke();
+  }
+  ctx.fillStyle = COLORS.mct1;
+  ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('MCT1', z.x + 14, mctY - 8);
+  ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Import', z.x + 14, mctY + mctH2 + 14);
+
+  // LDH-B box
+  const ldhX = z.x + z.w * 0.2;
+  const ldhY = z.h * 0.28;
+  const ldhW = z.w * 0.45;
+  const ldhH = 40;
+  ctx.fillStyle = 'rgba(58, 173, 168, 0.15)';
+  roundRect(ctx, ldhX, ldhY, ldhW, ldhH, 6);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.ldhB;
+  ctx.lineWidth = 1;
+  roundRect(ctx, ldhX, ldhY, ldhW, ldhH, 6);
+  ctx.stroke();
+  ctx.fillStyle = COLORS.ldhB;
+  ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LDH-B', ldhX + ldhW / 2, ldhY + 15);
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('Lactate \u2192 Pyruvate', ldhX + ldhW / 2, ldhY + 30);
+
+  // Arrow to mito
+  ctx.fillStyle = COLORS.pyruvate;
+  ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('\u2193 Pyruvate', ldhX + ldhW / 2, ldhY + ldhH + 16);
+
+  // Large mitochondrion
+  const mitX = z.x + z.w * 0.12;
+  const mitY = z.h * 0.52;
+  const mitW = z.w * 0.7;
+  const mitH = z.h * 0.3;
+  const mitoScale = 0.7 + state.training * 0.5;
+  const sMitW = mitW * mitoScale;
+  const sMitH = mitH * mitoScale;
+  const sMitX = mitX + (mitW - sMitW) / 2;
+  const sMitY = mitY + (mitH - sMitH) / 2;
+
+  // Outer membrane
+  ctx.fillStyle = 'rgba(42, 96, 64, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(sMitX + sMitW / 2, sMitY + sMitH / 2, sMitW / 2, sMitH / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.mito;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Inner membrane (cristae)
+  ctx.strokeStyle = COLORS.mitoInner;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const cx = sMitX + sMitW * (0.25 + i * 0.15);
+    const cy = sMitY + sMitH * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(cx, sMitY + sMitH * 0.25);
+    ctx.quadraticCurveTo(cx + 8, cy, cx, sMitY + sMitH * 0.75);
+    ctx.stroke();
+  }
+
+  // Krebs label
+  ctx.fillStyle = COLORS.krebs;
+  ctx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Krebs Cycle', sMitX + sMitW / 2, sMitY + sMitH / 2 - 4);
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = COLORS.textDim;
+  ctx.fillText('Pyruvate \u2192 CO\u2082 + ATP', sMitX + sMitW / 2, sMitY + sMitH / 2 + 10);
+
+  // Intracellular shuttle (dashed path from membrane to mito)
+  ctx.strokeStyle = 'rgba(58, 173, 168, 0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.moveTo(z.x + 30, z.h * 0.5);
+  ctx.quadraticCurveTo(z.x + z.w * 0.3, z.h * 0.6, sMitX + 10, sMitY + sMitH / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(58, 173, 168, 0.5)';
+  ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Intracellular shuttle', z.x + 30, z.h * 0.5 + 14);
+
+  // Training label
+  if (state.training > 0.5) {
+    ctx.fillStyle = 'rgba(74, 144, 217, 0.7)';
+    ctx.font = '9px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Trained: \u2191MCT1 \u2191Mito', z.x + z.w / 2, z.h - 16);
+  }
+}
+
+function drawParticles(ctx) {
+  for (const p of lactateParticles) {
+    if (!p.active) continue;
+    ctx.globalAlpha = Math.max(0, p.alpha);
+    ctx.fillStyle = COLORS.lactate;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Small glow
+    ctx.fillStyle = 'rgba(58, 173, 168, 0.3)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawStats(ctx) {
+  // Update DOM stats
+  document.getElementById('lactate-val').textContent = state.bloodLactate.toFixed(1);
+  document.getElementById('prod-val').textContent = state.productionRate.toFixed(1);
+  document.getElementById('clear-val').textContent = state.clearanceRate.toFixed(1);
+  const net = state.netRate;
+  const netEl = document.getElementById('net-val');
+  netEl.textContent = (net >= 0 ? '+' : '') + net.toFixed(1);
+  netEl.style.color = net > 0.5 ? '#D94A4A' : net < -0.5 ? '#3AADA8' : '#FFD700';
+}
+
+// ============================================================
+// 8. HIT REGIONS
+// ============================================================
+function buildHitRegions() {
+  const pz = zones.producer;
+  const bz = zones.blood;
+  const cz = zones.consumer;
+
+  // MCT4 region
+  hitRegions.push({
+    id: 'mct4',
+    cursor: 'pointer',
+    test: (mx, my) => mx > pz.x + pz.w - 30 && mx < pz.x + pz.w && my > pz.h * 0.25 && my < pz.h * 0.7
+  });
+
+  // LDH-A region
+  hitRegions.push({
+    id: 'ldhA',
+    cursor: 'pointer',
+    test: (mx, my) => {
+      const ldhX = pz.x + pz.w * 0.15;
+      const ldhY = pz.h * 0.32 + 36 + 22;
+      return mx > ldhX && mx < ldhX + pz.w * 0.45 && my > ldhY && my < ldhY + 40;
+    }
+  });
+
+  // Glycolysis box
+  hitRegions.push({
+    id: 'pyruvate',
+    cursor: 'pointer',
+    test: (mx, my) => {
+      const glyX = pz.x + pz.w * 0.15;
+      const glyY = pz.h * 0.32;
+      return mx > glyX && mx < glyX + pz.w * 0.4 && my > glyY && my < glyY + 36;
+    }
+  });
+
+  // Blood zone — lactate info
+  hitRegions.push({
+    id: 'bloodLactate',
+    cursor: 'pointer',
+    test: (mx, my) => mx > bz.x + 10 && mx < bz.x + bz.w - 10 && my > 30 && my < 70
+  });
+
+  // Lactate curve — threshold
+  hitRegions.push({
+    id: 'lactateThreshold',
+    cursor: 'pointer',
+    test: (mx, my) => {
+      const graphY = bz.h * 0.55;
+      return mx > bz.x + 10 && mx < bz.x + bz.w - 10 && my > graphY && my < graphY + bz.h * 0.35;
+    }
+  });
+
+  // MCT1 region
+  hitRegions.push({
+    id: 'mct1',
+    cursor: 'pointer',
+    test: (mx, my) => mx > cz.x && mx < cz.x + 30 && my > cz.h * 0.2 && my < cz.h * 0.65
+  });
+
+  // LDH-B region
+  hitRegions.push({
+    id: 'ldhB',
+    cursor: 'pointer',
+    test: (mx, my) => {
+      const ldhX = cz.x + cz.w * 0.2;
+      const ldhY = cz.h * 0.28;
+      return mx > ldhX && mx < ldhX + cz.w * 0.45 && my > ldhY && my < ldhY + 40;
+    }
+  });
+
+  // Krebs / mitochondrion region
+  hitRegions.push({
+    id: 'intracellularShuttle',
+    cursor: 'pointer',
+    test: (mx, my) => {
+      const mitX = cz.x + cz.w * 0.12;
+      const mitY = cz.h * 0.52;
+      return mx > mitX && mx < mitX + cz.w * 0.7 && my > mitY && my < mitY + cz.h * 0.3;
+    }
+  });
+
+  // Producer cell title — George Brooks
+  hitRegions.push({
+    id: 'georgeBrooks',
+    cursor: 'pointer',
+    test: (mx, my) => mx > pz.x + 10 && mx < pz.x + pz.w - 20 && my > 5 && my < 45
+  });
+
+  // Consumer cell title
+  hitRegions.push({
+    id: 'lactate',
+    cursor: 'pointer',
+    test: (mx, my) => mx > cz.x + 10 && mx < cz.x + cz.w - 10 && my > 5 && my < 45
+  });
+
+  // Producer mito — NAD recycling
+  hitRegions.push({
+    id: 'nadRecycling',
+    cursor: 'pointer',
+    test: (mx, my) => {
+      const mitX = pz.x + pz.w * 0.55;
+      const mitY = pz.h * 0.6;
+      return mx > mitX && mx < mitX + pz.w * 0.35 && my > mitY && my < mitY + pz.h * 0.2;
+    }
+  });
+
+  // Fatigue myth — blood zone bottom
+  hitRegions.push({
+    id: 'fatigueMythBuster',
+    cursor: 'pointer',
+    test: (mx, my) => mx > bz.x + 10 && mx < bz.x + bz.w - 10 && my > bz.h * 0.9 && my < bz.h
+  });
+}
+
+// ============================================================
+// 9. TUTORIAL
+// ============================================================
+const TUTORIAL_ACCENTS = [
+  null,
+  '#E8A040', // 1 — Paradigm shift
+  '#D4A843', // 2 — Producer cell
+  '#9B59B6', // 3 — MCT4
+  '#e04040', // 4 — Blood pool
+  '#9B59B6', // 5 — MCT1
+  '#3AADA8', // 6 — Consumer cell
+  '#4A90D9', // 7 — Training
+];
+
+const TUTORIAL_DESCRIPTIONS = [
+  `<strong>Lactate \u2014 Fuel, Not Waste.</strong> For decades, lactate was blamed for fatigue and soreness. <strong>George Brooks</strong> (UC Berkeley, 1985) shattered that dogma. His Lactate Shuttle hypothesis showed that lactate is actually the body\u2019s most important intercellular fuel \u2014 produced in one cell and consumed by another. The heart <em>preferentially</em> uses lactate. The brain uses it during exercise. It\u2019s not waste \u2014 it\u2019s a shuttle.`,
+
+  `<strong>The Producer Cell</strong> (left zone). Fast-twitch fibers specialize in glycolysis. Glucose enters \u2192 glycolysis produces pyruvate. When glycolytic flux is high and mitochondria can\u2019t keep up, <span class="tag tag-ldh">LDH-A</span> converts pyruvate \u2192 lactate, regenerating NAD\u207A so glycolysis can continue. This is NOT a failure \u2014 it\u2019s a designed relief valve.`,
+
+  `<strong>MCT4 \u2014 The Export Door.</strong> <span class="tag tag-mct">MCT4</span> is a low-affinity, high-capacity monocarboxylate transporter on glycolytic cells. It co-transports lactate\u207B + H\u207A out of the cell when intracellular lactate is high. Think of it as a relief valve \u2014 it only opens under pressure. Training increases MCT4 density.`,
+
+  `<strong>The Blood Pool</strong> (center zone). Lactate enters the blood and interstitial space. Blood [La\u207B] reflects the balance between production and clearance. Watch the real-time curve: below threshold (~4 mM), clearance matches production. Above threshold, accumulation is exponential. Resting: ~1 mM. Max effort: 15\u201325 mM.`,
+
+  `<strong>MCT1 \u2014 The Import Door.</strong> <span class="tag tag-mct">MCT1</span> is a high-affinity transporter on oxidative cells (slow-twitch, heart, brain). It imports lactate\u207B + H\u207A for use as fuel. MCT1 is the <em>primary</em> training adaptation for lactate handling \u2014 upregulated 30\u201380% with endurance training. More MCT1 = faster clearance = higher lactate threshold.`,
+
+  `<strong>The Consumer Cell</strong> (right zone). Oxidative tissues import lactate via MCT1. <span class="tag tag-ldh">LDH-B</span> reverses the reaction: lactate \u2192 pyruvate. Pyruvate enters the large mitochondrion \u2192 Krebs cycle \u2192 full oxidation. Brooks also discovered the <em>intracellular shuttle</em>: lactate goes directly from cytoplasm into mitochondria via mito-MCT1.`,
+
+  `<strong>Training Adaptation.</strong> <span class="tag tag-adapt">Adaptation</span> Endurance training transforms the lactate system: (1) MCT1 upregulation 30\u201380% \u2192 faster clearance. (2) Mitochondrial biogenesis ~2\u00D7 \u2192 more oxidation capacity. (3) MCT4 increase \u2192 faster export. (4) LDH isoform shift toward LDH-B. Try moving the Training Level slider to see these changes in real time.`,
+];
+
+let tutorial = null;
+function initTutorial() {
+  tutorial = new TutorialManager({
+    stepCount: 7,
+    accents: TUTORIAL_ACCENTS,
+    descriptions: TUTORIAL_DESCRIPTIONS,
+    onEnter: () => {},
+    onExit: () => {},
+    onStepChange: (step) => {
+      // Adjust sliders to match tutorial step context
+      const intensitySlider = document.getElementById('intensity-slider');
+      const trainingSlider = document.getElementById('training-slider');
+      switch (step) {
+        case 1: intensitySlider.value = 20; trainingSlider.value = 30; break;
+        case 2: intensitySlider.value = 60; trainingSlider.value = 20; break;
+        case 3: intensitySlider.value = 70; trainingSlider.value = 20; break;
+        case 4: intensitySlider.value = 80; trainingSlider.value = 20; break;
+        case 5: intensitySlider.value = 50; trainingSlider.value = 70; break;
+        case 6: intensitySlider.value = 50; trainingSlider.value = 60; break;
+        case 7: intensitySlider.value = 60; trainingSlider.value = 90; break;
+      }
+      state.intensity = intensitySlider.value / 100;
+      state.training = trainingSlider.value / 100;
+    },
+  });
+}
+
+// ============================================================
+// 10. INIT
+// ============================================================
+initNav('lactate-shuttle');
+
+const intensitySlider = document.getElementById('intensity-slider');
+const trainingSlider = document.getElementById('training-slider');
+
+intensitySlider.addEventListener('input', () => {
+  state.intensity = intensitySlider.value / 100;
+});
+trainingSlider.addEventListener('input', () => {
+  state.training = trainingSlider.value / 100;
+});
+
+// How It Works button
+document.getElementById('how-btn').addEventListener('click', () => {
+  if (!tutorial) initTutorial();
+  if (tutorial.isActive) {
+    tutorial.exit();
+  } else {
+    tutorial.enter();
+  }
+});
+
+// Training panel toggle
+const trainingBtn = document.getElementById('training-btn');
+const trainingPanel = document.getElementById('training-panel');
+trainingBtn.addEventListener('click', () => {
+  const isOpen = trainingPanel.classList.toggle('open');
+  trainingBtn.classList.toggle('active', isOpen);
+});
+
+// Tooltip manager
+new TooltipManager(
+  cm.canvas,
+  GLOSSARY,
+  () => hitRegions,
+);
+
+// Resize handler
+function handleResize() {
+  cm.resize();
+  computeLayout();
+}
+window.addEventListener('resize', handleResize);
+handleResize();
+
+// Animation loop
+let infoTimer = 0;
+createAnimationLoop(
+  (dt) => {
+    updateSim(dt);
+    infoTimer += dt;
+    if (infoTimer > 0.5) {
+      infoTimer = 0;
+      updateInfoPanel();
+    }
+  },
+  () => render()
+);
+</script>
+</body>
+</html>
